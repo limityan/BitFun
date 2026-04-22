@@ -19,7 +19,7 @@ import { useFlowChatSessionRelationship } from './useFlowChatSessionRelationship
 import { useFlowChatSync } from './useFlowChatSync';
 import { useFlowChatToolActions } from './useFlowChatToolActions';
 import { useFlowChatSearch } from './useFlowChatSearch';
-import { useVirtualItems, useActiveSession, useVisibleTurnInfo, type VisibleTurnInfo } from '../../store/modernFlowChatStore';
+import { useVirtualItems, useActiveSession, useVisibleTurnInfo, useSessionViewportState, type VisibleTurnInfo } from '../../store/modernFlowChatStore';
 import type { FlowChatConfig } from '../../types/flow-chat';
 import type { LineRange } from '@/component-library';
 import { useWorkspaceContext } from '@/infrastructure/contexts/WorkspaceContext';
@@ -47,6 +47,7 @@ export const ModernFlowChatContainer: React.FC<ModernFlowChatContainerProps> = (
   const virtualItems = useVirtualItems();
   const activeSession = useActiveSession();
   const visibleTurnInfo = useVisibleTurnInfo();
+  const sessionViewportState = useSessionViewportState(activeSession?.sessionId);
   const [pendingHeaderTurnId, setPendingHeaderTurnId] = useState<string | null>(null);
   const [searchOpenRequest, setSearchOpenRequest] = useState(0);
   const autoPinnedSessionIdRef = useRef<string | null>(null);
@@ -186,16 +187,23 @@ export const ModernFlowChatContainer: React.FC<ModernFlowChatContainerProps> = (
       return;
     }
 
-    const resolvedLatestTurnId = latestTurnId;
-    const resolvedSessionId = sessionId;
+    const restoredAnchorTurnId = sessionViewportState?.anchorTurnId ?? latestTurnId;
+    const shouldFollowLatest = sessionViewportState?.isFollowingOutput === true;
+    const targetTurnId = shouldFollowLatest ? latestTurnId : restoredAnchorTurnId;
+    const shouldUseStickyLatest = shouldFollowLatest || (
+      targetTurnId === latestTurnId &&
+      Math.abs(sessionViewportState?.relativeOffsetPx ?? 0) < 1
+    );
+    const pinMode = shouldUseStickyLatest ? 'sticky-latest' : 'transient';
 
+    const resolvedSessionId = sessionId;
     autoPinnedSessionIdRef.current = resolvedSessionId;
-    setPendingHeaderTurnId(resolvedLatestTurnId);
+    setPendingHeaderTurnId(targetTurnId);
 
     const frameId = requestAnimationFrame(() => {
-      const accepted = virtualListRef.current?.pinTurnToTop(resolvedLatestTurnId, {
+      const accepted = virtualListRef.current?.pinTurnToTop(targetTurnId, {
         behavior: 'auto',
-        pinMode: 'sticky-latest',
+        pinMode,
       }) ?? false;
 
       if (!accepted) {
@@ -207,7 +215,7 @@ export const ModernFlowChatContainer: React.FC<ModernFlowChatContainerProps> = (
     return () => {
       cancelAnimationFrame(frameId);
     };
-  }, [activeSession?.sessionId, turnSummaries]);
+  }, [activeSession?.sessionId, sessionViewportState, turnSummaries]);
 
   useEffect(() => {
     if (searchCurrentMatchVirtualIndex < 0) return;

@@ -53,14 +53,24 @@ export interface VisibleTurnInfo {
   turnId: string;
 }
 
+export interface SessionViewportState {
+  anchorTurnId: string | null;
+  relativeOffsetPx: number;
+  isFollowingOutput: boolean;
+  updatedAt: number;
+}
+
 interface ModernFlowChatState {
   activeSession: Session | null;
   virtualItems: VirtualItem[];
   visibleTurnInfo: VisibleTurnInfo | null;
+  sessionViewportStates: Map<string, SessionViewportState>;
 
   setActiveSession: (session: Session | null) => void;
   updateVirtualItems: () => void;
   setVisibleTurnInfo: (info: VisibleTurnInfo | null) => void;
+  setSessionViewportState: (sessionId: string, viewportState: SessionViewportState) => void;
+  getSessionViewportState: (sessionId: string) => SessionViewportState | null;
   clear: () => void;
 }
 
@@ -275,7 +285,7 @@ export function sessionToVirtualItems(session: Session | null): VirtualItem[] {
 
 function getInitialModernState(): Pick<
   ModernFlowChatState,
-  'activeSession' | 'virtualItems' | 'visibleTurnInfo'
+  'activeSession' | 'virtualItems' | 'visibleTurnInfo' | 'sessionViewportStates'
 > {
   const legacyState = flowChatStore.getState();
   const activeSession = legacyState.activeSessionId
@@ -286,6 +296,7 @@ function getInitialModernState(): Pick<
     activeSession,
     virtualItems: sessionToVirtualItems(activeSession),
     visibleTurnInfo: null,
+    sessionViewportStates: new Map(),
   };
 }
 
@@ -316,6 +327,16 @@ export const useModernFlowChatStore = create<ModernFlowChatState>()(
       });
     },
 
+    setSessionViewportState: (sessionId, viewportState) => {
+      set((state) => {
+        state.sessionViewportStates.set(sessionId, viewportState);
+      });
+    },
+
+    getSessionViewportState: (sessionId) => {
+      return get().sessionViewportStates.get(sessionId) ?? null;
+    },
+
     clear: () => {
       cachedSession = null;
       cachedDialogTurnsRef = null;
@@ -325,6 +346,7 @@ export const useModernFlowChatStore = create<ModernFlowChatState>()(
         state.activeSession = null;
         state.virtualItems = [];
         state.visibleTurnInfo = null;
+        state.sessionViewportStates = new Map();
       });
     },
   }))
@@ -339,6 +361,9 @@ export const useActiveSession = () =>
 export const useVisibleTurnInfo = () =>
   useModernFlowChatStore(state => state.visibleTurnInfo);
 
+export const useSessionViewportState = (sessionId?: string | null) =>
+  useModernFlowChatStore(state => (sessionId ? state.sessionViewportStates.get(sessionId) ?? null : null));
+
 /**
  * Get actions (does not trigger re-render)
  */
@@ -347,5 +372,7 @@ export const useFlowChatActions = () =>
     setActiveSession: state.setActiveSession,
     updateVirtualItems: state.updateVirtualItems,
     setVisibleTurnInfo: state.setVisibleTurnInfo,
+    setSessionViewportState: state.setSessionViewportState,
+    getSessionViewportState: state.getSessionViewportState,
     clear: state.clear,
   })));

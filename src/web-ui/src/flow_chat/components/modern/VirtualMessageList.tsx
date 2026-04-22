@@ -20,12 +20,13 @@ import { ProcessingIndicator } from './ProcessingIndicator';
 import { ScrollAnchor } from './ScrollAnchor';
 import { useFlowChatFollowOutput } from './useFlowChatFollowOutput';
 import type { FlowChatPinTurnToTopMode } from '../../events/flowchatNavigation';
-import { useVirtualItems, useActiveSession, useModernFlowChatStore, type VisibleTurnInfo } from '../../store/modernFlowChatStore';
+import { useVirtualItems, useActiveSession, useModernFlowChatStore, type VisibleTurnInfo, type SessionViewportState } from '../../store/modernFlowChatStore';
 import { useChatInputState } from '../../store/chatInputStateStore';
 import { computeFlowChatInputStackFooterPx } from '../../utils/flowChatScrollLayout';
 import './VirtualMessageList.scss';
 
 const COMPENSATION_EPSILON_PX = 0.5;
+const VIEWPORT_OFFSET_EPSILON_PX = 1;
 const ANCHOR_LOCK_MIN_DEVIATION_PX = 0.5;
 const ANCHOR_LOCK_DURATION_MS = 450;
 const PINNED_TURN_VIEWPORT_OFFSET_PX = 57; // Keep in sync with `.message-list-header`.
@@ -229,6 +230,7 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
   const previousScrollTopRef = useRef(0);
   const measureFrameRef = useRef<number | null>(null);
   const visibleTurnMeasureFrameRef = useRef<number | null>(null);
+  const viewportStateSaveFrameRef = useRef<number | null>(null);
   const pinReservationReconcileFrameRef = useRef<number | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const mutationObserverRef = useRef<MutationObserver | null>(null);
@@ -279,6 +281,8 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
   const activeSessionState = useActiveSessionState();
   const isProcessing = activeSessionState.isProcessing;
   const processingPhase = activeSessionState.processingPhase;
+  const setSessionViewportState = useModernFlowChatStore.getState().setSessionViewportState;
+  const getSessionViewportState = useModernFlowChatStore.getState().getSessionViewportState;
 
   const getFooterHeightPx = useCallback((compensationPx: number) => {
     return inputStackFooterPxRef.current + compensationPx;
@@ -669,6 +673,23 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
     run(Math.max(1, frames));
   }, [measureVisibleTurn]);
 
+  const saveSessionViewportState = useCallback((sessionId: string, nextViewportState: SessionViewportState | null) => {
+    if (!nextViewportState) {
+      return;
+    }
+
+    const currentViewportState = getSessionViewportState(sessionId);
+    if (
+      currentViewportState?.anchorTurnId === nextViewportState.anchorTurnId &&
+      currentViewportState?.isFollowingOutput === nextViewportState.isFollowingOutput &&
+      Math.abs((currentViewportState?.relativeOffsetPx ?? 0) - nextViewportState.relativeOffsetPx) <= VIEWPORT_OFFSET_EPSILON_PX
+    ) {
+      return;
+    }
+
+    setSessionViewportState(sessionId, nextViewportState);
+  }, [getSessionViewportState, setSessionViewportState]);
+
   const getRenderedUserMessageElement = useCallback((turnId: string) => {
     const scroller = scrollerElementRef.current;
     if (!scroller) return null;
@@ -677,6 +698,46 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
       `.virtual-item-wrapper[data-item-type="user-message"][data-turn-id="${turnId}"]`,
     );
   }, []);
+
+  const getViewportStateSnapshot = useCallback((turnId: string | null): SessionViewportState | null => {
+    const sessionId = activeSession?.sessionId;
+    const scroller = scrollerElementRef.current;
+    if (!sessionId || !scroller || !turnId) {
+      return null;
+    }
+
+    const targetElement = getRenderedUserMessageElement(turnId);
+    const scrollerRect = scroller.getBoundingClientRect();
+    const viewportTop = scrollerRect.top + PINNED_TURN_VIEWPORT_OFFSET_PX;
+    const relativeOffsetPx = targetElement
+      ? scroller.scrollTop - Math.max(0, scroller.scrollTop + (targetElement.getBoundingClientRect().top - viewportTop))
+      : 0;
+
+    return {
+      anchorTurnId: turnId,
+      relativeOffsetPx,
+      isFollowingOutput: isFollowingOutputRef.current,
+      updatedAt: Date.now(),
+    };
+  }, [activeSession?.sessionId, getRenderedUserMessageElement]);
+
+  const scheduleViewportStateSave = useCallback((turnId?: string | null, sessionIdOverride?: string) => {
+    const sessionId = sessionIdOverride ?? activeSession?.sessionId;
+    if (!sessionId) {
+      return;
+    }
+
+    if (viewportStateSaveFrameRef.current !== null) {
+      cancelAnimationFrame(viewportStateSaveFrameRef.current);
+      viewportStateSaveFrameRef.current = null;
+    }
+
+    viewportStateSaveFrameRef.current = requestAnimationFrame(() => {
+      viewportStateSaveFrameRef.current = null;
+      const resolvedTurnId = turnId ?? useModernFlowChatStore.getState().visibleTurnInfo?.turnId ?? null;
+      saveSessionViewportState(sessionId, getViewportStateSnapshot(resolvedTurnId));
+    });
+  }, [activeSession?.sessionId, getViewportStateSnapshot, saveSessionViewportState]);
 
   const buildPinReservation = useCallback((
     turnId: string,
@@ -831,6 +892,33 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
     run(Math.max(1, frames));
   }, [reconcileStickyPinReservation]);
 
+  const restoreViewportForTurn = useCallback((turnId: string, relativeOffsetPx: number = 0) => {
+    const scroller = scrollerElementRef.current;
+    if (!scroller) {
+      return false;
+    }
+
+    const resolvedMetrics = resolveTurnPinMetrics(turnId);
+    if (!resolvedMetrics) {
+      return false;
+    }
+
+    const resolvedMaxScrollTop = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    const targetScrollTop = Math.min(
+      resolvedMaxScrollTop,
+      Math.max(0, resolvedMetrics.desiredScrollTop + relativeOffsetPx),
+    );
+
+    if (Math.abs(scroller.scrollTop - targetScrollTop) > COMPENSATION_EPSILON_PX) {
+      scroller.scrollTop = targetScrollTop;
+      previousScrollTopRef.current = targetScrollTop;
+      previousMeasuredHeightRef.current = snapshotMeasuredContentHeight(scroller, bottomReservationStateRef.current);
+    }
+
+    scheduleVisibleTurnMeasure(2);
+    return true;
+  }, [resolveTurnPinMetrics, scheduleVisibleTurnMeasure, snapshotMeasuredContentHeight]);
+
   const tryResolvePendingTurnPin = useCallback((request: PendingTurnPinState) => {
     const scroller = scrollerElementRef.current;
     const virtuoso = virtuosoRef.current;
@@ -922,6 +1010,9 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
         bottomReservationStateRef.current.pin.mode === 'sticky-latest' &&
         bottomReservationStateRef.current.pin.targetTurnId === request.turnId
       );
+      const storedViewportState = activeSession?.sessionId
+        ? getSessionViewportState(activeSession.sessionId)
+        : null;
       // Sticky latest pins should keep correcting post-layout drift until the
       // target stabilizes, while transient jumps still back off if the user
       // has already moved away from the requested position.
@@ -936,6 +1027,13 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
         )
       );
       if (!shouldRealign) {
+        if (
+          request.pinMode === 'transient' &&
+          storedViewportState?.anchorTurnId === request.turnId &&
+          Math.abs(storedViewportState.relativeOffsetPx) > VIEWPORT_OFFSET_EPSILON_PX
+        ) {
+          restoreViewportForTurn(request.turnId, storedViewportState.relativeOffsetPx);
+        }
         return;
       }
 
@@ -975,10 +1073,13 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
 
     return alignedWithinTolerance;
   }, [
+    activeSession?.sessionId,
     buildPinReservation,
     applyFooterCompensationNow,
     getRenderedUserMessageElement,
+    getSessionViewportState,
     resolveTurnPinMetrics,
+    restoreViewportForTurn,
     schedulePinReservationReconcile,
     scheduleVisibleTurnMeasure,
     snapshotMeasuredContentHeight,
@@ -1016,6 +1117,12 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
   }, [shouldSuspendAutoFollow]);
 
   useEffect(() => {
+    const previousSessionId = previousSessionIdForFollowRef.current;
+    if (previousSessionId && previousSessionId !== activeSession?.sessionId) {
+      const previousVisibleTurnId = useModernFlowChatStore.getState().visibleTurnInfo?.turnId ?? null;
+      saveSessionViewportState(previousSessionId, getViewportStateSnapshot(previousVisibleTurnId));
+    }
+
     previousMeasuredHeightRef.current = null;
     previousScrollTopRef.current = 0;
     setPendingTurnPin(null);
@@ -1036,7 +1143,7 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
       cumulativeShrinkPx: 0,
     };
     resetBottomReservations();
-  }, [activeSession?.sessionId, resetBottomReservations]);
+  }, [activeSession?.sessionId, getViewportStateSnapshot, resetBottomReservations, saveSessionViewportState]);
 
   useEffect(() => {
     if (virtualItems.length === 0) {
@@ -1045,6 +1152,16 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
       resetBottomReservations();
     }
   }, [virtualItems.length, resetBottomReservations]);
+
+  useEffect(() => {
+    const sessionId = activeSession?.sessionId;
+    if (!sessionId) {
+      return;
+    }
+
+    const latestVisibleTurnId = visibleTurnInfoByTurnId.get(latestTurnId ?? '')?.turnId ?? latestTurnId ?? null;
+    scheduleViewportStateSave(latestVisibleTurnId, sessionId);
+  }, [activeSession?.sessionId, latestTurnId, scheduleViewportStateSave, visibleTurnInfoByTurnId, virtualItems.length]);
 
   useEffect(() => {
     if (!scrollerElement) {
@@ -1178,6 +1295,8 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
       }
       previousScrollTopRef.current = scrollerElement.scrollTop;
       scheduleVisibleTurnMeasure();
+      const nextVisibleTurnId = useModernFlowChatStore.getState().visibleTurnInfo?.turnId ?? null;
+      scheduleViewportStateSave(nextVisibleTurnId);
       followOutputControllerRef.current.handleScroll();
 
       if (anchorLockRef.current.active && performance.now() > anchorLockRef.current.lockUntilMs && layoutTransitionCountRef.current === 0) {
@@ -1381,6 +1500,7 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
     scheduleHeightMeasure,
     scheduleFollowToLatestWithViewportState,
     schedulePinReservationReconcile,
+    scheduleViewportStateSave,
     scheduleVisibleTurnMeasure,
     scrollerElement,
     shouldSuspendAutoFollow,
@@ -1754,6 +1874,14 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
   };
   isFollowingOutputRef.current = isFollowingOutput;
   isStreamingOutputRef.current = isStreamingOutput;
+
+  useEffect(() => {
+    return () => {
+      if (viewportStateSaveFrameRef.current !== null) {
+        cancelAnimationFrame(viewportStateSaveFrameRef.current);
+      }
+    };
+  }, []);
 
   const scrollToTurn = useCallback((turnIndex: number) => {
     if (!virtuosoRef.current) return;
