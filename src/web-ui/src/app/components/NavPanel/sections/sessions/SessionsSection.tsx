@@ -224,6 +224,8 @@ const SessionsSection: React.FC<SessionsSectionProps> = ({
           await openMainSession(parentSessionId, {
             workspaceId,
             activateWorkspace,
+            reason: 'btw_open',
+            source: 'sidebar',
           });
           openBtwSessionInAuxPane({
             childSessionId: sessionId,
@@ -237,6 +239,8 @@ const SessionsSection: React.FC<SessionsSectionProps> = ({
           await openMainSession(sessionId, {
             workspaceId,
             activateWorkspace,
+            reason: 'nav_click',
+            source: 'sidebar',
           });
           return;
         }
@@ -244,10 +248,9 @@ const SessionsSection: React.FC<SessionsSectionProps> = ({
         await openMainSession(sessionId, {
           workspaceId,
           activateWorkspace,
+          reason: 'nav_click',
+          source: 'sidebar',
         });
-        window.dispatchEvent(
-          new CustomEvent('flowchat:switch-session', { detail: { sessionId } })
-        );
       } catch (err) {
         log.error('Failed to switch session', err);
       }

@@ -37,6 +37,22 @@ import { sessionMatchesWorkspace } from '../utils/workspaceScope';
 
 const log = createLogger('FlowChatStore');
 
+export type SessionSwitchReason =
+  | 'create'
+  | 'nav_click'
+  | 'nav_keyboard_confirm'
+  | 'programmatic'
+  | 'btw_open'
+  | 'focus_item_jump'
+  | 'retry_recover';
+
+export interface SessionSwitchedEventDetail {
+  sessionId: string;
+  mode: string;
+  reason: SessionSwitchReason;
+  source?: 'store' | 'sidebar' | 'manager' | 'btw' | 'system';
+}
+
 export class FlowChatStore {
   private static instance: FlowChatStore;
   private state: FlowChatState;
@@ -205,6 +221,8 @@ export class FlowChatStore {
       stateMachineManager.getOrCreate(sessionId);
     });
     
+    const sessionMode = mode || 'agentic';
+
     this.setState(prev => {
       const relationship = normalizeSessionRelationship({ sessionKind: 'normal' });
       const session: Session = {
@@ -219,7 +237,7 @@ export class FlowChatStore {
         lastFinishedAt: undefined,
         error: null,
         maxContextTokens: maxContextTokens || 128128,
-        mode: mode || 'agentic',
+        mode: sessionMode,
         workspacePath,
         workspaceId: config.workspaceId,
         remoteConnectionId,
@@ -239,6 +257,15 @@ export class FlowChatStore {
         activeSessionId: sessionId
       };
     });
+
+    window.dispatchEvent(new CustomEvent<SessionSwitchedEventDetail>('bitfun:session-switched', {
+      detail: {
+        sessionId,
+        mode: sessionMode,
+        reason: 'create',
+        source: 'store',
+      }
+    }));
   }
 
   /**
@@ -297,8 +324,16 @@ export class FlowChatStore {
     });
   }
 
-  public switchSession(sessionId: string): void {
+  public switchSession(
+    sessionId: string,
+    options?: {
+      reason?: SessionSwitchReason;
+      source?: SessionSwitchedEventDetail['source'];
+    }
+  ): void {
     let sessionMode: string | undefined;
+    const reason = options?.reason ?? 'programmatic';
+    const source = options?.source ?? 'store';
     
     this.setState(prev => {
       if (!prev.sessions.has(sessionId)) return prev;
@@ -321,8 +356,8 @@ export class FlowChatStore {
       };
     });
     
-    window.dispatchEvent(new CustomEvent('bitfun:session-switched', {
-      detail: { sessionId, mode: sessionMode || 'agentic' }
+    window.dispatchEvent(new CustomEvent<SessionSwitchedEventDetail>('bitfun:session-switched', {
+      detail: { sessionId, mode: sessionMode || 'agentic', reason, source }
     }));
   }
 

@@ -18,7 +18,7 @@ import {
 } from '../hooks/useSessionStateMachine';
 import { SessionExecutionEvent } from '../state-machine/types';
 import { ModelSelector } from './ModelSelector';
-import { FlowChatStore } from '../store/FlowChatStore';
+import { FlowChatStore, type SessionSwitchedEventDetail } from '../store/FlowChatStore';
 import type { FlowChatState } from '../types/flow-chat';
 import type { FileContext, DirectoryContext, ImageContext } from '../../shared/types/context';
 import { SmartRecommendations } from './smart-recommendations';
@@ -87,6 +87,17 @@ type SlashMcpPromptItem = {
 type SlashPickerItem = SlashActionItem | SlashModeItem | SlashMcpPromptItem;
 type ChatInputTarget = 'main' | 'btw';
 type PendingLargePasteMap = Record<string, string>;
+
+function isEditableElement(element: Element | null): boolean {
+  if (!element) return false;
+  const html = element as HTMLElement;
+  return (
+    html.tagName === 'INPUT' ||
+    html.tagName === 'TEXTAREA' ||
+    html.isContentEditable ||
+    html.closest('[contenteditable="true"]') !== null
+  );
+}
 
 function getCharacterCount(text: string): number {
   return Array.from(text).length;
@@ -192,6 +203,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const richTextInputRef = useRef<HTMLDivElement>(null);
   const agentBoostRef = useRef<HTMLDivElement>(null);
   const isImeComposingRef = useRef(false);
+  const lastSessionSwitchRef = useRef<SessionSwitchedEventDetail | null>(null);
+  const previousEffectiveSessionIdRef = useRef<string | null>(null);
   // Ref so the queuedInput sync effect can read the latest value without it being a dep
   const inputValueRef = useRef('');
   const pendingLargePastesRef = useRef<PendingLargePasteMap>({});
@@ -289,6 +302,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   );
 
   const openScene = useSceneStore(s => s.openScene);
+  const activeSceneTabId = useSceneStore(s => s.activeTabId);
   const [boostPanelSkills, setBoostPanelSkills] = useState<SkillInfo[]>([]);
   const [boostSkillsLoading, setBoostSkillsLoading] = useState(false);
 
@@ -721,11 +735,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   React.useEffect(() => {
     const handleSessionSwitched = (event: Event) => {
-      const customEvent = event as CustomEvent<{ sessionId: string; mode: string }>;
-      const { sessionId, mode } = customEvent.detail || {};
-      
+      const customEvent = event as CustomEvent<SessionSwitchedEventDetail>;
+      const detail = customEvent.detail;
+      const { sessionId, mode } = detail || {};
+
       if (sessionId && mode) {
-        log.debug('Session switched, syncing mode', { sessionId, mode });
+        lastSessionSwitchRef.current = detail;
+        log.debug('Session switched, syncing mode', { sessionId, mode, reason: detail.reason });
         dispatchMode({ type: 'SET_CURRENT_MODE', payload: mode });
         try {
           sessionStorage.setItem('bitfun:flowchat:lastMode', mode);
@@ -759,6 +775,40 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       }
     }
   }, [effectiveTargetSessionId]);
+
+  React.useEffect(() => {
+    const nextSessionId = effectiveTargetSessionId ?? null;
+    const prevSessionId = previousEffectiveSessionIdRef.current;
+    previousEffectiveSessionIdRef.current = nextSessionId;
+
+    if (!nextSessionId || prevSessionId === nextSessionId) {
+      return;
+    }
+
+    const switchDetail = lastSessionSwitchRef.current;
+    if (!switchDetail || switchDetail.sessionId !== nextSessionId) {
+      return;
+    }
+
+    if (activeSceneTabId !== 'session' || isBtwSession || isEditableElement(document.activeElement)) {
+      return;
+    }
+
+    if (switchDetail.reason === 'programmatic' || switchDetail.reason === 'focus_item_jump' || switchDetail.reason === 'btw_open') {
+      return;
+    }
+
+    if (switchDetail.reason !== 'create' && (derivedState?.isProcessing || !derivedState)) {
+      return;
+    }
+
+    dispatchInput({ type: 'ACTIVATE' });
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        richTextInputRef.current?.focus();
+      });
+    });
+  }, [activeSceneTabId, derivedState, effectiveTargetSessionId, isBtwSession]);
 
   React.useEffect(() => {
     if (!isAssistantWorkspace || currentMode === 'Claw') {

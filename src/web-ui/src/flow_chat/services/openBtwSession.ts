@@ -5,7 +5,7 @@ import { createTab } from '@/shared/utils/tabUtils';
 import type { PanelContent } from '@/app/components/panels/base/types';
 import { useAgentCanvasStore } from '@/app/components/panels/content-canvas/stores';
 import type { CanvasTab } from '@/app/components/panels/content-canvas/types';
-import { flowChatStore } from '../store/FlowChatStore';
+import { flowChatStore, type SessionSwitchReason, type SessionSwitchedEventDetail } from '../store/FlowChatStore';
 import { flowChatManager } from './FlowChatManager';
 import { syncSessionToModernStore } from './storeSync';
 
@@ -88,6 +88,8 @@ export async function openMainSession(
   options?: {
     workspaceId?: string;
     activateWorkspace?: (workspaceId: string) => void | Promise<unknown>;
+    reason?: SessionSwitchReason;
+    source?: SessionSwitchedEventDetail['source'];
   }
 ): Promise<void> {
   appManager.updateLayout({
@@ -102,7 +104,10 @@ export async function openMainSession(
   if (flowChatStore.getState().activeSessionId === sessionId) {
     syncSessionToModernStore(sessionId);
   } else {
-    await flowChatManager.switchChatSession(sessionId);
+    await flowChatManager.switchChatSession(sessionId, {
+      reason: options?.reason,
+      source: options?.source,
+    });
     syncSessionToModernStore(sessionId);
   }
 

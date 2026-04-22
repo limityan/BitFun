@@ -11,6 +11,7 @@ import { workspaceManager } from '@/infrastructure/services/business/workspaceMa
 import { normalizeRemoteWorkspacePath } from '@/shared/utils/pathUtils';
 import { WorkspaceKind, type WorkspaceInfo } from '@/shared/types';
 import type { FlowChatContext, SessionConfig } from './types';
+import type { SessionSwitchReason, SessionSwitchedEventDetail } from '../../store/FlowChatStore';
 import { touchSessionActivity, cleanupSaveState } from './PersistenceModule';
 
 const log = createLogger('SessionModule');
@@ -313,13 +314,20 @@ export async function createChatSession(
  */
 export async function switchChatSession(
   context: FlowChatContext,
-  sessionId: string
+  sessionId: string,
+  options?: {
+    reason?: SessionSwitchReason;
+    source?: SessionSwitchedEventDetail['source'];
+  }
 ): Promise<void> {
   try {
     const session = context.flowChatStore.getState().sessions.get(sessionId);
 
     // Switch UI immediately so the user sees the new session without waiting for history load.
-    context.flowChatStore.switchSession(sessionId);
+    context.flowChatStore.switchSession(sessionId, {
+      reason: options?.reason,
+      source: options?.source ?? 'manager',
+    });
 
     touchSessionActivity(
       sessionId,

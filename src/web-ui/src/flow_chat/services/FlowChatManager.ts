@@ -8,7 +8,7 @@
  */
 
 import { processingStatusManager } from './ProcessingStatusManager';
-import { FlowChatStore } from '../store/FlowChatStore';
+import { FlowChatStore, type SessionSwitchReason, type SessionSwitchedEventDetail } from '../store/FlowChatStore';
 import { AgentService } from '../../shared/services/agent-service';
 import { stateMachineManager } from '../state-machine';
 import { EventBatcher } from './EventBatcher';
@@ -185,8 +185,14 @@ export class FlowChatManager {
     return createChatSessionModule(this.context, config, mode);
   }
 
-  async switchChatSession(sessionId: string): Promise<void> {
-    return switchChatSessionModule(this.context, sessionId);
+  async switchChatSession(
+    sessionId: string,
+    options?: {
+      reason?: SessionSwitchReason;
+      source?: SessionSwitchedEventDetail['source'];
+    }
+  ): Promise<void> {
+    return switchChatSessionModule(this.context, sessionId, options);
   }
 
   async deleteChatSession(sessionId: string): Promise<void> {
