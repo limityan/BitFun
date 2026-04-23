@@ -345,6 +345,24 @@
       "openMyAgent": "My Agent",
       "customize": "Customize"
     },
+    "agentCompanionEnable": "Turn on tea pet",
+    "agentCompanionDisable": "Turn off tea pet",
+    "agentCompanionEnabledMessage": "Tea pet enabled",
+    "agentCompanionDisabledMessage": "Tea pet hidden",
+    "agentCompanionToggleFailed": "Failed to update tea pet setting",
+    "agentCompanionCharacterMenu": "Switch tea pet",
+    "agentCompanionCharacterCurrent": "Tea pet character: {{character}}",
+    "agentCompanionCharacterRedPanda": "Red panda",
+    "agentCompanionCharacterFox": "Fox",
+    "agentCompanionCharacterUpdatedMessage": "Switched tea pet to {{character}}",
+    "agentCompanionCharacterUpdateFailed": "Failed to switch tea pet character",
+    "agentCompanionHints": {
+      "modelSetup": "Settings",
+      "createSession": "Start chat",
+      "openSession": "Open session",
+      "tip": "Look here",
+      "dialog": "Over here"
+    },
     "moreOptions": "More options",
     "multimodalTools": "Multimodal Tools",
     "notifications": "Notifications"

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   Settings,
   Info,
@@ -14,9 +14,13 @@ import {
   BarChart3,
   LineChart,
   ChevronUp,
+  Check,
+  PawPrint,
+  Sparkles,
 } from 'lucide-react';
 import { Tooltip, Modal } from '@/component-library';
 import { useI18n } from '@/infrastructure/i18n/hooks/useI18n';
+import { aiExperienceConfigService } from '@/infrastructure/config/services/AIExperienceConfigService';
 import { useSceneManager } from '../../../hooks/useSceneManager';
 import { useNavSceneStore } from '../../../stores/navSceneStore';
 import { useSceneStore } from '../../../stores/sceneStore';
@@ -35,6 +39,15 @@ import {
   setRemoteConnectDisclaimerAgreed,
 } from '../../RemoteConnectDialog/remoteConnectDisclaimerStorage';
 import { MERMAID_INTERACTIVE_EXAMPLE } from '@/flow_chat/constants/mermaidExamples';
+import {
+  COMPANION_CHARACTER_OPTIONS,
+  type CompanionCharacter,
+  useAgentCompanionCharacter,
+  useAgentCompanionEnabled,
+} from '@/shared/companion-system';
+import { createLogger } from '@/shared/utils/logger';
+
+const log = createLogger('PersistentFooterActions');
 
 const PersistentFooterActions: React.FC = () => {
   const { t } = useI18n('common');
@@ -44,6 +57,8 @@ const PersistentFooterActions: React.FC = () => {
   const navSceneId = useNavSceneStore((s) => s.navSceneId);
   const openNavScene = useNavSceneStore((s) => s.openNavScene);
   const closeNavScene = useNavSceneStore((s) => s.closeNavScene);
+  const agentCompanionCharacter = useAgentCompanionCharacter();
+  const agentCompanionEnabled = useAgentCompanionEnabled();
 
   // Check if a browser panel is the active tab in the AuxPane canvas
   const isBrowserPanelActiveInCanvas = useCanvasStore((s) => {
@@ -56,11 +71,15 @@ const PersistentFooterActions: React.FC = () => {
   });
   const { enableToolbarMode } = useToolbarModeContext();
   const { hasWorkspace } = useCurrentWorkspace();
-  const { warning } = useNotification();
+  const { warning, success, error } = useNotification();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuClosing, setMenuClosing] = useState(false);
+  const [characterMenuOpen, setCharacterMenuOpen] = useState(false);
+  const [characterMenuClosing, setCharacterMenuClosing] = useState(false);
   const [multimodalOpen, setMultimodalOpen] = useState(false);
+  const [isCompanionTogglePending, setIsCompanionTogglePending] = useState(false);
+  const [isCompanionCharacterPending, setIsCompanionCharacterPending] = useState(false);
   const multimodalHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showAbout, setShowAbout] = useState(false);
   const [showRemoteConnect, setShowRemoteConnect] = useState(false);
@@ -75,11 +94,33 @@ const PersistentFooterActions: React.FC = () => {
     }, 150);
   }, []);
 
+  const closeCharacterMenu = useCallback(() => {
+    setCharacterMenuClosing(true);
+    setTimeout(() => {
+      setCharacterMenuOpen(false);
+      setCharacterMenuClosing(false);
+    }, 150);
+  }, []);
+
   const toggleMenu = () => {
     if (menuOpen) {
       closeMenu();
     } else {
+      if (characterMenuOpen) {
+        closeCharacterMenu();
+      }
       setMenuOpen(true);
+    }
+  };
+
+  const toggleCharacterMenu = () => {
+    if (characterMenuOpen) {
+      closeCharacterMenu();
+    } else {
+      if (menuOpen) {
+        closeMenu();
+      }
+      setCharacterMenuOpen(true);
     }
   };
 
@@ -87,6 +128,97 @@ const PersistentFooterActions: React.FC = () => {
     closeMenu();
     openScene('settings');
   };
+
+  const handleToggleAgentCompanion = useCallback(async () => {
+    if (isCompanionTogglePending) {
+      return;
+    }
+
+    const nextEnabled = !agentCompanionEnabled;
+    setIsCompanionTogglePending(true);
+
+    try {
+      await aiExperienceConfigService.saveSettings({
+        ...aiExperienceConfigService.getSettings(),
+        enable_agent_companion: nextEnabled,
+      });
+
+      success(
+        nextEnabled
+          ? t('nav.agentCompanionEnabledMessage')
+          : t('nav.agentCompanionDisabledMessage'),
+        { duration: 1800 },
+      );
+    } catch (toggleError) {
+      log.error('Failed to toggle agent companion', { error: toggleError });
+      error(t('nav.agentCompanionToggleFailed'), { duration: 2200 });
+    } finally {
+      setIsCompanionTogglePending(false);
+    }
+  }, [agentCompanionEnabled, error, isCompanionTogglePending, success, t]);
+
+  const companionCharacterOptions = useMemo(
+    () => COMPANION_CHARACTER_OPTIONS.map(option => ({
+      ...option,
+      label: t(option.labelKey),
+    })),
+    [t],
+  );
+
+  const selectedCompanionCharacter = companionCharacterOptions.find(
+    option => option.id === agentCompanionCharacter,
+  ) ?? companionCharacterOptions[0];
+
+  const resolveCompanionCharacterLabel = useCallback(
+    (character: CompanionCharacter) => (
+      companionCharacterOptions.find(option => option.id === character)?.label
+      ?? selectedCompanionCharacter.label
+    ),
+    [companionCharacterOptions, selectedCompanionCharacter.label],
+  );
+
+  const handleSelectAgentCompanionCharacter = useCallback(async (character: CompanionCharacter) => {
+    if (isCompanionCharacterPending) {
+      return;
+    }
+
+    if (character === agentCompanionCharacter) {
+      closeCharacterMenu();
+      return;
+    }
+
+    setIsCompanionCharacterPending(true);
+
+    try {
+      await aiExperienceConfigService.saveSettings({
+        ...aiExperienceConfigService.getSettings(),
+        agent_companion_character: character,
+      });
+      closeCharacterMenu();
+      success(
+        t('nav.agentCompanionCharacterUpdatedMessage', {
+          character: resolveCompanionCharacterLabel(character),
+        }),
+        { duration: 1800 },
+      );
+    } catch (characterError) {
+      log.error('Failed to change agent companion character', {
+        error: characterError,
+        character,
+      });
+      error(t('nav.agentCompanionCharacterUpdateFailed'), { duration: 2200 });
+    } finally {
+      setIsCompanionCharacterPending(false);
+    }
+  }, [
+    agentCompanionCharacter,
+    closeCharacterMenu,
+    error,
+    isCompanionCharacterPending,
+    resolveCompanionCharacterLabel,
+    success,
+    t,
+  ]);
 
   const handleOpenShell = useCallback(() => {
     if (showSceneNav && navSceneId === 'shell') {
@@ -150,6 +282,12 @@ const PersistentFooterActions: React.FC = () => {
 
   const insightsTooltip = t('nav.items.insights');
   const isInsightsActive = activeTabId === 'insights';
+  const agentCompanionTooltip = agentCompanionEnabled
+    ? t('nav.agentCompanionDisable')
+    : t('nav.agentCompanionEnable');
+  const agentCompanionCharacterTooltip = t('nav.agentCompanionCharacterCurrent', {
+    character: selectedCompanionCharacter.label,
+  });
 
   const handleShowAbout = () => {
     closeMenu();
@@ -196,6 +334,7 @@ const PersistentFooterActions: React.FC = () => {
                 className={`bitfun-nav-panel__footer-btn bitfun-nav-panel__footer-btn--icon${menuOpen ? ' is-active' : ''}`}
                 aria-label={t('nav.moreOptions')}
                 aria-expanded={menuOpen}
+                data-companion-anchor="nav-more-actions"
                 onClick={toggleMenu}
               >
                 {menuOpen ? (
@@ -264,6 +403,124 @@ const PersistentFooterActions: React.FC = () => {
                     <Info size={14} />
                     <span>{t('header.about')}</span>
                   </button>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="bitfun-nav-panel__footer-companion-wrap">
+            <Tooltip content={agentCompanionTooltip} placement="right" followCursor>
+              <button
+                type="button"
+                className={[
+                  'bitfun-nav-panel__footer-btn',
+                  'bitfun-nav-panel__footer-btn--icon',
+                  'bitfun-nav-panel__footer-btn--companion',
+                  agentCompanionEnabled ? 'is-active' : '',
+                ].filter(Boolean).join(' ')}
+                aria-label={agentCompanionTooltip}
+                aria-pressed={agentCompanionEnabled}
+                disabled={isCompanionTogglePending}
+                onClick={handleToggleAgentCompanion}
+              >
+                <span className="bitfun-nav-panel__footer-btn-icon-swap" aria-hidden="true">
+                  <PawPrint size={15} className="bitfun-nav-panel__footer-btn-icon-swap-default" />
+                  <Sparkles size={15} className="bitfun-nav-panel__footer-btn-icon-swap-hover" />
+                </span>
+              </button>
+            </Tooltip>
+
+            <Tooltip
+              content={agentCompanionCharacterTooltip}
+              placement="right"
+              followCursor
+              disabled={characterMenuOpen}
+            >
+              <button
+                type="button"
+                className={[
+                  'bitfun-nav-panel__footer-btn',
+                  'bitfun-nav-panel__footer-btn--icon',
+                  'bitfun-nav-panel__footer-btn--companion-switch',
+                  characterMenuOpen ? 'is-active' : '',
+                ].filter(Boolean).join(' ')}
+                aria-label={agentCompanionCharacterTooltip}
+                aria-expanded={characterMenuOpen}
+                aria-haspopup="menu"
+                data-companion-anchor="nav-companion-switcher"
+                disabled={isCompanionCharacterPending}
+                onClick={toggleCharacterMenu}
+              >
+                <span
+                  className={[
+                    'bitfun-nav-panel__footer-companion-swatch',
+                    `bitfun-nav-panel__footer-companion-swatch--${selectedCompanionCharacter.id}`,
+                  ].join(' ')}
+                  aria-hidden="true"
+                >
+                  <span className="bitfun-nav-panel__footer-companion-swatch-label">
+                    {selectedCompanionCharacter.shortLabel}
+                  </span>
+                </span>
+                <ChevronUp
+                  size={13}
+                  className={[
+                    'bitfun-nav-panel__footer-companion-chevron',
+                    characterMenuOpen ? 'is-open' : '',
+                  ].join(' ')}
+                  aria-hidden="true"
+                />
+              </button>
+            </Tooltip>
+
+            {characterMenuOpen && (
+              <>
+                <div
+                  className="bitfun-nav-panel__footer-backdrop"
+                  onClick={closeCharacterMenu}
+                />
+                <div
+                  className={`bitfun-nav-panel__footer-character-menu${characterMenuClosing ? ' is-closing' : ''}`}
+                  role="menu"
+                  aria-label={t('nav.agentCompanionCharacterMenu')}
+                >
+                  {companionCharacterOptions.map(option => {
+                    const isSelected = option.id === agentCompanionCharacter;
+
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className={`bitfun-nav-panel__footer-character-item${isSelected ? ' is-active' : ''}`}
+                        role="menuitemradio"
+                        aria-checked={isSelected}
+                        disabled={isCompanionCharacterPending}
+                        onClick={() => {
+                          void handleSelectAgentCompanionCharacter(option.id);
+                        }}
+                      >
+                        <span
+                          className={[
+                            'bitfun-nav-panel__footer-companion-swatch',
+                            `bitfun-nav-panel__footer-companion-swatch--${option.id}`,
+                          ].join(' ')}
+                          aria-hidden="true"
+                        >
+                          <span className="bitfun-nav-panel__footer-companion-swatch-label">
+                            {option.shortLabel}
+                          </span>
+                        </span>
+                        <span className="bitfun-nav-panel__footer-character-label">{option.label}</span>
+                        {isSelected ? (
+                          <Check
+                            size={14}
+                            className="bitfun-nav-panel__footer-character-check"
+                            aria-hidden="true"
+                          />
+                        ) : null}
+                      </button>
+                    );
+                  })}
                 </div>
               </>
             )}
