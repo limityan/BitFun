@@ -5,7 +5,16 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { Loader2, CheckCircle, AlertTriangle, AlertCircle, Info, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Loader2,
+  CheckCircle,
+  AlertTriangle,
+  AlertCircle,
+  Info,
+  Clock,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Tooltip } from '@/component-library';
 import type { ToolCardProps } from '../types/flow-chat';
@@ -32,23 +41,37 @@ interface CodeReviewIssue {
   title: string;
   description: string;
   suggestion: string | null;
+  source_reviewer?: string;
+  validation_note?: string;
+}
+
+interface CodeReviewReviewer {
+  name: string;
+  specialty: string;
+  status: string;
+  summary: string;
+  issue_count?: number;
 }
 
 interface CodeReviewResult {
   summary: CodeReviewSummary;
   issues: CodeReviewIssue[];
   positive_points: string[];
+  review_mode?: 'standard' | 'deep';
+  review_scope?: string;
+  reviewers?: CodeReviewReviewer[];
+  remediation_plan?: string[];
 }
 
 const riskLevelColors: Record<string, string> = {
   low: '#22c55e',
   medium: '#f59e0b',
   high: '#f97316',
-  critical: '#ef4444'
+  critical: '#ef4444',
 };
 
 export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
-  toolItem
+  toolItem,
 }) => {
   const { t } = useTranslation('flow-chat');
   const { toolResult, status } = toolItem;
@@ -103,7 +126,7 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
       medium: 0,
       low: 0,
       info: 0,
-      total: 0
+      total: 0,
     };
 
     reviewData.issues.forEach(issue => {
@@ -133,12 +156,17 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
 
   const getSeverityClass = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'critical';
-      case 'high': return 'high';
-      case 'medium': return 'medium';
-      case 'low': return 'low';
-      case 'info': return 'info';
-      default: return 'info';
+      case 'critical':
+        return 'critical';
+      case 'high':
+        return 'high';
+      case 'medium':
+        return 'medium';
+      case 'low':
+        return 'low';
+      case 'info':
+      default:
+        return 'info';
     }
   };
 
@@ -168,6 +196,9 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
   const renderContent = () => {
     if (status === 'completed' && reviewData) {
       const { risk_level } = reviewData.summary;
+      const reviewLabel = reviewData.review_mode === 'deep'
+        ? t('toolCards.codeReview.deepReviewResult', { defaultValue: 'Deep Review Result' })
+        : t('toolCards.codeReview.reviewResult');
 
       if (hasIssues) {
         const parts: React.ReactNode[] = [];
@@ -175,34 +206,34 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
           parts.push(
             <span key="critical" style={{ color: riskLevelColors.critical }}>
               {issueStats!.critical} {t('toolCards.codeReview.severities.critical')}
-            </span>
+            </span>,
           );
         }
         if (issueStats!.high > 0) {
           parts.push(
             <span key="high" style={{ color: riskLevelColors.high }}>
               {issueStats!.high} {t('toolCards.codeReview.severities.high')}
-            </span>
+            </span>,
           );
         }
         if (issueStats!.medium > 0) {
           parts.push(
             <span key="medium" style={{ color: riskLevelColors.medium }}>
               {issueStats!.medium} {t('toolCards.codeReview.severities.medium')}
-            </span>
+            </span>,
           );
         }
         if (issueStats!.low > 0) {
           parts.push(
             <span key="low" style={{ color: riskLevelColors.low }}>
               {issueStats!.low} {t('toolCards.codeReview.severities.low')}
-            </span>
+            </span>,
           );
         }
 
         return (
           <>
-            {t('toolCards.codeReview.reviewResult')} —{' '}
+            {reviewLabel} -{' '}
             {parts.reduce<React.ReactNode[]>((acc, part, i) => {
               if (i > 0) acc.push(<span key={`sep-${i}`}>, </span>);
               acc.push(part);
@@ -214,7 +245,7 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
 
       return (
         <>
-          {t('toolCards.codeReview.reviewResult')} — {t(`toolCards.codeReview.riskLevels.${risk_level}`)}
+          {reviewLabel} - {t(`toolCards.codeReview.riskLevels.${risk_level}`)}
         </>
       );
     }
@@ -240,11 +271,11 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
         icon={null}
         iconClassName="code-review-icon"
         content={renderContent()}
-        extra={
+        extra={(
           <>
             {hasData && (
-              <Tooltip 
-                content={isExpanded ? t('toolCards.codeReview.collapseDetails') : t('toolCards.codeReview.expandDetails')} 
+              <Tooltip
+                content={isExpanded ? t('toolCards.codeReview.collapseDetails') : t('toolCards.codeReview.expandDetails')}
                 placement="top"
               >
                 <button
@@ -256,7 +287,7 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
               </Tooltip>
             )}
           </>
-        }
+        )}
         statusIcon={getStatusIcon()}
       />
     );
@@ -265,11 +296,18 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
   const expandedContent = useMemo(() => {
     if (!reviewData) return null;
 
-    const { summary, issues, positive_points } = reviewData;
+    const {
+      summary,
+      issues,
+      positive_points,
+      review_mode,
+      review_scope,
+    } = reviewData;
+    const reviewers = reviewData.reviewers ?? [];
+    const remediationPlan = reviewData.remediation_plan ?? [];
 
     return (
       <div className="code-review-details">
-        {/* Summary section — vertical layout */}
         <div className="review-summary">
           <div className="summary-header">{t('toolCards.codeReview.overallAssessment')}</div>
           <div className="summary-rows">
@@ -287,6 +325,18 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
               <span className="summary-label">{t('toolCards.codeReview.recommendedAction')}</span>
               <span className="summary-value">{t(`toolCards.codeReview.actions.${summary.recommended_action}`)}</span>
             </div>
+            {review_mode && (
+              <div className="summary-row">
+                <span className="summary-label">{t('toolCards.codeReview.reviewMode', { defaultValue: 'Review Mode' })}</span>
+                <span className="summary-value">{t(`toolCards.codeReview.reviewModes.${review_mode}`, { defaultValue: review_mode })}</span>
+              </div>
+            )}
+            {review_scope && (
+              <div className="summary-row summary-row--full">
+                <span className="summary-label">{t('toolCards.codeReview.reviewScope', { defaultValue: 'Scope' })}</span>
+                <span className="summary-value">{review_scope}</span>
+              </div>
+            )}
             <div className="summary-row summary-row--full">
               <span className="summary-label">{t('toolCards.codeReview.overallAssessment')}</span>
               <span className="summary-value">{summary.overall_assessment}</span>
@@ -300,7 +350,38 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
           </div>
         </div>
 
-        {/* Issues section */}
+        {reviewers.length > 0 && (
+          <div className="review-team">
+            <div className="team-header">{t('toolCards.codeReview.reviewerTeam', { defaultValue: 'Review Team' })}</div>
+            <div className="team-list">
+              {reviewers.map((reviewer, index) => (
+                <div key={`${reviewer.name}-${index}`} className="reviewer-item">
+                  <div className="reviewer-topline">
+                    <div className="reviewer-identity">
+                      <span className="reviewer-name">{reviewer.name}</span>
+                      <span className="reviewer-specialty">{reviewer.specialty}</span>
+                    </div>
+                    <div className="reviewer-metrics">
+                      <span className="reviewer-status">{reviewer.status}</span>
+                      <span className="reviewer-issues">
+                        {typeof reviewer.issue_count === 'number'
+                          ? t('toolCards.codeReview.reviewerIssues', {
+                              count: reviewer.issue_count,
+                              defaultValue: '{{count}} issues',
+                            })
+                          : t('toolCards.codeReview.reviewerIssuesUnknown', {
+                              defaultValue: 'Issue count unavailable',
+                            })}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="reviewer-summary">{reviewer.summary}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {issues.length > 0 && (
           <div className="review-issues">
             <div className="issues-header">
@@ -316,6 +397,9 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
                     <div className="issue-left">
                       {getSeverityIcon(issue.severity)}
                       <span className="issue-category">[{issue.category}]</span>
+                      {issue.source_reviewer && (
+                        <span className="issue-source">{issue.source_reviewer}</span>
+                      )}
                       <span className="issue-location">
                         {issue.file}{issue.line ? `:${issue.line}` : ''}
                       </span>
@@ -326,6 +410,11 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
                   </div>
                   <div className="issue-title">{issue.title}</div>
                   <div className="issue-description">{issue.description}</div>
+                  {issue.validation_note && (
+                    <div className="issue-validation-note">
+                      {issue.validation_note}
+                    </div>
+                  )}
                   {issue.suggestion && (
                     <div className="issue-suggestion">
                       <span className="suggestion-label">{t('toolCards.codeReview.suggestion')}:</span>
@@ -338,7 +427,20 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
           </div>
         )}
 
-        {/* Positive points section */}
+        {remediationPlan.length > 0 && (
+          <div className="review-remediation">
+            <div className="remediation-header">{t('toolCards.codeReview.remediationPlan', { defaultValue: 'Remediation Plan' })}</div>
+            <div className="remediation-list">
+              {remediationPlan.map((step, index) => (
+                <div key={index} className="remediation-item">
+                  <span className="remediation-index">{index + 1}</span>
+                  <span>{step}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {positive_points.length > 0 && (
           <div className="review-positive">
             <div className="positive-header">{t('toolCards.codeReview.codeStrengths')}</div>

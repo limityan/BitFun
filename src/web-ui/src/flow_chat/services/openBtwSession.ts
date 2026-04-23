@@ -27,7 +27,7 @@ export interface BtwSessionPanelMetadata {
 
 type AgentCanvasState = ReturnType<typeof useAgentCanvasStore.getState>;
 
-const getBtwSessionDuplicateKey = (childSessionId: string) => `btw-session-${childSessionId}`;
+export const getBtwSessionDuplicateKey = (childSessionId: string) => `btw-session-${childSessionId}`;
 
 const resolveBtwSessionTitle = (childSessionId: string): string => {
   const session = flowChatStore.getState().sessions.get(childSessionId);
@@ -138,4 +138,16 @@ export function openBtwSessionInAuxPane(params: {
     replaceExisting: false,
     mode: 'agent',
   });
+}
+
+export function closeBtwSessionInAuxPane(childSessionId: string): boolean {
+  const duplicateCheckKey = getBtwSessionDuplicateKey(childSessionId);
+  const canvasStore = useAgentCanvasStore.getState();
+  const result = canvasStore.findTabByMetadata({ duplicateCheckKey });
+  if (!result) {
+    return false;
+  }
+
+  canvasStore.closeTab(result.tab.id, result.groupId, { forceRemove: true });
+  return true;
 }

@@ -16,8 +16,11 @@ mod team_mode;
 mod deep_research_agent;
 mod explore_agent;
 mod file_finder_agent;
+mod review_fixer_agent;
+mod review_specialist_agents;
 // Hidden agents
 mod code_review_agent;
+mod deep_review_agent;
 mod generate_doc_agent;
 mod init_agent;
 
@@ -30,6 +33,7 @@ pub use cowork_mode::CoworkMode;
 pub use custom_subagents::{CustomSubagent, CustomSubagentKind};
 pub use debug_mode::DebugMode;
 pub use deep_research_agent::DeepResearchAgent;
+pub use deep_review_agent::DeepReviewAgent;
 pub use explore_agent::ExploreAgent;
 pub use file_finder_agent::FileFinderAgent;
 pub use generate_doc_agent::GenerateDocAgent;
@@ -42,6 +46,10 @@ pub use prompt_builder::{
 pub use registry::{
     get_agent_registry, AgentCategory, AgentInfo, AgentRegistry, CustomSubagentConfig,
     CustomSubagentDetail, SubAgentSource,
+};
+pub use review_fixer_agent::ReviewFixerAgent;
+pub use review_specialist_agents::{
+    BusinessLogicReviewerAgent, PerformanceReviewerAgent, ReviewJudgeAgent, SecurityReviewerAgent,
 };
 use std::any::Any;
 pub use team_mode::TeamMode;

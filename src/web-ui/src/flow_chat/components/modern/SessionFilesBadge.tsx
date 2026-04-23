@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { FileEdit, FilePlus, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { FileEdit, FilePlus, Trash2, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSnapshotState } from '../../../tools/snapshot_system/hooks/useSnapshotState';
 import { createDiffEditorTab } from '../../../shared/utils/tabUtils';
@@ -15,6 +15,10 @@ import { notificationService } from '../../../shared/notification-system';
 import { createLogger } from '@/shared/utils/logger';
 import { createBtwChildSession } from '../../services/BtwThreadService';
 import { openBtwSessionInAuxPane } from '../../services/openBtwSession';
+import {
+  buildDeepReviewPromptFromSessionFiles,
+  launchDeepReviewSession,
+} from '../../services/DeepReviewService';
 import './SessionFilesBadge.scss';
 
 const log = createLogger('SessionFilesBadge');
@@ -415,6 +419,84 @@ export const SessionFilesBadge: React.FC<SessionFilesBadgeProps> = ({
     }
   }, [fileStats, sessionId, t, currentWorkspace?.rootPath]);
 
+  const handleDeepReviewClick = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!sessionId || fileStats.size === 0) return;
+
+    const filePaths = Array.from(fileStats.keys());
+    const reviewableFilePaths = filePaths.filter(shouldReviewFile);
+    const skippedCount = filePaths.length - reviewableFilePaths.length;
+
+    if (reviewableFilePaths.length === 0) {
+      notificationService.warning(
+        t('sessionFilesBadge.review.noEligibleFiles', {
+          defaultValue: 'No reviewable files remain after excluded files were filtered out.',
+        }),
+        { duration: 3500 }
+      );
+      return;
+    }
+
+    notificationService.info(
+      t('sessionFilesBadge.deepReview.info', {
+        defaultValue: 'Deep review launches a parallel review team locally. It may take longer and use noticeably more tokens.',
+      }),
+      { duration: 4500 }
+    );
+
+    if (skippedCount > 0) {
+      notificationService.info(
+        t('sessionFilesBadge.review.filteredNotice', {
+          included: reviewableFilePaths.length,
+          skipped: skippedCount,
+          defaultValue:
+            'Review will analyze {{included}} files and skip {{skipped}} excluded files such as lock, generated, or binary assets.',
+        }),
+        { duration: 3500 }
+      );
+    }
+
+    const fileList = reviewableFilePaths.map(p => `- ${p}`).join('\n');
+    const displayMessage = skippedCount > 0
+      ? t('sessionFilesBadge.deepReview.displayMessageFiltered', {
+          files: fileList,
+          skipped: skippedCount,
+          defaultValue:
+            'Deep review filtered files:\n{{files}}\n\nSkipped {{skipped}} excluded files.',
+        })
+      : t('sessionFilesBadge.deepReview.displayMessage', {
+          files: fileList,
+          defaultValue: 'Deep review modified files:\n{{files}}',
+        });
+
+    try {
+      const prompt = await buildDeepReviewPromptFromSessionFiles(
+        reviewableFilePaths,
+        undefined,
+        currentWorkspace?.rootPath,
+      );
+
+      await launchDeepReviewSession({
+        parentSessionId: sessionId,
+        workspacePath: currentWorkspace?.rootPath,
+        prompt,
+        displayMessage,
+        childSessionName: t('sessionFilesBadge.deepReview.threadTitle', {
+          defaultValue: 'Deep review',
+        }),
+      });
+
+      setIsExpanded(false);
+    } catch (error) {
+      log.error('Failed to send deep review request', {
+        sessionId,
+        fileCount: reviewableFilePaths.length,
+        skippedCount,
+        error,
+      });
+    }
+  }, [fileStats, sessionId, t, currentWorkspace?.rootPath]);
+
   const getOperationIcon = (operationType: 'write' | 'edit' | 'delete') => {
     switch (operationType) {
       case 'write':
@@ -470,6 +552,17 @@ export const SessionFilesBadge: React.FC<SessionFilesBadgeProps> = ({
         type="button"
       >
         <span className="session-files-badge__review-text">{t('sessionFilesBadge.reviewLabel')}</span>
+      </button>
+
+      <button
+        className="session-files-badge__review-btn session-files-badge__review-btn--deep"
+        onClick={handleDeepReviewClick}
+        disabled={loadingStats}
+        title={t('sessionFilesBadge.deepReviewAll', { defaultValue: 'Deep Review' })}
+        type="button"
+      >
+        <Sparkles size={12} className="session-files-badge__review-icon" />
+        <span className="session-files-badge__review-text">{t('sessionFilesBadge.deepReviewLabel', { defaultValue: 'Deep' })}</span>
       </button>
 
       {isExpanded && (

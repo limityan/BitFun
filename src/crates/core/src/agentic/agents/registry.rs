@@ -1,6 +1,8 @@
 use super::{
-    Agent, AgenticMode, ClawMode, CodeReviewAgent, CoworkMode, DebugMode, DeepResearchAgent,
-    ExploreAgent, FileFinderAgent, GenerateDocAgent, InitAgent, PlanMode, TeamMode,
+    Agent, AgenticMode, BusinessLogicReviewerAgent, ClawMode, CodeReviewAgent, CoworkMode,
+    DebugMode, DeepResearchAgent, DeepReviewAgent, ExploreAgent, FileFinderAgent, GenerateDocAgent,
+    InitAgent, PerformanceReviewerAgent, PlanMode, ReviewFixerAgent, ReviewJudgeAgent,
+    SecurityReviewerAgent, TeamMode,
 };
 use crate::agentic::agents::custom_subagents::{
     CustomSubagent, CustomSubagentKind, CustomSubagentLoader,
@@ -129,7 +131,14 @@ pub struct CustomSubagentDetail {
 fn default_model_id_for_builtin_agent(agent_type: &str) -> &'static str {
     match agent_type {
         "agentic" | "Cowork" | "Plan" | "debug" | "Claw" | "DeepResearch" | "Team" => "auto",
-        _ => "primary",
+        "DeepReview"
+        | "ReviewBusinessLogic"
+        | "ReviewPerformance"
+        | "ReviewSecurity"
+        | "ReviewJudge"
+        | "ReviewFixer" => "fast",
+        "Explore" | "FileFinder" | "CodeReview" | "GenerateDoc" | "Init" => "primary",
+        _ => "fast",
     }
 }
 
@@ -305,6 +314,11 @@ impl AgentRegistry {
         let builtin_subagents: Vec<Arc<dyn Agent>> = vec![
             Arc::new(ExploreAgent::new()),
             Arc::new(FileFinderAgent::new()),
+            Arc::new(BusinessLogicReviewerAgent::new()),
+            Arc::new(PerformanceReviewerAgent::new()),
+            Arc::new(SecurityReviewerAgent::new()),
+            Arc::new(ReviewJudgeAgent::new()),
+            Arc::new(ReviewFixerAgent::new()),
         ];
         for subagent in builtin_subagents {
             register(
@@ -318,6 +332,7 @@ impl AgentRegistry {
         // Register hidden agents
         let hidden_subagents: Vec<Arc<dyn Agent>> = vec![
             Arc::new(CodeReviewAgent::new()),
+            Arc::new(DeepReviewAgent::new()),
             Arc::new(GenerateDocAgent::new()),
             Arc::new(InitAgent::new()),
         ];
@@ -609,7 +624,7 @@ impl AgentRegistry {
 
     /// validate and correct CustomSubagent's tools and model
     /// - tools: filter out invalid tools, record warning log
-    /// - model: if invalid, set to "primary", record warning log
+    /// - model: if invalid, set to "fast", record warning log
     fn validate_custom_subagent(
         subagent: &mut CustomSubagent,
         valid_tools: &[String],
@@ -632,13 +647,13 @@ impl AgentRegistry {
         }
         subagent.tools = valid;
 
-        // validate model: if invalid, set to "primary"
+        // validate model: if invalid, set to "fast"
         if !valid_models.contains(&subagent.model) {
             warn!(
-                "[Subagent {}] Invalid model '{}', reset to 'primary'",
+                "[Subagent {}] Invalid model '{}', reset to 'fast'",
                 agent_id, subagent.model
             );
-            subagent.model = "primary".to_string();
+            subagent.model = "fast".to_string();
         }
     }
 
@@ -1014,10 +1029,10 @@ impl AgentRegistry {
                 }
                 // empty model, use default value
                 debug!(
-                    "[AgentRegistry] Custom subagent '{}' using default model: primary",
+                    "[AgentRegistry] Custom subagent '{}' using default model: fast",
                     agent_type
                 );
-                return Ok("primary".to_string());
+                return Ok("fast".to_string());
             }
         }
 
@@ -1086,9 +1101,32 @@ mod tests {
     }
 
     #[test]
-    fn non_mode_agents_default_to_primary() {
-        assert_eq!(default_model_id_for_builtin_agent("Explore"), "primary");
-        assert_eq!(default_model_id_for_builtin_agent("CodeReview"), "primary");
+    fn non_deep_review_builtin_subagents_default_to_primary() {
+        for agent_type in ["Explore", "FileFinder", "CodeReview", "GenerateDoc", "Init"] {
+            assert_eq!(
+                default_model_id_for_builtin_agent(agent_type),
+                "primary",
+                "{agent_type} should default to the primary model slot"
+            );
+        }
+    }
+
+    #[test]
+    fn deep_review_family_defaults_to_fast() {
+        for agent_type in [
+            "DeepReview",
+            "ReviewBusinessLogic",
+            "ReviewPerformance",
+            "ReviewSecurity",
+            "ReviewJudge",
+            "ReviewFixer",
+        ] {
+            assert_eq!(
+                default_model_id_for_builtin_agent(agent_type),
+                "fast",
+                "{agent_type} should stay on the fast model slot"
+            );
+        }
     }
 
     #[test]

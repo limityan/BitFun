@@ -15,7 +15,13 @@
   },
   "nav": {
     "coreAgents": "核心智能体",
-    "agents": "Agent"
+    "agents": "Agent",
+    "teams": "团队"
+  },
+  "teamsZone": {
+    "title": "智能体团队",
+    "subtitle": "为更深入的任务组织多智能体阵容，当前先提供默认的本地审核团队。",
+    "empty": "当前没有可用的智能体团队"
   },
   "filters": {
     "source": "来源",
@@ -132,6 +138,112 @@
       "submit": "创建",
       "createSuccess": "已创建 Agent「{{name}}」",
       "createFailed": "创建失败："
+    }
+  },
+  "reviewTeams": {
+    "default": {
+      "name": "默认审核团队",
+      "summary": "本地运行的深度审核团队，内置业务逻辑、性能、安全和质检四个固定角色。",
+      "members": "{{count}} 名成员"
+    },
+    "detail": {
+      "open": "打开团队",
+      "back": "返回专业智能体",
+      "title": "默认审核团队",
+      "subtitle": "配置 Deep Review 与 /deepreview 使用的本地审核团队。每个审核员默认使用快速模型，你也可以单独修改。",
+      "summaryTitle": "团队概览",
+      "summaryDescription": "默认审核团队会在本地并行拉起多个审核员，并始终以质检员的复核结果作为最终结论。",
+      "membersTitle": "团队成员",
+      "membersDescription": "点击成员可以查看职责并调整模型。固定角色始终保留在团队中。",
+      "membersCount": "{{count}} 名成员",
+      "lockedCount": "{{count}} 个固定角色",
+      "extraCount": "{{count}} 个额外 Sub-Agent",
+      "localOnly": "仅本地执行",
+      "localOnlyDescription": "所有审核员都运行在本地 BitFun 会话中，不依赖云端审核基础设施。",
+      "parallelLabel": "并行审核",
+      "parallelDescription": "业务逻辑、性能、安全以及额外成员会并行运行，随后由质检员统一复核。",
+      "warningLabel": "耗时更久",
+      "warning": "深度审核会完全在本地运行，通常比普通审核耗时更长且 token 消耗更高。",
+      "qualityGate": "质检复核",
+      "memberDetailTitle": "成员详情",
+      "memberDetailDescription": "被选中的审核员会在深度审核时以独立上下文运行。",
+      "responsibilities": "职责范围",
+      "model": "使用模型",
+      "modelDescription": "只修改当前审核员使用的模型。深度审核默认使用快速模型，保存后会立即生效。",
+      "remove": "移除成员",
+      "removeDescription": "将这个额外 Sub-Agent 从审核团队中移除。固定角色不可删除。",
+      "addTitle": "添加额外 Sub-Agent",
+      "addDescription": "把其他 Sub-Agent 加入深度审核团队，四个固定角色会始终保留。",
+      "addLabel": "候选成员",
+      "addHint": "额外成员会参与并行审核，最终仍由质检员统一复核后再输出结果。",
+      "addPlaceholder": "选择一个 Sub-Agent",
+      "addButton": "加入团队",
+      "emptyCandidates": "当前没有可添加的额外 Sub-Agent。",
+      "memberTypes": {
+        "locked": "固定",
+        "core": "核心角色",
+        "extra": "额外 Sub-Agent",
+        "builtin": "内置",
+        "user": "用户级",
+        "project": "项目级"
+      },
+      "messages": {
+        "modelUpdated": "已更新 {{name}} 的模型配置。",
+        "memberAdded": "已将额外审核员加入团队。",
+        "memberRemoved": "已将额外审核员移出团队。",
+        "saveFailed": "保存审核团队配置失败。"
+      }
+    },
+    "members": {
+      "businessLogic": {
+        "funName": "逻辑神探 Locke",
+        "role": "业务逻辑审核员",
+        "description": "专门追踪业务规则、状态流转、回滚路径和真实用户正确性的流程侦探。",
+        "responsibilities": [
+          "验证业务流程、状态切换和领域规则是否仍然正确。",
+          "检查边界条件、回滚路径以及数据一致性假设。",
+          "优先指出会直接影响用户结果或产品意图的问题。"
+        ]
+      },
+      "performance": {
+        "funName": "涡轮追踪 Bolt",
+        "role": "性能审核员",
+        "description": "专盯热点路径、无效工作、阻塞调用和规模化回退问题的速度分析员。",
+        "responsibilities": [
+          "检查热点路径、大循环以及不必要的分配或重复计算。",
+          "识别阻塞调用、N+1 模式和低效的数据搬运。",
+          "给出贴合现有架构、可落地的性能优化建议。"
+        ]
+      },
+      "security": {
+        "funName": "圣盾哨兵 Nova",
+        "role": "安全审核员",
+        "description": "专门盯住注入风险、信任边界、权限错误以及危险文件或命令处理的边界守卫。",
+        "responsibilities": [
+          "审查信任边界、鉴权假设和敏感数据处理方式。",
+          "寻找注入、危险命令执行与数据暴露风险。",
+          "优先给出不依赖大改造的具体修复方案。"
+        ]
+      },
+      "judge": {
+        "funName": "终审质检官 Echo",
+        "role": "审核质检员",
+        "description": "负责给其他审核员做二次质检，过滤误报、危险建议和证据不足结论的最终裁判。",
+        "responsibilities": [
+          "在结论进入最终报告前，对各审核员的发现进行验证、合并、降级或驳回。",
+          "过滤误报以及方向错误的优化建议。",
+          "确保每条保留的问题都带有明确修复方案或后续计划。"
+        ]
+      }
+    },
+    "extraReviewer": {
+      "role": "额外专项审核员",
+      "description": "由用户手动加入的额外 Sub-Agent，会带着自己的系统提示、工具和视角参与深度审核。",
+      "responsibilities": [
+        "从额外的独立视角补充本次审核目标中的问题发现。",
+        "保持 scope 严格聚焦在本次 diff、commit 或工作区改动上。",
+        "输出清晰、可执行的修复建议或后续计划。"
+      ]
     }
   }
 }

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { TFunction } from 'i18next';
 import {
   Bot,
@@ -8,6 +8,7 @@ import {
   Puzzle,
   RefreshCw,
   Search as SearchIcon,
+  ShieldCheck,
   Trash2,
   Wrench,
 } from 'lucide-react';
@@ -23,8 +24,10 @@ import {
   GalleryZone,
 } from '@/app/components';
 import AgentCard from './components/AgentCard';
+import AgentTeamCard from './components/AgentTeamCard';
 import CoreAgentCard, { type CoreAgentMeta } from './components/CoreAgentCard';
 import CreateAgentPage from './components/CreateAgentPage';
+import ReviewTeamPage from './components/ReviewTeamPage';
 import {
   type AgentWithCapabilities,
   useAgentsStore,
@@ -40,6 +43,8 @@ import { CORE_AGENT_IDS, isAgentInOverviewZone } from './agentVisibility';
 import { SubagentAPI } from '@/infrastructure/api/service-api/SubagentAPI';
 import type { ModeSkillInfo } from '@/infrastructure/config/types';
 import { useNotification } from '@/shared/notification-system';
+import { useCurrentWorkspace } from '@/infrastructure/contexts/WorkspaceContext';
+import { loadDefaultReviewTeam, type ReviewTeam } from '@/shared/services/reviewTeamService';
 
 const UNGROUPED_SKILL_GROUP = '__ungrouped__';
 
@@ -164,6 +169,7 @@ function buildSkillGroups(
 const AgentsHomeView: React.FC = () => {
   const { t } = useTranslation('scenes/agents');
   const notification = useNotification();
+  const { workspacePath } = useCurrentWorkspace();
   const [deletingAgent, setDeletingAgent] = useState(false);
   const {
     agentSoloEnabled,
@@ -176,6 +182,7 @@ const AgentsHomeView: React.FC = () => {
     setAgentSoloEnabled,
     openCreateAgent,
     openEditAgent,
+    openReviewTeam,
   } = useAgentsStore();
   const [selectedAgentId, setSelectedAgentId] = React.useState<string | null>(null);
   const [toolsEditing, setToolsEditing] = React.useState(false);
@@ -184,6 +191,7 @@ const AgentsHomeView: React.FC = () => {
   const [pendingSkills, setPendingSkills] = React.useState<string[] | null>(null);
   const [savingTools, setSavingTools] = React.useState(false);
   const [savingSkills, setSavingSkills] = React.useState(false);
+  const [reviewTeam, setReviewTeam] = useState<ReviewTeam | null>(null);
 
   const {
     allAgents,
@@ -206,8 +214,34 @@ const AgentsHomeView: React.FC = () => {
 
   useGallerySceneAutoRefresh({
     sceneId: 'agents',
-    refetch: () => void loadAgents(),
+    refetch: () => {
+      void loadAgents();
+      void loadDefaultReviewTeam(workspacePath || undefined).then(setReviewTeam).catch(() => {
+        setReviewTeam(null);
+      });
+    },
   });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const loadedTeam = await loadDefaultReviewTeam(workspacePath || undefined);
+        if (!cancelled) {
+          setReviewTeam(loadedTeam);
+        }
+      } catch {
+        if (!cancelled) {
+          setReviewTeam(null);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [workspacePath]);
 
   const coreAgentMeta = useMemo((): Record<string, CoreAgentMeta> => ({
     agentic: {
@@ -396,6 +430,13 @@ const AgentsHomeView: React.FC = () => {
             <button
               type="button"
               className="gallery-anchor-btn"
+              onClick={() => scrollToZone('teams-zone')}
+            >
+              {t('nav.teams', { defaultValue: 'Teams' })}
+            </button>
+            <button
+              type="button"
+              className="gallery-anchor-btn"
               onClick={() => scrollToZone('agents-zone')}
             >
               {t('nav.agents')}
@@ -458,6 +499,80 @@ const AgentsHomeView: React.FC = () => {
               ))}
             </div>
           )}
+        </GalleryZone>
+
+        <GalleryZone
+          id="teams-zone"
+          title={t('teamsZone.title', {
+            defaultValue: 'Agent Teams',
+          })}
+          subtitle={t('teamsZone.subtitle', {
+            defaultValue:
+              'Launch specialized multi-agent lineups for deeper tasks. Start with the default local review team.',
+          })}
+          tools={(
+            <>
+              <button
+                type="button"
+                className="gallery-action-btn"
+                onClick={openReviewTeam}
+              >
+                <ShieldCheck size={15} />
+                <span>{t('reviewTeams.detail.open', { defaultValue: 'Configure team' })}</span>
+              </button>
+              <span className="gallery-zone-count">{reviewTeam ? 1 : 0}</span>
+            </>
+          )}
+        >
+          {loading && !reviewTeam ? renderSkeletons('team') : null}
+
+          {!loading && reviewTeam ? (
+            <GalleryGrid minCardWidth={360}>
+              <AgentTeamCard
+                index={0}
+                title={t('reviewTeams.default.name', {
+                  defaultValue: 'Default Review Team',
+                })}
+                subtitle={t('reviewTeams.default.summary', {
+                  defaultValue:
+                    'A local deep-review team with locked logic, performance, security, and quality-gate roles.',
+                })}
+                localOnlyLabel={t('reviewTeams.detail.localOnly', {
+                  defaultValue: 'Local only',
+                })}
+                qualityGateLabel={t('reviewTeams.detail.qualityGate', {
+                  defaultValue: 'Quality gate',
+                })}
+                membersLabel={t('reviewTeams.default.members', {
+                  count: reviewTeam.members.length,
+                  defaultValue: `${reviewTeam.members.length} members`,
+                })}
+                warningText={t('reviewTeams.detail.warning', {
+                  defaultValue: reviewTeam.warning,
+                })}
+                openLabel={t('reviewTeams.detail.open', {
+                  defaultValue: 'Open team',
+                })}
+                memberNames={reviewTeam.coreMembers.map((member) =>
+                  member.definitionKey
+                    ? t(`reviewTeams.members.${member.definitionKey}.funName`, {
+                      defaultValue: member.displayName,
+                    })
+                    : member.displayName,
+                )}
+                onOpen={openReviewTeam}
+              />
+            </GalleryGrid>
+          ) : null}
+
+          {!loading && !reviewTeam ? (
+            <GalleryEmpty
+              icon={<ShieldCheck size={32} strokeWidth={1.5} />}
+              message={t('teamsZone.empty', {
+                defaultValue: 'No agent teams are available right now.',
+              })}
+            />
+          ) : null}
         </GalleryZone>
 
         <GalleryZone
@@ -937,6 +1052,14 @@ const AgentsScene: React.FC = () => {
     return (
       <div className="bitfun-agents-scene">
         <CreateAgentPage />
+      </div>
+    );
+  }
+
+  if (page === 'reviewTeam') {
+    return (
+      <div className="bitfun-agents-scene">
+        <ReviewTeamPage />
       </div>
     );
   }

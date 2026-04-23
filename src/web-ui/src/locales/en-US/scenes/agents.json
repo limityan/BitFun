@@ -15,7 +15,13 @@
   },
   "nav": {
     "coreAgents": "Core Agents",
-    "agents": "Agent"
+    "agents": "Agent",
+    "teams": "Teams"
+  },
+  "teamsZone": {
+    "title": "Agent Teams",
+    "subtitle": "Organize specialized agent lineups for deeper tasks. Start with the default local review team.",
+    "empty": "No agent teams are available right now"
   },
   "filters": {
     "source": "Source",
@@ -132,6 +138,112 @@
       "submit": "Create",
       "createSuccess": "Created agent \"{{name}}\"",
       "createFailed": "Create failed: "
+    }
+  },
+  "reviewTeams": {
+    "default": {
+      "name": "Default Review Team",
+      "summary": "A local deep-review team with locked logic, performance, security, and quality-gate roles.",
+      "members": "{{count}} members"
+    },
+    "detail": {
+      "open": "Open team",
+      "back": "Back to Agents",
+      "title": "Default Review Team",
+      "subtitle": "Configure the local deep-review team used by Deep Review and /deepreview. Every reviewer starts on the Fast model unless you change it.",
+      "summaryTitle": "Team Overview",
+      "summaryDescription": "The default review team runs locally, launches reviewers in parallel, and always finishes with a quality-gate pass.",
+      "membersTitle": "Team Members",
+      "membersDescription": "Click a member to inspect its role, responsibilities, and model. Locked roles always stay in the team.",
+      "membersCount": "{{count}} members",
+      "lockedCount": "{{count}} locked roles",
+      "extraCount": "{{count}} extra Sub-Agents",
+      "localOnly": "Local only",
+      "localOnlyDescription": "All reviewers run inside the local BitFun session. No cloud review workers are involved.",
+      "parallelLabel": "Parallel reviewers",
+      "parallelDescription": "Business logic, performance, security, and any extra reviewers run concurrently before the judge verifies them.",
+      "warningLabel": "Longer and heavier",
+      "warning": "Deep review runs locally, may take longer, and usually consumes more tokens than a standard review.",
+      "qualityGate": "Quality gate",
+      "memberDetailTitle": "Member Detail",
+      "memberDetailDescription": "The selected reviewer keeps an isolated context when the review team runs.",
+      "responsibilities": "Responsibilities",
+      "model": "Assigned model",
+      "modelDescription": "Change the model for this reviewer only. Deep review uses Fast by default, and your update applies immediately.",
+      "remove": "Remove member",
+      "removeDescription": "Remove this extra Sub-Agent from the review team. Core roles cannot be removed.",
+      "addTitle": "Add Extra Sub-Agent",
+      "addDescription": "Bring another Sub-Agent into the deep review team. The four core roles always remain locked in place.",
+      "addLabel": "Candidate",
+      "addHint": "Extra members join the parallel review pass and are checked by the quality inspector before final reporting.",
+      "addPlaceholder": "Select a Sub-Agent",
+      "addButton": "Add to team",
+      "emptyCandidates": "No additional Sub-Agents are available to add right now.",
+      "memberTypes": {
+        "locked": "Locked",
+        "core": "Core role",
+        "extra": "Extra Sub-Agent",
+        "builtin": "Built-in",
+        "user": "User",
+        "project": "Project"
+      },
+      "messages": {
+        "modelUpdated": "Updated {{name}} model.",
+        "memberAdded": "Added the extra reviewer to the team.",
+        "memberRemoved": "Removed the extra reviewer from the team.",
+        "saveFailed": "Failed to save the review team configuration."
+      }
+    },
+    "members": {
+      "businessLogic": {
+        "funName": "Logic Detective Locke",
+        "role": "Business Logic Reviewer",
+        "description": "A workflow sleuth that inspects business rules, state transitions, recovery paths, and real-user correctness.",
+        "responsibilities": [
+          "Verify workflows, state transitions, and domain rules still behave correctly.",
+          "Check boundary cases, rollback paths, and data integrity assumptions.",
+          "Focus on issues that can break user outcomes or product intent."
+        ]
+      },
+      "performance": {
+        "funName": "Turbo Trace Bolt",
+        "role": "Performance Reviewer",
+        "description": "A speed-focused profiler that hunts hot paths, unnecessary work, blocking calls, and scale-sensitive regressions.",
+        "responsibilities": [
+          "Inspect hot paths, large loops, and unnecessary allocations or recomputation.",
+          "Flag blocking work, N+1 patterns, and wasteful data movement.",
+          "Keep performance advice practical and aligned with the existing architecture."
+        ]
+      },
+      "security": {
+        "funName": "Aegis Sentinel Nova",
+        "role": "Security Reviewer",
+        "description": "A boundary guardian that scans for injection risks, trust leaks, privilege mistakes, and unsafe file or command handling.",
+        "responsibilities": [
+          "Review trust boundaries, auth assumptions, and sensitive data handling.",
+          "Look for injection, unsafe command execution, and exposure risks.",
+          "Highlight concrete fixes that reduce risk without broad rewrites."
+        ]
+      },
+      "judge": {
+        "funName": "Quality Judge Echo",
+        "role": "Review Quality Inspector",
+        "description": "A calm final arbiter that checks other reviewers for false positives, risky advice, and evidence quality before reporting.",
+        "responsibilities": [
+          "Validate, merge, downgrade, or reject reviewer findings before they reach the final report.",
+          "Filter out false positives and directionally-wrong optimization advice.",
+          "Ensure every surviving issue has an actionable fix or follow-up plan."
+        ]
+      }
+    },
+    "extraReviewer": {
+      "role": "Additional Specialist Reviewer",
+      "description": "User-added Sub-Agent that joins the deep review lineup with its own instructions, tools, and perspective.",
+      "responsibilities": [
+        "Bring an extra independent review perspective into the same target scope.",
+        "Stay tightly focused on the requested diff, commit, or workspace changes.",
+        "Return concrete findings with clear fix suggestions or follow-up steps."
+      ]
     }
   }
 }

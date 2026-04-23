@@ -18,6 +18,7 @@ pub mod tools;
 
 // Coordination module
 pub mod coordination;
+pub mod deep_review_policy;
 
 /// Round-boundary yield when user queues a message during an active turn
 pub mod round_preempt;

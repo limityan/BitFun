@@ -225,6 +225,12 @@
     "initUsage": "Use /init without extra arguments.",
     "initFailed": "AGENTS.md initialization failed",
     "initPrompt": "Please generate or update AGENTS.md based on the current project content",
+    "deepreviewAction": "Deep review",
+    "deepreviewNoSession": "No active session for /deepreview",
+    "deepreviewUsage": "Use /deepreview with optional focus text, for example /deepreview review commit abc123 for security.",
+    "deepreviewFailed": "Deep review failed",
+    "deepreviewInfo": "Deep review launches a local parallel review team. It may take longer and use more tokens than a normal review.",
+    "deepreviewThreadTitle": "Deep review",
     "currentMode": "Current mode: {{mode}}",
     "noMatchingMode": "No matching mode",
     "noMatchingCommand": "No matching command",
@@ -348,6 +354,8 @@
     "files": "files",
     "reviewLabel": "Review",
     "reviewAll": "Review All",
+    "deepReviewLabel": "Deep",
+    "deepReviewAll": "Deep Review",
     "loadFailed": "Load failed",
     "clickToViewDiff": "Click to view diff",
     "review": {
@@ -358,6 +366,12 @@
       "prompt": "Please review the following files modified in this session:\n\n{{files}}",
       "promptFiltered": "Please review the following modified files in this session:\n\n{{files}}\n\nDo not review the {{skipped}} skipped files because they matched the excluded lock, generated, or binary file rules.",
       "threadTitle": "Code review"
+    },
+    "deepReview": {
+      "info": "Deep review launches a parallel review team locally. It may take longer and use noticeably more tokens.",
+      "displayMessage": "Deep review modified files:\n{{files}}",
+      "displayMessageFiltered": "Deep review filtered files:\n{{files}}\n\nSkipped {{skipped}} excluded files.",
+      "threadTitle": "Deep review"
     }
   },
   "sessionFileModificationsBar": {
@@ -872,6 +886,7 @@
     },
     "codeReview": {
       "reviewResult": "Review Result",
+      "deepReviewResult": "Deep Review Result",
       "reviewingCode": "Reviewing code...",
       "preparingReview": "Preparing code review",
       "reviewFailed": "Code review failed: {{error}}",
@@ -881,10 +896,20 @@
       "overallAssessment": "Overall Assessment",
       "riskLevel": "Risk Level",
       "recommendedAction": "Recommended Action",
+      "reviewMode": "Review Mode",
+      "reviewScope": "Scope",
       "contextLimitations": "Context Limitations",
       "issuesCount": "Issues ({{count}})",
       "suggestion": "Suggestion",
       "codeStrengths": "Code Strengths",
+      "reviewerTeam": "Review Team",
+      "reviewerIssues": "{{count}} issues",
+      "reviewerIssuesUnknown": "Issue count unavailable",
+      "remediationPlan": "Remediation Plan",
+      "reviewModes": {
+        "standard": "Standard",
+        "deep": "Deep"
+      },
       "riskLevels": {
         "low": "Low Risk",
         "medium": "Medium Risk",

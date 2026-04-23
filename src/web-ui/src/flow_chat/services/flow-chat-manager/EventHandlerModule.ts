@@ -90,6 +90,133 @@ function logDroppedDataEvent(
   });
 }
 
+function attachSubagentSessionToParentTool(
+  parentInfo: SubagentParentInfo,
+  subagentSessionId: string,
+): void {
+  const store = FlowChatStore.getInstance();
+  const parentSession = store.getState().sessions.get(parentInfo.sessionId);
+  if (!parentSession) {
+    return;
+  }
+
+  const parentTurn = parentSession.dialogTurns.find((turn) => turn.id === parentInfo.dialogTurnId);
+  if (!parentTurn) {
+    return;
+  }
+
+  const parentTool = store.findToolItem(
+    parentInfo.sessionId,
+    parentInfo.dialogTurnId,
+    parentInfo.toolCallId,
+  );
+
+  if (parentTool?.subagentSessionId === subagentSessionId) {
+    return;
+  }
+
+  store.updateModelRoundItem(
+    parentInfo.sessionId,
+    parentInfo.dialogTurnId,
+    parentInfo.toolCallId,
+    {
+      subagentSessionId,
+    } as any,
+  );
+}
+
+function settleSubagentItems(
+  context: FlowChatContext,
+  parentInfo: SubagentParentInfo,
+  subagentSessionId: string,
+  status: 'completed' | 'cancelled' | 'error',
+  errorMessage?: string,
+): void {
+  const store = FlowChatStore.getInstance();
+  const parentSession = store.getState().sessions.get(parentInfo.sessionId);
+  if (!parentSession) {
+    return;
+  }
+
+  const parentTurn = parentSession.dialogTurns.find((turn) => turn.id === parentInfo.dialogTurnId);
+  if (!parentTurn) {
+    return;
+  }
+
+  const timestamp = Date.now();
+  let changed = false;
+
+  store.updateDialogTurn(parentInfo.sessionId, parentInfo.dialogTurnId, (turn) => {
+    const updatedRounds = turn.modelRounds.map((round) => {
+      const updatedItems = round.items.map((item) => {
+        if (
+          !item.isSubagentItem
+          || item.parentTaskToolId !== parentInfo.toolCallId
+          || item.subagentSessionId !== subagentSessionId
+        ) {
+          return item;
+        }
+
+        if (item.status === 'completed' || item.status === 'cancelled' || item.status === 'error') {
+          return item;
+        }
+
+        changed = true;
+
+        if (item.type === 'text') {
+          return {
+            ...item,
+            status,
+            isStreaming: false,
+            timestamp,
+          };
+        }
+
+        if (item.type === 'thinking') {
+          return {
+            ...item,
+            status,
+            isStreaming: false,
+            isCollapsed: true,
+            timestamp,
+          };
+        }
+
+        if (item.type === 'tool') {
+          const nextToolResult = status === 'completed'
+            ? item.toolResult
+            : {
+              result: null,
+              success: false,
+              error: errorMessage || (status === 'cancelled'
+                ? 'Subagent was cancelled.'
+                : 'Subagent failed before this tool finished.'),
+            };
+
+          return {
+            ...item,
+            status,
+            isParamsStreaming: false,
+            endTime: item.endTime || timestamp,
+            toolResult: nextToolResult,
+            timestamp,
+          };
+        }
+
+        return item;
+      });
+
+      return updatedItems === round.items ? round : { ...round, items: updatedItems };
+    });
+
+    return changed ? { ...turn, modelRounds: updatedRounds } : turn;
+  });
+
+  if (changed) {
+    debouncedSaveDialogTurn(context, parentInfo.sessionId, parentInfo.dialogTurnId, 800);
+  }
+}
+
 /**
  * Event filtering mechanism: determines if an event should be processed
  */
@@ -762,6 +889,7 @@ function handleDialogTurnStarted(context: FlowChatContext, event: any): void {
   const { sessionId, turnId, turnIndex, userInput, originalUserInput, userMessageMetadata, subagentParentInfo } = event;
 
   if (subagentParentInfo) {
+    attachSubagentSessionToParentTool(subagentParentInfo, sessionId);
     return;
   }
 
@@ -1345,6 +1473,10 @@ function handleDialogTurnComplete(
   const subagentParentInfo = event?.subagentParentInfo ?? event?.subagent_parent_info;
 
   if (subagentParentInfo) {
+    if (sessionId) {
+      attachSubagentSessionToParentTool(subagentParentInfo, sessionId);
+      settleSubagentItems(context, subagentParentInfo, sessionId, 'completed');
+    }
     return;
   }
 
@@ -1397,6 +1529,10 @@ function handleDialogTurnFailed(context: FlowChatContext, event: any): void {
   const { sessionId, turnId, error, subagentParentInfo } = event;
 
   if (subagentParentInfo) {
+    if (sessionId) {
+      attachSubagentSessionToParentTool(subagentParentInfo, sessionId);
+      settleSubagentItems(context, subagentParentInfo, sessionId, 'error', error);
+    }
     return;
   }
   
@@ -1496,6 +1632,10 @@ function handleDialogTurnCancelled(
   const { sessionId, turnId, subagentParentInfo } = event;
 
   if (subagentParentInfo) {
+    if (sessionId) {
+      attachSubagentSessionToParentTool(subagentParentInfo, sessionId);
+      settleSubagentItems(context, subagentParentInfo, sessionId, 'cancelled');
+    }
     return;
   }
   

@@ -35,6 +35,35 @@ impl CodeReviewTool {
 
     pub fn input_schema_value_for_language(lang_code: &str) -> Value {
         let copy = code_review_copy_for_language(lang_code);
+        let (
+            scope_desc,
+            reviewer_summary_desc,
+            source_reviewer_desc,
+            validation_note_desc,
+            plan_desc,
+        ) = match lang_code {
+            "en-US" => (
+                "Human-readable review scope (optional, in English)",
+                "Reviewer summary (in English)",
+                "Reviewer source / role (optional, in English)",
+                "Validation or triage note (optional, in English)",
+                "Concrete remediation / follow-up plan items (in English)",
+            ),
+            "zh-TW" => (
+                "Human-readable review scope (optional, in Traditional Chinese)",
+                "Reviewer summary (in Traditional Chinese)",
+                "Reviewer source / role (optional, in Traditional Chinese)",
+                "Validation or triage note (optional, in Traditional Chinese)",
+                "Concrete remediation / follow-up plan items (in Traditional Chinese)",
+            ),
+            _ => (
+                "Human-readable review scope (optional, in Simplified Chinese)",
+                "Reviewer summary (in Simplified Chinese)",
+                "Reviewer source / role (optional, in Simplified Chinese)",
+                "Validation or triage note (optional, in Simplified Chinese)",
+                "Concrete remediation / follow-up plan items (in Simplified Chinese)",
+            ),
+        };
 
         json!({
             "type": "object",
@@ -103,6 +132,14 @@ impl CodeReviewTool {
                             "suggestion": {
                                 "type": ["string", "null"],
                                 "description": copy.issue_suggestion
+                            },
+                            "source_reviewer": {
+                                "type": "string",
+                                "description": source_reviewer_desc
+                            },
+                            "validation_note": {
+                                "type": "string",
+                                "description": validation_note_desc
                             }
                         },
                         "required": ["severity", "certainty", "category", "file", "title", "description"]
@@ -111,6 +148,53 @@ impl CodeReviewTool {
                 "positive_points": {
                     "type": "array",
                     "description": copy.positive_points,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "review_mode": {
+                    "type": "string",
+                    "enum": ["standard", "deep"],
+                    "description": "Review mode"
+                },
+                "review_scope": {
+                    "type": "string",
+                    "description": scope_desc
+                },
+                "reviewers": {
+                    "type": "array",
+                    "description": "Reviewer summaries",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Reviewer display name"
+                            },
+                            "specialty": {
+                                "type": "string",
+                                "description": "Reviewer specialty / role"
+                            },
+                            "status": {
+                                "type": "string",
+                                "description": "Reviewer result status"
+                            },
+                            "summary": {
+                                "type": "string",
+                                "description": reviewer_summary_desc
+                            },
+                            "issue_count": {
+                                "type": "integer",
+                                "description": "Validated issue count for this reviewer"
+                            }
+                        },
+                        "required": ["name", "specialty", "status", "summary"],
+                        "additionalProperties": false
+                    }
+                },
+                "remediation_plan": {
+                    "type": "array",
+                    "description": plan_desc,
                     "items": {
                         "type": "string"
                     }
@@ -134,28 +218,26 @@ impl CodeReviewTool {
                 "recommended_action": "approve",
                 "confidence_note": "AI did not return complete review results"
             });
-        } else {
-            if let Some(summary) = input.get_mut("summary") {
-                if summary.get("overall_assessment").is_none() {
-                    summary["overall_assessment"] = json!("None");
-                }
-                if summary.get("risk_level").is_none() {
-                    summary["risk_level"] = json!("low");
-                }
-                if summary.get("recommended_action").is_none() {
-                    summary["recommended_action"] = json!("approve");
-                }
-            } else {
-                warn!(
-                    "CodeReview tool summary field exists but is not mutable object, using default values"
-                );
-                input["summary"] = json!({
-                    "overall_assessment": "None",
-                    "risk_level": "low",
-                    "recommended_action": "approve",
-                    "confidence_note": "AI returned invalid summary format"
-                });
+        } else if let Some(summary) = input.get_mut("summary") {
+            if summary.get("overall_assessment").is_none() {
+                summary["overall_assessment"] = json!("None");
             }
+            if summary.get("risk_level").is_none() {
+                summary["risk_level"] = json!("low");
+            }
+            if summary.get("recommended_action").is_none() {
+                summary["recommended_action"] = json!("approve");
+            }
+        } else {
+            warn!(
+                "CodeReview tool summary field exists but is not mutable object, using default values"
+            );
+            input["summary"] = json!({
+                "overall_assessment": "None",
+                "risk_level": "low",
+                "recommended_action": "approve",
+                "confidence_note": "AI returned invalid summary format"
+            });
         }
 
         // Fill issues default values
@@ -168,6 +250,18 @@ impl CodeReviewTool {
         if input.get("positive_points").is_none() {
             warn!("CodeReview tool missing positive_points field, using default values");
             input["positive_points"] = json!(["None"]);
+        }
+
+        if input.get("review_mode").is_none() {
+            input["review_mode"] = json!("standard");
+        }
+
+        if input.get("reviewers").is_none() {
+            input["reviewers"] = json!([]);
+        }
+
+        if input.get("remediation_plan").is_none() {
+            input["remediation_plan"] = json!([]);
         }
     }
 
@@ -183,7 +277,10 @@ impl CodeReviewTool {
                 "confidence_note": "AI review failed, using default result"
             },
             "issues": [],
-            "positive_points": ["None"]
+            "positive_points": ["None"],
+            "review_mode": "standard",
+            "reviewers": [],
+            "remediation_plan": []
         })
     }
 }
@@ -235,11 +332,9 @@ impl Tool for CodeReviewTool {
         input: &Value,
         _context: &ToolUseContext,
     ) -> BitFunResult<Vec<ToolResult>> {
-        // Fill missing default values
         let mut filled_input = input.clone();
         Self::validate_and_fill_defaults(&mut filled_input);
 
-        // Return success with filled data
         Ok(vec![ToolResult::Result {
             data: filled_input,
             result_for_assistant: Some("Code review results submitted successfully".to_string()),

@@ -104,6 +104,19 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+
+    &--deep {
+      color: color-mix(in srgb, var(--color-accent-400, #8b5cf6) 86%, var(--color-text-primary));
+
+      &:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--color-accent-400, #8b5cf6) 12%, transparent);
+        color: var(--color-text-primary);
+      }
+    }
+  }
+
+  &__review-icon {
+    flex-shrink: 0;
   }
 
   &__review-text {
