@@ -30,6 +30,7 @@ export { NotificationCenter } from './components/NotificationCenter';
 export { NotificationItem } from './components/NotificationItem';
 export { ProgressNotification } from './components/ProgressNotification';
 export { LoadingNotification } from './components/LoadingNotification';
+export { NotificationCompanionBridge } from './components/NotificationCompanionBridge';
 
 // Providers
 export { registerNotificationContextMenu } from './providers/NotificationContextMenuProvider';

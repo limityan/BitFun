@@ -22,7 +22,14 @@ import { useFlowChatFollowOutput } from './useFlowChatFollowOutput';
 import type { FlowChatPinTurnToTopMode } from '../../events/flowchatNavigation';
 import { useVirtualItems, useActiveSession, useModernFlowChatStore, type VisibleTurnInfo } from '../../store/modernFlowChatStore';
 import { useChatInputState } from '../../store/chatInputStateStore';
+import { ProcessingPhase } from '../../state-machine/types';
+import type { FlowToolItem } from '../../types/flow-chat';
 import { computeFlowChatInputStackFooterPx } from '../../utils/flowChatScrollLayout';
+import {
+  useAgentCompanionEnabled,
+  useCompanionScenario,
+  type CompanionScenario,
+} from '@/shared/companion-system';
 import './VirtualMessageList.scss';
 
 const COMPENSATION_EPSILON_PX = 0.5;
@@ -30,6 +37,7 @@ const ANCHOR_LOCK_MIN_DEVIATION_PX = 0.5;
 const ANCHOR_LOCK_DURATION_MS = 450;
 const PINNED_TURN_VIEWPORT_OFFSET_PX = 57; // Keep in sync with `.message-list-header`.
 const TOUCH_SCROLL_INTENT_EXIT_THRESHOLD_PX = 6;
+const LONG_THINKING_THRESHOLD_MS = 9000;
 
 // Read `FLOWCHAT_SCROLL_STABILITY.md` before changing collapse compensation logic.
 
@@ -210,6 +218,34 @@ function getReservationConsumablePx(reservation: BottomReservationBase): number 
   return Math.max(0, reservation.px - reservation.floorPx);
 }
 
+function isActiveToolStatus(status: FlowToolItem['status']): boolean {
+  return status === 'preparing' || status === 'running' || status === 'streaming';
+}
+
+function escapeSelectorValue(value: string): string {
+  if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') {
+    return CSS.escape(value);
+  }
+
+  return value.replace(/["\\]/g, '\\$&');
+}
+
+function getToolCardSelector(id: string | null | undefined): string | null {
+  if (!id) {
+    return null;
+  }
+
+  return `[data-tool-card-id="${escapeSelectorValue(id)}"]`;
+}
+
+function getTerminalSelector(terminalSessionId: string | null | undefined): string | null {
+  if (!terminalSessionId) {
+    return null;
+  }
+
+  return `[data-terminal-id="${escapeSelectorValue(terminalSessionId)}"]`;
+}
+
 export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => {
   const virtuosoRef = useRef<VirtuosoHandle>(null);
   const virtualItems = useVirtualItems();
@@ -279,6 +315,7 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
   const activeSessionState = useActiveSessionState();
   const isProcessing = activeSessionState.isProcessing;
   const processingPhase = activeSessionState.processingPhase;
+  const companionEnabled = useAgentCompanionEnabled();
 
   const getFooterHeightPx = useCallback((compensationPx: number) => {
     return inputStackFooterPxRef.current + compensationPx;
@@ -1853,8 +1890,24 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
   }, [activeSession]);
 
   const [isContentGrowing, setIsContentGrowing] = useState(true);
+  const [companionNow, setCompanionNow] = useState(() => Date.now());
   const lastContentRef = useRef(lastItemInfo.content);
   const contentTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (!companionEnabled || (!lastItemInfo.isTurnProcessing && !isProcessing)) {
+      return;
+    }
+
+    setCompanionNow(Date.now());
+    const intervalId = window.setInterval(() => {
+      setCompanionNow(Date.now());
+    }, 1200);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [companionEnabled, isProcessing, lastItemInfo.isTurnProcessing, lastItemInfo.lastItem?.id]);
 
   useEffect(() => {
     const currentContent = lastItemInfo.content;
@@ -1885,6 +1938,45 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
     }
   }, [lastItemInfo.isTurnProcessing, isProcessing]);
 
+  const activeToolItem = React.useMemo<FlowToolItem | null>(() => {
+    const { lastItem } = lastItemInfo;
+    if (lastItem?.type !== 'tool') {
+      return null;
+    }
+
+    return isActiveToolStatus(lastItem.status) ? lastItem : null;
+  }, [lastItemInfo]);
+
+  const activeThinkingItem = React.useMemo(() => (
+    lastItemInfo.lastItem?.type === 'thinking' && lastItemInfo.isTurnProcessing
+      ? lastItemInfo.lastItem
+      : null
+  ), [lastItemInfo]);
+
+  const processingStartedAt = React.useMemo(() => {
+    return activeToolItem?.startTime
+      ?? activeThinkingItem?.timestamp
+      ?? lastItemInfo.lastItem?.timestamp
+      ?? lastItemInfo.lastDialogTurn?.startTime
+      ?? companionNow;
+  }, [
+    activeThinkingItem?.timestamp,
+    activeToolItem?.startTime,
+    companionNow,
+    lastItemInfo.lastDialogTurn?.startTime,
+    lastItemInfo.lastItem?.timestamp,
+  ]);
+
+  const processingAgeMs = Math.max(0, companionNow - processingStartedAt);
+  const thinkingAgeMs = Math.max(
+    0,
+    companionNow - (
+      activeThinkingItem?.timestamp
+      ?? lastItemInfo.lastDialogTurn?.startTime
+      ?? companionNow
+    ),
+  );
+
   const showBreathingIndicator = React.useMemo(() => {
     const { lastItem, isTurnProcessing } = lastItemInfo;
 
@@ -1912,6 +2004,255 @@ export const VirtualMessageList = forwardRef<VirtualMessageListRef>((_, ref) => 
     if (processingPhase === 'tool_confirming') return false;
     return true;
   }, [lastItemInfo.isTurnProcessing, isProcessing, processingPhase]);
+
+  const terminalCompanionScenario = React.useMemo<CompanionScenario>(() => {
+    const terminalToolItem = activeToolItem?.toolName === 'Bash' ? activeToolItem : null;
+    const terminalSelector = getTerminalSelector(terminalToolItem?.terminalSessionId);
+    const toolSelector = getToolCardSelector(terminalToolItem?.id ?? terminalToolItem?.toolCall.id);
+    const viewportFallback = {
+      type: 'viewport' as const,
+      position: 'bottom-right' as const,
+      offsetX: -20,
+      offsetY: -(inputStackFooterPx + 26),
+    };
+
+    return {
+      id: 'flow-chat:terminal-companion',
+      enabled: companionEnabled && processingPhase !== 'tool_confirming' && Boolean(terminalToolItem),
+      priority: 82,
+      target: {
+        kind: 'floating',
+        anchor: terminalSelector
+          ? {
+            type: 'selector',
+            selector: terminalSelector,
+            placement: 'top-right',
+            offsetX: 12,
+            offsetY: -12,
+          }
+          : toolSelector
+            ? {
+              type: 'selector',
+              selector: toolSelector,
+              placement: 'bottom-right',
+              offsetX: 10,
+              offsetY: 8,
+            }
+            : viewportFallback,
+        fallbackAnchor: terminalSelector
+          ? (
+            toolSelector
+              ? {
+                type: 'selector',
+                selector: toolSelector,
+                placement: 'bottom-right',
+                offsetX: 10,
+                offsetY: 8,
+              }
+              : viewportFallback
+          )
+          : toolSelector
+            ? viewportFallback
+            : undefined,
+      },
+      presentation: {
+        action: terminalToolItem?.status === 'preparing' ? 'watching' : 'hurrying',
+        size: 'sm',
+        emphasis: 'pulse',
+        expression: terminalToolItem?.status === 'preparing' ? 'bashful' : 'mischief',
+      },
+      behavior: {
+        roam: {
+          enabled: true,
+          radiusX: 24,
+          radiusY: 14,
+          speed: 'fast',
+        },
+        interaction: {
+          hover: 'dodge',
+          click: ['tease', 'hide', 'emote'],
+          emotes: ['?!', '>_<', '...'],
+        },
+      },
+    };
+  }, [activeToolItem, companionEnabled, inputStackFooterPx, processingPhase]);
+  useCompanionScenario(terminalCompanionScenario);
+
+  const toolCompanionScenario = React.useMemo<CompanionScenario>(() => {
+    const toolItem = activeToolItem && activeToolItem.toolName !== 'Bash' ? activeToolItem : null;
+    const toolSelector = getToolCardSelector(toolItem?.id ?? toolItem?.toolCall.id);
+    const viewportFallback = {
+      type: 'viewport' as const,
+      position: 'center-right' as const,
+      offsetX: -24,
+      offsetY: -4,
+    };
+
+    return {
+      id: 'flow-chat:tool-companion',
+      enabled: companionEnabled && processingPhase !== 'tool_confirming' && Boolean(toolItem),
+      priority: 76,
+      target: {
+        kind: 'floating',
+        anchor: toolSelector
+          ? {
+            type: 'selector',
+            selector: toolSelector,
+            placement: 'right',
+            offsetX: 12,
+            offsetY: -8,
+          }
+          : viewportFallback,
+        fallbackAnchor: toolSelector ? viewportFallback : undefined,
+      },
+      presentation: {
+        action:
+          toolItem?.status === 'preparing'
+            ? 'watching'
+            : toolItem?.status === 'streaming'
+              ? 'playful'
+              : 'checking-in',
+        size: 'sm',
+        emphasis: 'pulse',
+        expression:
+          toolItem?.status === 'preparing'
+            ? 'bashful'
+            : toolItem?.status === 'streaming'
+              ? 'mischief'
+              : undefined,
+      },
+      behavior: {
+        roam: {
+          enabled: true,
+          radiusX: 22,
+          radiusY: 14,
+          speed: 'medium',
+        },
+        interaction: {
+          hover: 'dodge',
+          click: ['emote', 'tease'],
+          emotes: ['?!', '*', '>_<'],
+        },
+      },
+    };
+  }, [activeToolItem, companionEnabled, processingPhase]);
+  useCompanionScenario(toolCompanionScenario);
+
+  const longThinkingCompanionScenario = React.useMemo<CompanionScenario>(() => {
+    const thinkingSelector = getToolCardSelector(activeThinkingItem?.id);
+    const viewportFallback = {
+      type: 'viewport' as const,
+      position: 'center-right' as const,
+      offsetX: -18,
+      offsetY: -18,
+    };
+
+    return {
+      id: 'flow-chat:long-thinking-companion',
+      enabled: (
+        companionEnabled &&
+        processingPhase !== 'tool_confirming' &&
+        Boolean(activeThinkingItem) &&
+        thinkingAgeMs >= LONG_THINKING_THRESHOLD_MS
+      ),
+      priority: 72,
+      target: {
+        kind: 'floating',
+        anchor: thinkingSelector
+          ? {
+            type: 'selector',
+            selector: thinkingSelector,
+            placement: 'right',
+            offsetX: 12,
+            offsetY: -10,
+          }
+          : viewportFallback,
+        fallbackAnchor: thinkingSelector ? viewportFallback : undefined,
+      },
+      presentation: {
+        action: thinkingAgeMs >= LONG_THINKING_THRESHOLD_MS * 2.2 ? 'watching' : 'checking-in',
+        size: 'sm',
+        emphasis: thinkingAgeMs >= LONG_THINKING_THRESHOLD_MS * 2 ? 'dramatic' : 'pulse',
+        expression: thinkingAgeMs >= LONG_THINKING_THRESHOLD_MS * 2.2 ? 'bashful' : undefined,
+      },
+      behavior: {
+        roam: {
+          enabled: true,
+          radiusX: 28,
+          radiusY: 16,
+          speed: 'slow',
+        },
+        interaction: {
+          hover: 'dodge',
+          click: ['hide', 'emote'],
+          emotes: ['...', '?!'],
+        },
+      },
+    };
+  }, [activeThinkingItem, companionEnabled, processingPhase, thinkingAgeMs]);
+  useCompanionScenario(longThinkingCompanionScenario);
+
+  const processingCompanionScenario = React.useMemo<CompanionScenario>(() => ({
+    id: 'flow-chat:processing-companion',
+    enabled: companionEnabled && showBreathingIndicator,
+    priority: 40,
+    target: {
+      kind: 'floating',
+      anchor: {
+        type: 'viewport',
+        position: 'bottom-right',
+        offsetX: -16,
+        offsetY: -(inputStackFooterPx + 18),
+      },
+    },
+    presentation: {
+      action:
+        processingPhase === ProcessingPhase.THINKING
+          ? 'thinking'
+          : isStreamingOutput
+            ? 'keeping-company'
+            : 'encouraging',
+      size: 'sm',
+      emphasis: 'pulse',
+    },
+    behavior: {
+      roam: {
+        enabled: processingAgeMs >= 12000,
+        radiusX: 18,
+        radiusY: 12,
+        speed: 'slow',
+      },
+      interaction: {
+        hover: 'dodge',
+        click: ['emote', 'hide'],
+        emotes: ['?!', '...'],
+      },
+    },
+  }), [companionEnabled, inputStackFooterPx, isStreamingOutput, processingAgeMs, processingPhase, showBreathingIndicator]);
+  useCompanionScenario(processingCompanionScenario);
+
+  const scrollGuideCompanionScenario = React.useMemo<CompanionScenario>(() => ({
+    id: 'flow-chat:scroll-guide-companion',
+    enabled: companionEnabled && !showBreathingIndicator && !isAtBottom && virtualItems.length > 0,
+    priority: 60,
+    target: {
+      kind: 'floating',
+      anchor: {
+        type: 'selector',
+        selector: '.scroll-to-latest-bar__btn',
+        placement: 'right',
+        offsetX: 8,
+        offsetY: -8,
+      },
+    },
+    presentation: {
+      action: 'guiding',
+      size: 'sm',
+      emphasis: 'pulse',
+      direction: 'left',
+    },
+  }), [companionEnabled, isAtBottom, showBreathingIndicator, virtualItems.length]);
+  useCompanionScenario(scrollGuideCompanionScenario);
 
   const footerHeightPx = getFooterHeightPx(getTotalBottomCompensationPx(bottomReservationState));
 

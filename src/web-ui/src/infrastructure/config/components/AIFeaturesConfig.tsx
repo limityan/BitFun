@@ -14,9 +14,13 @@ import './AIFeaturesConfig.scss';
 
 const log = createLogger('AIFeaturesConfig');
 
+type BooleanAIExperienceSettingKey = {
+  [K in keyof AIExperienceSettings]: AIExperienceSettings[K] extends boolean ? K : never;
+}[keyof AIExperienceSettings];
+
 interface FeatureConfig {
   id: string;
-  settingKey?: keyof AIExperienceSettings;  
+  settingKey?: BooleanAIExperienceSettingKey;
   agentName?: string;  
 }
 

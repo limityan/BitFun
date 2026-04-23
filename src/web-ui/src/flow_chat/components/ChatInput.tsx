@@ -42,10 +42,16 @@ import { resolveSessionRelationship } from '../utils/sessionMetadata';
 import { useSceneStore } from '@/app/stores/sceneStore';
 import type { SceneTabId } from '@/app/components/SceneBar/types';
 import type { SkillInfo } from '@/infrastructure/config/types';
-import { aiExperienceConfigService } from '@/infrastructure/config/services/AIExperienceConfigService';
 import MCPAPI, { type MCPPrompt, type MCPPromptMessage, type MCPServerInfo } from '@/infrastructure/api/service-api/MCPAPI';
 import { deriveChatInputPetMood } from '../utils/chatInputPetMood';
-import { ChatInputPixelPet } from './ChatInputPixelPet';
+import {
+  CompanionSlot,
+  useAgentCompanionEnabled,
+  useCompanionScenario,
+  useCompanionSlotScenario,
+  type CompanionAction,
+  type CompanionScenario,
+} from '@/shared/companion-system';
 import './ChatInput.scss';
 
 const log = createLogger('ChatInput');
@@ -87,6 +93,15 @@ type SlashMcpPromptItem = {
 type SlashPickerItem = SlashActionItem | SlashModeItem | SlashMcpPromptItem;
 type ChatInputTarget = 'main' | 'btw';
 type PendingLargePasteMap = Record<string, string>;
+
+const CHAT_INPUT_COMPANION_SLOT_ID = 'flow-chat:collapsed-input';
+const CHAT_INPUT_COMPANION_PRIORITY = 10;
+const CHAT_INPUT_COMPANION_ACTION: Record<string, CompanionAction> = {
+  rest: 'resting',
+  analyzing: 'thinking',
+  waiting: 'guiding',
+  working: 'encouraging',
+};
 
 function getCharacterCount(text: string): number {
   return Array.from(text).length;
@@ -251,16 +266,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     () => deriveChatInputPetMood(sessionMachineSnapshot),
     [sessionMachineSnapshot],
   );
-  const [agentCompanionEnabled, setAgentCompanionEnabled] = useState(
-    () => aiExperienceConfigService.getSettings().enable_agent_companion,
-  );
-  useEffect(() => {
-    setAgentCompanionEnabled(aiExperienceConfigService.getSettings().enable_agent_companion);
-    return aiExperienceConfigService.addChangeListener(settings => {
-      setAgentCompanionEnabled(settings.enable_agent_companion);
-    });
-  }, []);
-  const showCollapsedPet =
+  const agentCompanionEnabled = useAgentCompanionEnabled();
+  const wantsCollapsedCompanion =
     agentCompanionEnabled && !inputState.isActive && !inputState.value.trim();
   const { transition, setQueuedInput } = useSessionStateMachineActions(effectiveTargetSessionId);
 
@@ -2073,7 +2080,25 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   }, []);
 
   const isCollapsedProcessing = !inputState.isActive && !!derivedState?.isProcessing;
-  const petReplacesStopChrome = agentCompanionEnabled && isCollapsedProcessing;
+  const collapsedCompanionScenario = useMemo<CompanionScenario>(() => ({
+    id: CHAT_INPUT_COMPANION_SLOT_ID,
+    enabled: wantsCollapsedCompanion,
+    priority: CHAT_INPUT_COMPANION_PRIORITY,
+    target: {
+      kind: 'inline',
+      slotId: CHAT_INPUT_COMPANION_SLOT_ID,
+    },
+    presentation: {
+      action: CHAT_INPUT_COMPANION_ACTION[petMood] ?? 'idle',
+      size: isCollapsedProcessing ? 'md' : 'sm',
+      emphasis: isCollapsedProcessing ? 'pulse' : 'normal',
+      direction: petMood === 'waiting' ? 'right' : undefined,
+    },
+  }), [isCollapsedProcessing, petMood, wantsCollapsedCompanion]);
+  useCompanionScenario(collapsedCompanionScenario);
+  const activeCollapsedCompanion = useCompanionSlotScenario(CHAT_INPUT_COMPANION_SLOT_ID);
+  const showCollapsedCompanion = wantsCollapsedCompanion && !!activeCollapsedCompanion;
+  const petReplacesStopChrome = showCollapsedCompanion && isCollapsedProcessing;
   const petStopClickable = petReplacesStopChrome && !!derivedState?.canCancel;
   const collapsedPetSplitSend =
     petReplacesStopChrome && derivedState?.sendButtonMode === 'split';
@@ -2200,7 +2225,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       >
         <div 
           ref={containerRef}
-          className={`bitfun-chat-input ${inputState.isActive ? 'bitfun-chat-input--active' : 'bitfun-chat-input--collapsed'} ${inputState.isExpanded ? 'bitfun-chat-input--expanded' : ''} ${derivedState?.isProcessing ? 'bitfun-chat-input--processing' : ''} ${showCollapsedPet ? 'bitfun-chat-input--pet-visible' : ''} ${petReplacesStopChrome ? 'bitfun-chat-input--pet-replaces-stop' : ''} ${collapsedPetSplitSend ? 'bitfun-chat-input--pet-split-send' : ''} ${className}`}
+          className={`bitfun-chat-input ${inputState.isActive ? 'bitfun-chat-input--active' : 'bitfun-chat-input--collapsed'} ${inputState.isExpanded ? 'bitfun-chat-input--expanded' : ''} ${derivedState?.isProcessing ? 'bitfun-chat-input--processing' : ''} ${showCollapsedCompanion ? 'bitfun-chat-input--pet-visible' : ''} ${petReplacesStopChrome ? 'bitfun-chat-input--pet-replaces-stop' : ''} ${collapsedPetSplitSend ? 'bitfun-chat-input--pet-split-send' : ''} ${className}`}
           onClick={!inputState.isActive ? handleActivate : undefined}
           data-testid="chat-input-container"
         >
@@ -2213,7 +2238,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
         <div className="bitfun-chat-input__container">
           <div className={`bitfun-chat-input__box ${inputState.isExpanded ? 'bitfun-chat-input__box--expanded' : ''}`}>
-            {showCollapsedPet && (
+            {showCollapsedCompanion && (
               <div
                 className={[
                   'bitfun-chat-input__pet-wrap',
@@ -2234,16 +2259,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                       }}
                       aria-label={t('input.stopGeneration')}
                     >
-                      <ChatInputPixelPet
-                        mood={petMood}
-                        layout={petReplacesStopChrome ? 'stopRight' : 'center'}
-                      />
+                      <CompanionSlot slotId={CHAT_INPUT_COMPANION_SLOT_ID} />
                     </button>
                   ) : (
-                    <ChatInputPixelPet
-                      mood={petMood}
-                      layout={petReplacesStopChrome ? 'stopRight' : 'center'}
-                    />
+                    <CompanionSlot slotId={CHAT_INPUT_COMPANION_SLOT_ID} />
                   )}
                 </div>
               </div>
@@ -2334,7 +2353,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
               {!inputState.isActive &&
                 !inputState.value.trim() &&
-                !agentCompanionEnabled && (
+                !derivedState?.isProcessing &&
+                !showCollapsedCompanion && (
                 <span className="bitfun-chat-input__space-hint">
                   <Trans
                     i18nKey="input.spaceToActivate"

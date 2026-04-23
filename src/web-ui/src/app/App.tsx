@@ -6,13 +6,19 @@ import { SSHRemoteProvider } from '../features/ssh-remote';
 import AppLayout from './layout/AppLayout';
 import { useCurrentModelConfig } from '../hooks/useModelConfigs';
 import { ContextMenuRenderer } from '../shared/context-menu-system/components/ContextMenuRenderer';
-import { NotificationContainer, NotificationCenter } from '../shared/notification-system';
+import {
+  NotificationCompanionBridge,
+  NotificationContainer,
+  NotificationCenter,
+} from '../shared/notification-system';
 import { AnnouncementProvider } from '../shared/announcement-system';
 import { ConfirmDialogRenderer } from '../component-library';
 import { createLogger } from '@/shared/utils/logger';
 import { useWorkspaceContext } from '../infrastructure/contexts/WorkspaceContext';
 import SplashScreen from './components/SplashScreen/SplashScreen';
+import { AppCompanionBridge } from './components/AppCompanionBridge';
 import { useGlobalSceneShortcuts } from './hooks/useGlobalSceneShortcuts';
+import { CompanionSystemProvider } from '@/shared/companion-system';
 
 // Toolbar Mode
 import { ToolbarModeProvider } from '../flow_chat';
@@ -204,6 +210,9 @@ function App() {
             {/* Notification system */}
             <NotificationContainer />
             <NotificationCenter />
+            <NotificationCompanionBridge />
+            <AppCompanionBridge />
+            <CompanionSystemProvider />
 
             {/* Confirm dialog */}
             <ConfirmDialogRenderer />

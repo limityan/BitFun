@@ -9,7 +9,7 @@
     },
     "agentCompanion": {
       "title": "Agent companion",
-      "subtitle": "Show BitFun companion in the collapsed chat input.",
+      "subtitle": "Show the BitFun companion in supported chat scenes and guidance overlays.",
       "enable": "Show Agent companion"
     }
   },

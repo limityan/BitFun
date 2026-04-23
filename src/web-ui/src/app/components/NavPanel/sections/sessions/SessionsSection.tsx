@@ -374,7 +374,10 @@ const SessionsSection: React.FC<SessionsSectionProps> = ({
   }
 
   return (
-    <div className="bitfun-nav-panel__inline-list">
+    <div
+      className="bitfun-nav-panel__inline-list"
+      data-companion-anchor="nav-session-list"
+    >
       {visibleItems.map(({ session, level }) => {
           const isEditing = editingSessionId === session.sessionId;
           const relationship = resolveSessionRelationship(session);

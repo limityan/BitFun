@@ -1,4 +1,5 @@
 import { i18nService } from '@/infrastructure/i18n';
+import type { CompanionCharacter } from '@/shared/companion-system/types';
 
 const t = (key: string, options?: Record<string, unknown>) => i18nService.t(key, options);
 export interface GlobalConfig {
@@ -62,8 +63,11 @@ export interface AIExperienceConfig {
   /** Whether to enable visual mode (use Mermaid diagrams to illustrate complex logic and flows). */
   enable_visual_mode: boolean;
 
-  /** Whether to show the pixel Agent companion in the collapsed chat input. */
+  /** Whether to show the BitFun companion in supported chat scenes. */
   enable_agent_companion: boolean;
+
+  /** Which BitFun companion character is currently selected. */
+  agent_companion_character: CompanionCharacter;
 }
 
 export type ModelCapability =

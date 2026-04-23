@@ -9,7 +9,7 @@
     },
     "agentCompanion": {
       "title": "Agent 伙伴",
-      "subtitle": "在收起的会话输入框中显示BitFun伙伴。",
+      "subtitle": "在支持的聊天场景与引导浮层中显示 BitFun 伙伴。",
       "enable": "显示 Agent 伙伴"
     }
   },
