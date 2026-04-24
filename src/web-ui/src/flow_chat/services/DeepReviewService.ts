@@ -5,6 +5,7 @@ import { closeBtwSessionInAuxPane, openBtwSessionInAuxPane } from './openBtwSess
 import { FlowChatManager } from './FlowChatManager';
 import { flowChatStore } from '../store/FlowChatStore';
 import {
+  buildEffectiveReviewTeamManifest,
   buildReviewTeamPromptBlock,
   prepareDefaultReviewTeamForLaunch,
 } from '@/shared/services/reviewTeamService';
@@ -147,6 +148,7 @@ export async function buildDeepReviewPromptFromSessionFiles(
   workspacePath?: string,
 ): Promise<string> {
   const team = await prepareDefaultReviewTeamForLaunch(workspacePath);
+  const manifest = buildEffectiveReviewTeamManifest(team, { workspacePath });
   const fileList = formatFileList(filePaths);
   const contextBlock = extraContext?.trim()
     ? `User-provided focus:\n${extraContext.trim()}`
@@ -157,7 +159,7 @@ export async function buildDeepReviewPromptFromSessionFiles(
     'Review scope: ONLY inspect the following files modified in this session.',
     fileList,
     contextBlock,
-    buildReviewTeamPromptBlock(team),
+    buildReviewTeamPromptBlock(team, manifest),
     'Keep the scope tight to the listed files unless a directly-related dependency must be read to confirm a finding.',
   ].join('\n\n');
 }
@@ -167,6 +169,7 @@ export async function buildDeepReviewPromptFromSlashCommand(
   workspacePath?: string,
 ): Promise<string> {
   const team = await prepareDefaultReviewTeamForLaunch(workspacePath);
+  const manifest = buildEffectiveReviewTeamManifest(team, { workspacePath });
   const trimmed = commandText.trim();
   const extraContext = trimmed.replace(/^\/deepreview\b/i, '').trim();
   const contextBlock = extraContext
@@ -180,7 +183,7 @@ export async function buildDeepReviewPromptFromSlashCommand(
     'Otherwise, review the current workspace changes relative to HEAD.',
     `Original command:\n${trimmed}`,
     contextBlock,
-    buildReviewTeamPromptBlock(team),
+    buildReviewTeamPromptBlock(team, manifest),
   ].join('\n\n');
 }
 

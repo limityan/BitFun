@@ -375,7 +375,12 @@ impl Tool for TaskTool {
             .map(str::trim)
             .is_some_and(|agent_type| agent_type == DEEP_REVIEW_AGENT_TYPE)
         {
-            let policy = load_default_deep_review_policy().await;
+            let policy = load_default_deep_review_policy().await.map_err(|error| {
+                BitFunError::tool(format!(
+                    "Failed to load DeepReview execution policy: {}",
+                    error
+                ))
+            })?;
             let role = policy
                 .classify_subagent(&subagent_type)
                 .map_err(|violation| {

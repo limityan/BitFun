@@ -34,6 +34,13 @@ impl CodeReviewTool {
     }
 
     pub fn input_schema_value_for_language(lang_code: &str) -> Value {
+        Self::input_schema_value_for_language_with_mode(lang_code, false)
+    }
+
+    fn input_schema_value_for_language_with_mode(
+        lang_code: &str,
+        require_deep_fields: bool,
+    ) -> Value {
         let copy = code_review_copy_for_language(lang_code);
         let (
             scope_desc,
@@ -64,6 +71,15 @@ impl CodeReviewTool {
                 "Concrete remediation / follow-up plan items (in Simplified Chinese)",
             ),
         };
+        let mut required = vec!["summary", "issues", "positive_points"];
+        if require_deep_fields {
+            required.extend([
+                "review_mode",
+                "review_scope",
+                "reviewers",
+                "remediation_plan",
+            ]);
+        }
 
         json!({
             "type": "object",
@@ -200,15 +216,22 @@ impl CodeReviewTool {
                     }
                 }
             },
-            "required": ["summary", "issues", "positive_points"],
+            "required": required,
             "additionalProperties": false
         })
+    }
+
+    fn is_deep_review_context(context: Option<&ToolUseContext>) -> bool {
+        context
+            .and_then(|context| context.agent_type.as_deref())
+            .map(str::trim)
+            .is_some_and(|agent_type| agent_type == "DeepReview")
     }
 
     /// Validate and fill missing fields with default values
     ///
     /// When AI-returned data is missing certain fields, fill with default values to avoid entire review failure
-    fn validate_and_fill_defaults(input: &mut Value) {
+    fn validate_and_fill_defaults(input: &mut Value, deep_review: bool) {
         // Fill summary default values
         if input.get("summary").is_none() {
             warn!("CodeReview tool missing summary field, using default values");
@@ -252,7 +275,12 @@ impl CodeReviewTool {
             input["positive_points"] = json!(["None"]);
         }
 
-        if input.get("review_mode").is_none() {
+        if deep_review {
+            input["review_mode"] = json!("deep");
+            if input.get("review_scope").is_none() {
+                input["review_scope"] = json!("Deep review scope was not provided");
+            }
+        } else if input.get("review_mode").is_none() {
             input["review_mode"] = json!("standard");
         }
 
@@ -315,8 +343,11 @@ impl Tool for CodeReviewTool {
         &self,
         context: Option<&crate::agentic::tools::framework::ToolUseContext>,
     ) -> Value {
-        let _ = context;
-        self.input_schema_for_model().await
+        let lang = get_app_language_code().await;
+        Self::input_schema_value_for_language_with_mode(
+            lang.as_str(),
+            Self::is_deep_review_context(context),
+        )
     }
 
     fn is_readonly(&self) -> bool {
@@ -330,15 +361,90 @@ impl Tool for CodeReviewTool {
     async fn call_impl(
         &self,
         input: &Value,
-        _context: &ToolUseContext,
+        context: &ToolUseContext,
     ) -> BitFunResult<Vec<ToolResult>> {
         let mut filled_input = input.clone();
-        Self::validate_and_fill_defaults(&mut filled_input);
+        Self::validate_and_fill_defaults(
+            &mut filled_input,
+            Self::is_deep_review_context(Some(context)),
+        );
 
         Ok(vec![ToolResult::Result {
             data: filled_input,
             result_for_assistant: Some("Code review results submitted successfully".to_string()),
             image_attachments: None,
         }])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::CodeReviewTool;
+    use crate::agentic::tools::framework::{Tool, ToolResult, ToolUseContext};
+    use serde_json::json;
+    use std::collections::HashMap;
+
+    fn tool_context(agent_type: Option<&str>) -> ToolUseContext {
+        ToolUseContext {
+            tool_call_id: None,
+            agent_type: agent_type.map(str::to_string),
+            session_id: None,
+            dialog_turn_id: None,
+            workspace: None,
+            custom_data: HashMap::new(),
+            computer_use_host: None,
+            cancellation_token: None,
+            workspace_services: None,
+        }
+    }
+
+    #[tokio::test]
+    async fn deep_review_schema_requires_deep_review_fields() {
+        let tool = CodeReviewTool::new();
+        let context = tool_context(Some("DeepReview"));
+        let schema = tool
+            .input_schema_for_model_with_context(Some(&context))
+            .await;
+        let required = schema["required"].as_array().expect("required fields");
+
+        for field in [
+            "review_mode",
+            "review_scope",
+            "reviewers",
+            "remediation_plan",
+        ] {
+            assert!(
+                required.iter().any(|value| value.as_str() == Some(field)),
+                "DeepReview schema should require {field}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn deep_review_submission_defaults_missing_mode_to_deep() {
+        let tool = CodeReviewTool::new();
+        let context = tool_context(Some("DeepReview"));
+        let result = tool
+            .call_impl(
+                &json!({
+                    "summary": {
+                        "overall_assessment": "No blocking issues",
+                        "risk_level": "low",
+                        "recommended_action": "approve"
+                    },
+                    "issues": [],
+                    "positive_points": []
+                }),
+                &context,
+            )
+            .await
+            .expect("submit review result");
+
+        let ToolResult::Result { data, .. } = &result[0] else {
+            panic!("expected tool result");
+        };
+        assert_eq!(data["review_mode"], "deep");
+        assert!(data["reviewers"].as_array().is_some());
+        assert!(data["remediation_plan"].as_array().is_some());
     }
 }

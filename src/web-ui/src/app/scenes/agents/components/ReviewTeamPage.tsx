@@ -246,6 +246,7 @@ const ReviewTeamPage: React.FC = () => {
         subagentId: member.subagentId,
         enabled: true,
         model: modelId,
+        workspacePath: workspacePath || undefined,
       });
       notification.success(
         t('reviewTeams.detail.messages.modelUpdated', {
@@ -265,7 +266,7 @@ const ReviewTeamPage: React.FC = () => {
     } finally {
       setSavingMemberId(null);
     }
-  }, [getLocalizedMemberName, loadData, notification, t]);
+  }, [getLocalizedMemberName, loadData, notification, t, workspacePath]);
 
   const handleAddMember = useCallback(async () => {
     if (!candidateId) {
@@ -278,6 +279,7 @@ const ReviewTeamPage: React.FC = () => {
       await SubagentAPI.updateSubagentConfig({
         subagentId: candidateId,
         enabled: true,
+        workspacePath: workspacePath || undefined,
       });
       await loadData();
       setSelectedMemberId(`extra:${candidateId}`);
@@ -297,7 +299,7 @@ const ReviewTeamPage: React.FC = () => {
     } finally {
       setAddingMember(false);
     }
-  }, [candidateId, loadData, notification, t]);
+  }, [candidateId, loadData, notification, t, workspacePath]);
 
   const handleRemoveMember = useCallback(async (member: ReviewTeamMember) => {
     if (member.locked) {

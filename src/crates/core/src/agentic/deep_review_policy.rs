@@ -1,5 +1,7 @@
 use crate::service::config::global::GlobalConfigManager;
+use crate::util::errors::{BitFunError, BitFunResult};
 use dashmap::DashMap;
+use log::warn;
 use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::sync::LazyLock;
@@ -10,6 +12,7 @@ pub const REVIEW_JUDGE_AGENT_TYPE: &str = "ReviewJudge";
 pub const REVIEW_FIXER_AGENT_TYPE: &str = "ReviewFixer";
 pub const CORE_REVIEWER_AGENT_TYPES: [&str; 3] =
     ["ReviewBusinessLogic", "ReviewPerformance", "ReviewSecurity"];
+const DEFAULT_REVIEW_TEAM_CONFIG_PATH: &str = "ai.review_teams.default";
 
 const DEFAULT_REVIEWER_TIMEOUT_SECONDS: u64 = 300;
 const DEFAULT_JUDGE_TIMEOUT_SECONDS: u64 = 240;
@@ -259,16 +262,44 @@ impl DeepReviewBudgetTracker {
 static GLOBAL_DEEP_REVIEW_BUDGET_TRACKER: LazyLock<DeepReviewBudgetTracker> =
     LazyLock::new(DeepReviewBudgetTracker::default);
 
-pub async fn load_default_deep_review_policy() -> DeepReviewExecutionPolicy {
-    let raw_config = match GlobalConfigManager::get_service().await {
-        Ok(config_service) => config_service
-            .get_config::<Value>(Some("ai.review_teams.default"))
-            .await
-            .ok(),
-        Err(_) => None,
+pub async fn load_default_deep_review_policy() -> BitFunResult<DeepReviewExecutionPolicy> {
+    let config_service = GlobalConfigManager::get_service().await.map_err(|error| {
+        BitFunError::config(format!(
+            "Failed to load DeepReview execution policy because config service is unavailable: {}",
+            error
+        ))
+    })?;
+
+    let raw_config = match config_service
+        .get_config::<Value>(Some(DEFAULT_REVIEW_TEAM_CONFIG_PATH))
+        .await
+    {
+        Ok(config) => Some(config),
+        Err(error) if is_missing_default_review_team_config_error(&error) => {
+            warn!(
+                "DeepReview policy config missing at {}, using defaults",
+                DEFAULT_REVIEW_TEAM_CONFIG_PATH
+            );
+            None
+        }
+        Err(error) => {
+            return Err(BitFunError::config(format!(
+                "Failed to load DeepReview execution policy from {}: {}",
+                DEFAULT_REVIEW_TEAM_CONFIG_PATH, error
+            )));
+        }
     };
 
-    DeepReviewExecutionPolicy::from_config_value(raw_config.as_ref())
+    Ok(DeepReviewExecutionPolicy::from_config_value(
+        raw_config.as_ref(),
+    ))
+}
+
+pub fn is_missing_default_review_team_config_error(error: &BitFunError) -> bool {
+    error.to_string().contains(&format!(
+        "Config path '{}' not found",
+        DEFAULT_REVIEW_TEAM_CONFIG_PATH
+    ))
 }
 
 pub fn record_deep_review_task_budget(
@@ -339,4 +370,23 @@ fn number_as_i64(value: &Value) -> Option<i64> {
             .as_u64()
             .map(|value| i64::try_from(value).unwrap_or(i64::MAX))
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_missing_default_review_team_config_error;
+    use crate::util::errors::BitFunError;
+
+    #[test]
+    fn only_missing_default_review_team_path_can_fallback_to_defaults() {
+        assert!(is_missing_default_review_team_config_error(
+            &BitFunError::config("Config path 'ai.review_teams.default' not found")
+        ));
+        assert!(!is_missing_default_review_team_config_error(
+            &BitFunError::config("Config service unavailable")
+        ));
+        assert!(!is_missing_default_review_team_config_error(
+            &BitFunError::config("Config path 'ai.review_teams.default.extra' not found")
+        ));
+    }
 }

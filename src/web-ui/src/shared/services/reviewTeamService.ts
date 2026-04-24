@@ -77,6 +77,28 @@ export interface ReviewTeam {
   extraMembers: ReviewTeamMember[];
 }
 
+export interface ReviewTeamManifestMember {
+  subagentId: string;
+  displayName: string;
+  roleName: string;
+  model: string;
+  locked: boolean;
+  source: ReviewTeamMember['source'];
+  subagentSource: ReviewTeamMember['subagentSource'];
+  reason?: 'disabled' | 'unavailable';
+}
+
+export interface ReviewTeamRunManifest {
+  reviewMode: 'deep';
+  workspacePath?: string;
+  policySource: 'default-review-team-config';
+  executionPolicy: ReviewTeamExecutionPolicy;
+  coreReviewers: ReviewTeamManifestMember[];
+  qualityGateReviewer?: ReviewTeamManifestMember;
+  enabledExtraReviewers: ReviewTeamManifestMember[];
+  skippedReviewers: ReviewTeamManifestMember[];
+}
+
 const EXTRA_MEMBER_DEFAULTS = {
   roleName: 'Additional Specialist Reviewer',
   description:
@@ -419,12 +441,13 @@ export async function prepareDefaultReviewTeamForLaunch(
   }
 
   await Promise.all(
-    team.members
+    team.coreMembers
       .filter((member) => member.available)
       .map((member) =>
         SubagentAPI.updateSubagentConfig({
           subagentId: member.subagentId,
           enabled: true,
+          workspacePath,
         }),
       ),
   );
@@ -432,13 +455,99 @@ export async function prepareDefaultReviewTeamForLaunch(
   return loadDefaultReviewTeam(workspacePath);
 }
 
+function toManifestMember(
+  member: ReviewTeamMember,
+  reason?: ReviewTeamManifestMember['reason'],
+): ReviewTeamManifestMember {
+  return {
+    subagentId: member.subagentId,
+    displayName: member.displayName,
+    roleName: member.roleName,
+    model: member.model || DEFAULT_REVIEW_TEAM_MODEL,
+    locked: member.locked,
+    source: member.source,
+    subagentSource: member.subagentSource,
+    ...(reason ? { reason } : {}),
+  };
+}
+
+export function buildEffectiveReviewTeamManifest(
+  team: ReviewTeam,
+  options: {
+    workspacePath?: string;
+    policySource?: ReviewTeamRunManifest['policySource'];
+  } = {},
+): ReviewTeamRunManifest {
+  const availableCoreMembers = team.coreMembers.filter((member) => member.available);
+  const unavailableCoreMembers = team.coreMembers.filter((member) => !member.available);
+  const coreReviewers = availableCoreMembers
+    .filter((member) => member.definitionKey !== 'judge')
+    .map((member) => toManifestMember(member));
+  const qualityGateReviewer = availableCoreMembers.find(
+    (member) => member.definitionKey === 'judge',
+  );
+  const enabledExtraReviewers = team.extraMembers
+    .filter((member) => member.available && member.enabled)
+    .map((member) => toManifestMember(member));
+  const skippedReviewers = [
+    ...team.extraMembers
+      .filter((member) => !member.available || !member.enabled)
+      .map((member) =>
+        toManifestMember(member, member.available ? 'disabled' : 'unavailable'),
+      ),
+    ...unavailableCoreMembers.map((member) =>
+      toManifestMember(member, 'unavailable'),
+    ),
+  ];
+
+  return {
+    reviewMode: 'deep',
+    ...(options.workspacePath ? { workspacePath: options.workspacePath } : {}),
+    policySource: options.policySource ?? 'default-review-team-config',
+    executionPolicy: team.executionPolicy,
+    coreReviewers,
+    ...(qualityGateReviewer
+      ? { qualityGateReviewer: toManifestMember(qualityGateReviewer) }
+      : {}),
+    enabledExtraReviewers,
+    skippedReviewers,
+  };
+}
+
 function formatResponsibilities(items: string[]): string {
   return items.map((item) => `    - ${item}`).join('\n');
 }
 
-export function buildReviewTeamPromptBlock(team: ReviewTeam): string {
+function formatManifestList(
+  members: ReviewTeamManifestMember[],
+  emptyValue: string,
+): string {
+  if (members.length === 0) {
+    return emptyValue;
+  }
+
+  return members
+    .map((member) =>
+      member.reason
+        ? `${member.subagentId}: ${member.reason}`
+        : member.subagentId,
+    )
+    .join(', ');
+}
+
+export function buildReviewTeamPromptBlock(
+  team: ReviewTeam,
+  manifest = buildEffectiveReviewTeamManifest(team),
+): string {
+  const activeSubagentIds = new Set([
+    ...manifest.coreReviewers.map((member) => member.subagentId),
+    ...manifest.enabledExtraReviewers.map((member) => member.subagentId),
+    ...(manifest.qualityGateReviewer
+      ? [manifest.qualityGateReviewer.subagentId]
+      : []),
+  ]);
   const members = team.members
-    .filter((member) => member.available)
+    .filter((member) => member.available && activeSubagentIds.has(member.subagentId))
     .map((member) => [
       `- ${member.displayName}`,
       `  - subagent_type: ${member.subagentId}`,
@@ -457,15 +566,32 @@ export function buildReviewTeamPromptBlock(team: ReviewTeam): string {
     `- auto_fix_max_rounds: ${team.executionPolicy.autoFixMaxRounds}`,
     `- auto_fix_max_stalled_rounds: ${team.executionPolicy.autoFixMaxStalledRounds}`,
   ].join('\n');
+  const manifestBlock = [
+    'Run manifest:',
+    `- review_mode: ${manifest.reviewMode}`,
+    `- workspace_path: ${manifest.workspacePath || 'inherited from current session'}`,
+    `- policy_source: ${manifest.policySource}`,
+    `- core_reviewers: ${formatManifestList(manifest.coreReviewers, 'none')}`,
+    `- quality_gate_reviewer: ${manifest.qualityGateReviewer?.subagentId || 'none'}`,
+    `- enabled_extra_reviewers: ${formatManifestList(manifest.enabledExtraReviewers, 'none')}`,
+    '- skipped_reviewers:',
+    ...(manifest.skippedReviewers.length > 0
+      ? manifest.skippedReviewers.map(
+        (member) => `  - ${member.subagentId}: ${member.reason || 'skipped'}`,
+      )
+      : ['  - none']),
+  ].join('\n');
 
   return [
+    manifestBlock,
     'Configured review team:',
     members || '- No team members available.',
     'Execution policy:',
     executionPolicy,
     'Team execution rules:',
-    '- Always run the four locked core reviewers.',
-    '- If extra reviewers are configured, run them in parallel with the core reviewers whenever possible.',
+    '- Always run the three locked reviewer roles first: ReviewBusinessLogic, ReviewPerformance, and ReviewSecurity.',
+    '- Run ReviewJudge only after the reviewer batch finishes, as the quality-gate pass.',
+    '- If extra reviewers are configured and enabled, run them in parallel with the three locked reviewers whenever possible.',
     '- If reviewer_timeout_seconds is greater than 0, pass timeout_seconds with that value to every reviewer Task call.',
     '- If judge_timeout_seconds is greater than 0, pass timeout_seconds with that value to the ReviewJudge Task call.',
     '- If auto_fix_enabled is true and validated findings remain, run ReviewFixer and then rerun the team incrementally on the fix diff.',
