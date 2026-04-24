@@ -194,6 +194,29 @@
         "saveFailed": "保存审核团队配置失败。"
       }
     },
+    "strategy": {
+      "teamTitle": "审核策略",
+      "teamDescription": "选择整个审核团队的默认审查深度。单个审核员可以在成员详情中单独覆盖。",
+      "memberTitle": "审核员策略",
+      "memberDescription": "只有当某个角色需要不同于团队默认值的审查深度时，才建议单独覆盖。",
+      "impact": "大约 {{token}} token 消耗，{{runtime}} 耗时。",
+      "inheritLabel": "继承团队（{{level}}）",
+      "inheritSummary": "该审核员使用团队级审核策略。",
+      "modelFallbackShort": "已回退",
+      "modelFallbackDescription": "已配置的模型 {{configuredModel}} 当前不可用，因此该审核员会使用 {{model}}。",
+      "quick": {
+        "label": "快速",
+        "summary": "面向指定 diff 或范围的快速筛查，只保留高置信问题。"
+      },
+      "normal": {
+        "label": "正常",
+        "summary": "适合日常代码审查的均衡深度，兼顾覆盖面和证据质量。"
+      },
+      "deep": {
+        "label": "深度",
+        "summary": "适合高风险、大范围或发布前变更的多轮深度审查。"
+      }
+    },
     "members": {
       "businessLogic": {
         "funName": "逻辑神探 Locke",

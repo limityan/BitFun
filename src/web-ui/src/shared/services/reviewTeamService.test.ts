@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { configAPI } from '@/infrastructure/api/service-api/ConfigAPI';
 import {
   DEFAULT_REVIEW_TEAM_EXECUTION_POLICY,
+  DEFAULT_REVIEW_TEAM_STRATEGY_LEVEL,
   buildEffectiveReviewTeamManifest,
   buildReviewTeamPromptBlock,
   loadDefaultReviewTeamConfig,
@@ -35,20 +36,25 @@ describe('reviewTeamService', () => {
 
   const storedConfigWithExtra = (
     extraSubagentIds: string[] = [],
+    overrides: Partial<ReviewTeamStoredConfig> = {},
   ): ReviewTeamStoredConfig => ({
     extra_subagent_ids: extraSubagentIds,
+    strategy_level: DEFAULT_REVIEW_TEAM_STRATEGY_LEVEL,
+    member_strategy_overrides: {},
     reviewer_timeout_seconds: DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.reviewerTimeoutSeconds,
     judge_timeout_seconds: DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.judgeTimeoutSeconds,
     auto_fix_enabled: DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.autoFixEnabled,
     auto_fix_max_rounds: DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.autoFixMaxRounds,
     auto_fix_max_stalled_rounds:
       DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.autoFixMaxStalledRounds,
+    ...overrides,
   });
 
   const subagent = (
     id: string,
     enabled = true,
     subagentSource: SubagentInfo['subagentSource'] = 'builtin',
+    model = 'fast',
   ): SubagentInfo => ({
     id,
     name: id,
@@ -58,7 +64,7 @@ describe('reviewTeamService', () => {
     defaultTools: ['Read'],
     enabled,
     subagentSource,
-    model: 'fast',
+    model,
   });
 
   const coreSubagents = (enabled = true): SubagentInfo[] => [
@@ -75,6 +81,8 @@ describe('reviewTeamService', () => {
 
     await expect(loadDefaultReviewTeamConfig()).resolves.toEqual({
       extra_subagent_ids: [],
+      strategy_level: 'normal',
+      member_strategy_overrides: {},
       reviewer_timeout_seconds: DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.reviewerTimeoutSeconds,
       judge_timeout_seconds: DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.judgeTimeoutSeconds,
       auto_fix_enabled: DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.autoFixEnabled,
@@ -93,6 +101,29 @@ describe('reviewTeamService', () => {
 
     expect(config.auto_fix_enabled).toBe(false);
     expect(DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.autoFixEnabled).toBe(false);
+    expect(config.strategy_level).toBe('normal');
+  });
+
+  it('normalizes team strategy and member strategy overrides', async () => {
+    vi.mocked(configAPI.getConfig).mockResolvedValueOnce({
+      extra_subagent_ids: ['ExtraOne'],
+      strategy_level: 'deep',
+      member_strategy_overrides: {
+        ReviewSecurity: 'quick',
+        ReviewJudge: 'deep',
+        ExtraOne: 'normal',
+        ExtraTwo: 'invalid',
+      },
+    });
+
+    await expect(loadDefaultReviewTeamConfig()).resolves.toMatchObject({
+      strategy_level: 'deep',
+      member_strategy_overrides: {
+        ReviewSecurity: 'quick',
+        ReviewJudge: 'deep',
+        ExtraOne: 'normal',
+      },
+    });
   });
 
   it('propagates config errors that are not missing review team config paths', async () => {
@@ -177,6 +208,7 @@ describe('reviewTeamService', () => {
     });
 
     expect(manifest.reviewMode).toBe('deep');
+    expect(manifest.strategyLevel).toBe('normal');
     expect(manifest.workspacePath).toBe('D:/workspace/project-a');
     expect(manifest.policySource).toBe('default-review-team-config');
     expect(manifest.coreReviewers.map((member) => member.subagentId)).toEqual([
@@ -194,6 +226,90 @@ describe('reviewTeamService', () => {
         reason: 'disabled',
       }),
     ]);
+  });
+
+  it('applies per-member strategy overrides in the launch manifest and prompt', () => {
+    const team = resolveDefaultReviewTeam(
+      [
+        ...coreSubagents(),
+        subagent('ExtraEnabled', true, 'user'),
+      ],
+      storedConfigWithExtra(['ExtraEnabled'], {
+        strategy_level: 'quick',
+        member_strategy_overrides: {
+          ReviewSecurity: 'deep',
+          ExtraEnabled: 'normal',
+        },
+      }),
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      workspacePath: 'D:/workspace/project-a',
+    });
+
+    expect(manifest.strategyLevel).toBe('quick');
+    expect(manifest.coreReviewers).toEqual([
+      expect.objectContaining({
+        subagentId: 'ReviewBusinessLogic',
+        strategyLevel: 'quick',
+        strategySource: 'team',
+      }),
+      expect.objectContaining({
+        subagentId: 'ReviewPerformance',
+        strategyLevel: 'quick',
+        strategySource: 'team',
+      }),
+      expect.objectContaining({
+        subagentId: 'ReviewSecurity',
+        strategyLevel: 'deep',
+        strategySource: 'member',
+      }),
+    ]);
+    expect(manifest.enabledExtraReviewers[0]).toMatchObject({
+      subagentId: 'ExtraEnabled',
+      strategyLevel: 'normal',
+      strategySource: 'member',
+    });
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
+    expect(promptBlock).toContain('- team_strategy: quick');
+    expect(promptBlock).toContain('subagent_type: ReviewSecurity');
+    expect(promptBlock).toContain('strategy: deep');
+    expect(promptBlock).toContain('Token/time impact: approximately 1.8-2.5x token usage and 1.5-2.5x runtime.');
+  });
+
+  it('falls back removed concrete reviewer models to the strategy default model slot', () => {
+    const team = resolveDefaultReviewTeam(
+      [
+        ...coreSubagents(),
+        subagent('ExtraDeletedModel', true, 'user', 'deleted-model'),
+        subagent('ExtraCustomModel', true, 'user', 'model-kept'),
+      ],
+      storedConfigWithExtra(['ExtraDeletedModel', 'ExtraCustomModel'], {
+        strategy_level: 'deep',
+      }),
+      { availableModelIds: ['model-kept'] },
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team);
+    const deletedModelMember = manifest.enabledExtraReviewers.find(
+      (member) => member.subagentId === 'ExtraDeletedModel',
+    );
+    const customModelMember = manifest.enabledExtraReviewers.find(
+      (member) => member.subagentId === 'ExtraCustomModel',
+    );
+
+    expect(deletedModelMember).toMatchObject({
+      model: 'primary',
+      configuredModel: 'deleted-model',
+      modelFallbackReason: 'model_removed',
+      strategyLevel: 'deep',
+    });
+    expect(customModelMember).toMatchObject({
+      model: 'model-kept',
+      configuredModel: 'model-kept',
+      modelFallbackReason: undefined,
+    });
   });
 
   it('renders the run manifest without scheduling disabled extra reviewers', () => {
@@ -214,6 +330,7 @@ describe('reviewTeamService', () => {
     );
 
     expect(promptBlock).toContain('Run manifest:');
+    expect(promptBlock).toContain('- team_strategy: normal');
     expect(promptBlock).toContain('- workspace_path: D:/workspace/project-a');
     expect(promptBlock).toContain('quality_gate_reviewer: ReviewJudge');
     expect(promptBlock).toContain('enabled_extra_reviewers: ExtraEnabled');

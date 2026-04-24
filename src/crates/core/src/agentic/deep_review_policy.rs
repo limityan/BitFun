@@ -3,7 +3,7 @@ use crate::util::errors::{BitFunError, BitFunResult};
 use dashmap::DashMap;
 use log::warn;
 use serde_json::{json, Value};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::LazyLock;
 use std::time::{Duration, Instant};
 
@@ -16,7 +16,7 @@ const DEFAULT_REVIEW_TEAM_CONFIG_PATH: &str = "ai.review_teams.default";
 
 const DEFAULT_REVIEWER_TIMEOUT_SECONDS: u64 = 300;
 const DEFAULT_JUDGE_TIMEOUT_SECONDS: u64 = 240;
-const DEFAULT_AUTO_FIX_ENABLED: bool = true;
+const DEFAULT_AUTO_FIX_ENABLED: bool = false;
 const DEFAULT_AUTO_FIX_MAX_ROUNDS: usize = 2;
 const DEFAULT_AUTO_FIX_MAX_STALLED_ROUNDS: usize = 1;
 const MAX_TIMEOUT_SECONDS: u64 = 3600;
@@ -31,9 +31,35 @@ pub enum DeepReviewSubagentRole {
     Fixer,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DeepReviewStrategyLevel {
+    Quick,
+    Normal,
+    Deep,
+}
+
+impl Default for DeepReviewStrategyLevel {
+    fn default() -> Self {
+        Self::Normal
+    }
+}
+
+impl DeepReviewStrategyLevel {
+    fn from_value(value: Option<&Value>) -> Option<Self> {
+        match value.and_then(Value::as_str) {
+            Some("quick") => Some(Self::Quick),
+            Some("normal") => Some(Self::Normal),
+            Some("deep") => Some(Self::Deep),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DeepReviewExecutionPolicy {
     pub extra_subagent_ids: Vec<String>,
+    pub strategy_level: DeepReviewStrategyLevel,
+    pub member_strategy_overrides: HashMap<String, DeepReviewStrategyLevel>,
     pub reviewer_timeout_seconds: u64,
     pub judge_timeout_seconds: u64,
     pub auto_fix_enabled: bool,
@@ -68,6 +94,8 @@ impl Default for DeepReviewExecutionPolicy {
     fn default() -> Self {
         Self {
             extra_subagent_ids: Vec::new(),
+            strategy_level: DeepReviewStrategyLevel::default(),
+            member_strategy_overrides: HashMap::new(),
             reviewer_timeout_seconds: DEFAULT_REVIEWER_TIMEOUT_SECONDS,
             judge_timeout_seconds: DEFAULT_JUDGE_TIMEOUT_SECONDS,
             auto_fix_enabled: DEFAULT_AUTO_FIX_ENABLED,
@@ -85,6 +113,11 @@ impl DeepReviewExecutionPolicy {
 
         Self {
             extra_subagent_ids: normalize_extra_subagent_ids(config.get("extra_subagent_ids")),
+            strategy_level: DeepReviewStrategyLevel::from_value(config.get("strategy_level"))
+                .unwrap_or_default(),
+            member_strategy_overrides: normalize_member_strategy_overrides(
+                config.get("member_strategy_overrides"),
+            ),
             reviewer_timeout_seconds: clamp_u64(
                 config.get("reviewer_timeout_seconds"),
                 0,
@@ -330,6 +363,27 @@ fn normalize_extra_subagent_ids(raw: Option<&Value>) -> Vec<String> {
     normalized
 }
 
+fn normalize_member_strategy_overrides(
+    raw: Option<&Value>,
+) -> HashMap<String, DeepReviewStrategyLevel> {
+    let Some(values) = raw.and_then(Value::as_object) else {
+        return HashMap::new();
+    };
+
+    let mut normalized = HashMap::new();
+    for (subagent_id, value) in values {
+        let id = subagent_id.trim();
+        let Some(strategy_level) = DeepReviewStrategyLevel::from_value(Some(value)) else {
+            continue;
+        };
+        if !id.is_empty() {
+            normalized.insert(id.to_string(), strategy_level);
+        }
+    }
+
+    normalized
+}
+
 fn disallowed_extra_subagent_ids() -> HashSet<&'static str> {
     CORE_REVIEWER_AGENT_TYPES
         .into_iter()
@@ -374,8 +428,12 @@ fn number_as_i64(value: &Value) -> Option<i64> {
 
 #[cfg(test)]
 mod tests {
-    use super::is_missing_default_review_team_config_error;
+    use super::{
+        is_missing_default_review_team_config_error, DeepReviewExecutionPolicy,
+        DeepReviewStrategyLevel, REVIEW_FIXER_AGENT_TYPE,
+    };
     use crate::util::errors::BitFunError;
+    use serde_json::json;
 
     #[test]
     fn only_missing_default_review_team_path_can_fallback_to_defaults() {
@@ -388,5 +446,52 @@ mod tests {
         assert!(!is_missing_default_review_team_config_error(
             &BitFunError::config("Config path 'ai.review_teams.default.extra' not found")
         ));
+    }
+
+    #[test]
+    fn default_policy_is_read_only_with_normal_strategy() {
+        let policy = DeepReviewExecutionPolicy::default();
+
+        assert!(!policy.auto_fix_enabled);
+        assert_eq!(policy.strategy_level, DeepReviewStrategyLevel::Normal);
+        assert!(policy.member_strategy_overrides.is_empty());
+        assert_eq!(
+            policy
+                .classify_subagent(REVIEW_FIXER_AGENT_TYPE)
+                .unwrap_err()
+                .code,
+            "deep_review_auto_fix_disabled"
+        );
+    }
+
+    #[test]
+    fn parses_review_strategy_and_member_overrides_from_config() {
+        let raw = json!({
+            "extra_subagent_ids": ["ExtraOne"],
+            "strategy_level": "deep",
+            "member_strategy_overrides": {
+                "ReviewSecurity": "quick",
+                "ReviewJudge": "deep",
+                "ExtraOne": "normal",
+                "ExtraInvalid": "invalid"
+            }
+        });
+
+        let policy = DeepReviewExecutionPolicy::from_config_value(Some(&raw));
+
+        assert_eq!(policy.strategy_level, DeepReviewStrategyLevel::Deep);
+        assert_eq!(
+            policy.member_strategy_overrides.get("ReviewSecurity"),
+            Some(&DeepReviewStrategyLevel::Quick)
+        );
+        assert_eq!(
+            policy.member_strategy_overrides.get("ReviewJudge"),
+            Some(&DeepReviewStrategyLevel::Deep)
+        );
+        assert_eq!(
+            policy.member_strategy_overrides.get("ExtraOne"),
+            Some(&DeepReviewStrategyLevel::Normal)
+        );
+        assert!(!policy.member_strategy_overrides.contains_key("ExtraInvalid"));
     }
 }

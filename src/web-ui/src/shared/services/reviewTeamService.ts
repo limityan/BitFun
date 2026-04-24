@@ -8,6 +8,8 @@ import {
 export const DEFAULT_REVIEW_TEAM_ID = 'default-review-team';
 export const DEFAULT_REVIEW_TEAM_CONFIG_PATH = 'ai.review_teams.default';
 export const DEFAULT_REVIEW_TEAM_MODEL = 'fast';
+export const DEFAULT_REVIEW_TEAM_STRATEGY_LEVEL = 'normal' as const;
+export const DEFAULT_REVIEW_MEMBER_STRATEGY_LEVEL = 'inherit' as const;
 export const DEFAULT_REVIEW_TEAM_EXECUTION_POLICY = {
   reviewerTimeoutSeconds: 300,
   judgeTimeoutSeconds: 240,
@@ -15,6 +17,66 @@ export const DEFAULT_REVIEW_TEAM_EXECUTION_POLICY = {
   autoFixMaxRounds: 2,
   autoFixMaxStalledRounds: 1,
 } as const;
+
+export type ReviewStrategyLevel = 'quick' | 'normal' | 'deep';
+export type ReviewMemberStrategyLevel = ReviewStrategyLevel | 'inherit';
+export type ReviewStrategySource = 'team' | 'member';
+export type ReviewModelFallbackReason = 'model_removed';
+
+export interface ReviewStrategyDefinition {
+  level: ReviewStrategyLevel;
+  label: string;
+  summary: string;
+  tokenImpact: string;
+  runtimeImpact: string;
+  defaultModelSlot: 'fast' | 'primary';
+  promptDirective: string;
+}
+
+export const REVIEW_STRATEGY_LEVELS: ReviewStrategyLevel[] = [
+  'quick',
+  'normal',
+  'deep',
+];
+
+export const REVIEW_STRATEGY_DEFINITIONS: Record<
+  ReviewStrategyLevel,
+  ReviewStrategyDefinition
+> = {
+  quick: {
+    level: 'quick',
+    label: 'Quick',
+    summary:
+      'Fast screening for high-confidence issues in the requested diff or scope.',
+    tokenImpact: '0.4-0.6x',
+    runtimeImpact: '0.5-0.7x',
+    defaultModelSlot: 'fast',
+    promptDirective:
+      'Prefer a concise diff-focused pass. Report only high-confidence correctness, security, or regression risks and avoid speculative design rewrites.',
+  },
+  normal: {
+    level: 'normal',
+    label: 'Normal',
+    summary:
+      'Balanced review depth for day-to-day code review with practical evidence.',
+    tokenImpact: '1x',
+    runtimeImpact: '1x',
+    defaultModelSlot: 'fast',
+    promptDirective:
+      'Perform the standard role-specific review. Balance coverage with precision and include concrete evidence for each issue.',
+  },
+  deep: {
+    level: 'deep',
+    label: 'Deep',
+    summary:
+      'Thorough multi-pass review for risky, broad, or release-sensitive changes.',
+    tokenImpact: '1.8-2.5x',
+    runtimeImpact: '1.5-2.5x',
+    defaultModelSlot: 'primary',
+    promptDirective:
+      'Run a thorough role-specific pass. Inspect edge cases, cross-file interactions, failure modes, and remediation tradeoffs before finalizing findings.',
+  },
+};
 
 export type ReviewTeamCoreRoleKey =
   | 'businessLogic'
@@ -34,6 +96,8 @@ export interface ReviewTeamCoreRoleDefinition {
 
 export interface ReviewTeamStoredConfig {
   extra_subagent_ids: string[];
+  strategy_level: ReviewStrategyLevel;
+  member_strategy_overrides: Record<string, ReviewStrategyLevel>;
   reviewer_timeout_seconds: number;
   judge_timeout_seconds: number;
   auto_fix_enabled: boolean;
@@ -58,6 +122,11 @@ export interface ReviewTeamMember {
   description: string;
   responsibilities: string[];
   model: string;
+  configuredModel: string;
+  modelFallbackReason?: ReviewModelFallbackReason;
+  strategyOverride: ReviewMemberStrategyLevel;
+  strategyLevel: ReviewStrategyLevel;
+  strategySource: ReviewStrategySource;
   enabled: boolean;
   available: boolean;
   locked: boolean;
@@ -71,6 +140,8 @@ export interface ReviewTeam {
   name: string;
   description: string;
   warning: string;
+  strategyLevel: ReviewStrategyLevel;
+  memberStrategyOverrides: Record<string, ReviewStrategyLevel>;
   executionPolicy: ReviewTeamExecutionPolicy;
   members: ReviewTeamMember[];
   coreMembers: ReviewTeamMember[];
@@ -82,6 +153,10 @@ export interface ReviewTeamManifestMember {
   displayName: string;
   roleName: string;
   model: string;
+  configuredModel: string;
+  modelFallbackReason?: ReviewModelFallbackReason;
+  strategyLevel: ReviewStrategyLevel;
+  strategySource: ReviewStrategySource;
   locked: boolean;
   source: ReviewTeamMember['source'];
   subagentSource: ReviewTeamMember['subagentSource'];
@@ -92,6 +167,7 @@ export interface ReviewTeamRunManifest {
   reviewMode: 'deep';
   workspacePath?: string;
   policySource: 'default-review-team-config';
+  strategyLevel: ReviewStrategyLevel;
   executionPolicy: ReviewTeamExecutionPolicy;
   coreReviewers: ReviewTeamManifestMember[];
   qualityGateReviewer?: ReviewTeamManifestMember;
@@ -189,6 +265,37 @@ function dedupeIds(ids: string[]): string[] {
   );
 }
 
+function isReviewStrategyLevel(value: unknown): value is ReviewStrategyLevel {
+  return (
+    typeof value === 'string' &&
+    REVIEW_STRATEGY_LEVELS.includes(value as ReviewStrategyLevel)
+  );
+}
+
+function normalizeTeamStrategyLevel(value: unknown): ReviewStrategyLevel {
+  return isReviewStrategyLevel(value)
+    ? value
+    : DEFAULT_REVIEW_TEAM_STRATEGY_LEVEL;
+}
+
+function normalizeMemberStrategyOverrides(
+  raw: unknown,
+): Record<string, ReviewStrategyLevel> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return {};
+  }
+
+  return Object.entries(raw as Record<string, unknown>).reduce<
+    Record<string, ReviewStrategyLevel>
+  >((result, [subagentId, value]) => {
+    const normalizedId = subagentId.trim();
+    if (normalizedId && isReviewStrategyLevel(value)) {
+      result[normalizedId] = value;
+    }
+    return result;
+  }, {});
+}
+
 function clampInteger(
   value: unknown,
   min: number,
@@ -265,9 +372,14 @@ function normalizeStoredConfig(raw: unknown): ReviewTeamStoredConfig {
       .map((value) => String(value))
     : [];
   const executionPolicy = normalizeExecutionPolicy(raw);
+  const config = raw as Partial<ReviewTeamStoredConfig> | undefined;
 
   return {
     extra_subagent_ids: dedupeIds(extraIds).filter((id) => !DISALLOWED_REVIEW_TEAM_MEMBER_IDS.has(id)),
+    strategy_level: normalizeTeamStrategyLevel(config?.strategy_level),
+    member_strategy_overrides: normalizeMemberStrategyOverrides(
+      config?.member_strategy_overrides,
+    ),
     ...executionPolicy,
   };
 }
@@ -301,6 +413,8 @@ export async function saveDefaultReviewTeamConfig(
   await configAPI.setConfig(DEFAULT_REVIEW_TEAM_CONFIG_PATH, {
     extra_subagent_ids: dedupeIds(normalizedConfig.extra_subagent_ids)
       .filter((id) => !DISALLOWED_REVIEW_TEAM_MEMBER_IDS.has(id)),
+    strategy_level: normalizedConfig.strategy_level,
+    member_strategy_overrides: normalizedConfig.member_strategy_overrides,
     reviewer_timeout_seconds: normalizedConfig.reviewer_timeout_seconds,
     judge_timeout_seconds: normalizedConfig.judge_timeout_seconds,
     auto_fix_enabled: normalizedConfig.auto_fix_enabled,
@@ -339,10 +453,137 @@ export async function saveDefaultReviewTeamExecutionPolicy(
   });
 }
 
+export async function saveDefaultReviewTeamStrategyLevel(
+  strategyLevel: ReviewStrategyLevel,
+): Promise<void> {
+  const current = await loadDefaultReviewTeamConfig();
+  await saveDefaultReviewTeamConfig({
+    ...current,
+    strategy_level: normalizeTeamStrategyLevel(strategyLevel),
+  });
+}
+
+export async function saveDefaultReviewTeamMemberStrategyOverride(
+  subagentId: string,
+  strategyLevel: ReviewMemberStrategyLevel,
+): Promise<void> {
+  const normalizedId = subagentId.trim();
+  if (!normalizedId) {
+    return;
+  }
+
+  const current = await loadDefaultReviewTeamConfig();
+  const nextOverrides = { ...current.member_strategy_overrides };
+  if (strategyLevel === DEFAULT_REVIEW_MEMBER_STRATEGY_LEVEL) {
+    delete nextOverrides[normalizedId];
+  } else if (isReviewStrategyLevel(strategyLevel)) {
+    nextOverrides[normalizedId] = strategyLevel;
+  }
+
+  await saveDefaultReviewTeamConfig({
+    ...current,
+    member_strategy_overrides: nextOverrides,
+  });
+}
+
+export interface ResolveDefaultReviewTeamOptions {
+  availableModelIds?: string[];
+}
+
+function extractAvailableModelIds(rawModels: unknown): string[] | undefined {
+  if (!Array.isArray(rawModels)) {
+    return undefined;
+  }
+
+  return rawModels
+    .map((model) => {
+      if (typeof model === 'string') {
+        return model.trim();
+      }
+      if (model && typeof model === 'object') {
+        const value = (model as { id?: unknown }).id;
+        return typeof value === 'string' ? value.trim() : '';
+      }
+      return '';
+    })
+    .filter(Boolean);
+}
+
+function resolveMemberStrategy(
+  storedConfig: ReviewTeamStoredConfig,
+  subagentId: string,
+): {
+  strategyOverride: ReviewMemberStrategyLevel;
+  strategyLevel: ReviewStrategyLevel;
+  strategySource: ReviewStrategySource;
+} {
+  const override = storedConfig.member_strategy_overrides[subagentId];
+  if (override) {
+    return {
+      strategyOverride: override,
+      strategyLevel: override,
+      strategySource: 'member',
+    };
+  }
+
+  return {
+    strategyOverride: DEFAULT_REVIEW_MEMBER_STRATEGY_LEVEL,
+    strategyLevel: storedConfig.strategy_level,
+    strategySource: 'team',
+  };
+}
+
+function resolveMemberModel(
+  configuredModel: string | undefined,
+  strategyLevel: ReviewStrategyLevel,
+  availableModelIds?: Set<string>,
+): {
+  model: string;
+  configuredModel: string;
+  modelFallbackReason?: ReviewModelFallbackReason;
+} {
+  const normalizedConfiguredModel = configuredModel?.trim() || '';
+  const defaultModelSlot =
+    REVIEW_STRATEGY_DEFINITIONS[strategyLevel].defaultModelSlot;
+
+  if (
+    !normalizedConfiguredModel ||
+    normalizedConfiguredModel === 'fast' ||
+    normalizedConfiguredModel === 'primary'
+  ) {
+    return {
+      model: defaultModelSlot,
+      configuredModel: normalizedConfiguredModel || defaultModelSlot,
+    };
+  }
+
+  if (availableModelIds && !availableModelIds.has(normalizedConfiguredModel)) {
+    return {
+      model: defaultModelSlot,
+      configuredModel: normalizedConfiguredModel,
+      modelFallbackReason: 'model_removed',
+    };
+  }
+
+  return {
+    model: normalizedConfiguredModel,
+    configuredModel: normalizedConfiguredModel,
+  };
+}
+
 function buildCoreMember(
   definition: ReviewTeamCoreRoleDefinition,
   info: SubagentInfo | undefined,
+  storedConfig: ReviewTeamStoredConfig,
+  availableModelIds?: Set<string>,
 ): ReviewTeamMember {
+  const strategy = resolveMemberStrategy(storedConfig, definition.subagentId);
+  const model = resolveMemberModel(
+    info?.model || DEFAULT_REVIEW_TEAM_MODEL,
+    strategy.strategyLevel,
+    availableModelIds,
+  );
+
   return {
     id: `core:${definition.subagentId}`,
     subagentId: definition.subagentId,
@@ -351,7 +592,12 @@ function buildCoreMember(
     roleName: definition.roleName,
     description: definition.description,
     responsibilities: definition.responsibilities,
-    model: info?.model || DEFAULT_REVIEW_TEAM_MODEL,
+    model: model.model,
+    configuredModel: model.configuredModel,
+    ...(model.modelFallbackReason
+      ? { modelFallbackReason: model.modelFallbackReason }
+      : {}),
+    ...strategy,
     enabled: info?.enabled ?? true,
     available: Boolean(info),
     locked: true,
@@ -361,7 +607,18 @@ function buildCoreMember(
   };
 }
 
-function buildExtraMember(info: SubagentInfo): ReviewTeamMember {
+function buildExtraMember(
+  info: SubagentInfo,
+  storedConfig: ReviewTeamStoredConfig,
+  availableModelIds?: Set<string>,
+): ReviewTeamMember {
+  const strategy = resolveMemberStrategy(storedConfig, info.id);
+  const model = resolveMemberModel(
+    info.model || DEFAULT_REVIEW_TEAM_MODEL,
+    strategy.strategyLevel,
+    availableModelIds,
+  );
+
   return {
     id: `extra:${info.id}`,
     subagentId: info.id,
@@ -369,7 +626,12 @@ function buildExtraMember(info: SubagentInfo): ReviewTeamMember {
     roleName: EXTRA_MEMBER_DEFAULTS.roleName,
     description: info.description?.trim() || EXTRA_MEMBER_DEFAULTS.description,
     responsibilities: EXTRA_MEMBER_DEFAULTS.responsibilities,
-    model: info.model || DEFAULT_REVIEW_TEAM_MODEL,
+    model: model.model,
+    configuredModel: model.configuredModel,
+    ...(model.modelFallbackReason
+      ? { modelFallbackReason: model.modelFallbackReason }
+      : {}),
+    ...strategy,
     enabled: info.enabled,
     available: true,
     locked: false,
@@ -390,16 +652,25 @@ export function canAddSubagentToReviewTeam(subagentId: string): boolean {
 export function resolveDefaultReviewTeam(
   subagents: SubagentInfo[],
   storedConfig: ReviewTeamStoredConfig,
+  options: ResolveDefaultReviewTeamOptions = {},
 ): ReviewTeam {
   const byId = new Map(subagents.map((subagent) => [subagent.id, subagent]));
+  const availableModelIds = options.availableModelIds
+    ? new Set(options.availableModelIds)
+    : undefined;
   const coreMembers = DEFAULT_REVIEW_TEAM_CORE_ROLES.map((definition) =>
-    buildCoreMember(definition, byId.get(definition.subagentId)),
+    buildCoreMember(
+      definition,
+      byId.get(definition.subagentId),
+      storedConfig,
+      availableModelIds,
+    ),
   );
   const extraMembers = storedConfig.extra_subagent_ids
     .map((subagentId) => byId.get(subagentId))
     .filter((subagent): subagent is SubagentInfo => Boolean(subagent))
     .filter((subagent) => canAddSubagentToReviewTeam(subagent.id))
-    .map(buildExtraMember);
+    .map((subagent) => buildExtraMember(subagent, storedConfig, availableModelIds));
 
   return {
     id: DEFAULT_REVIEW_TEAM_ID,
@@ -408,6 +679,8 @@ export function resolveDefaultReviewTeam(
       'A local multi-reviewer team for deep code review with mandatory logic, performance, security, and quality-gate roles.',
     warning:
       'Deep review runs locally, may take longer, and usually consumes more tokens than a standard review.',
+    strategyLevel: storedConfig.strategy_level,
+    memberStrategyOverrides: storedConfig.member_strategy_overrides,
     executionPolicy: executionPolicyFromStoredConfig(storedConfig),
     members: [...coreMembers, ...extraMembers],
     coreMembers,
@@ -418,12 +691,15 @@ export function resolveDefaultReviewTeam(
 export async function loadDefaultReviewTeam(
   workspacePath?: string,
 ): Promise<ReviewTeam> {
-  const [storedConfig, subagents] = await Promise.all([
+  const [storedConfig, subagents, rawModels] = await Promise.all([
     loadDefaultReviewTeamConfig(),
     SubagentAPI.listSubagents({ workspacePath }),
+    configAPI.getConfig('ai.models').catch(() => undefined),
   ]);
 
-  return resolveDefaultReviewTeam(subagents, storedConfig);
+  return resolveDefaultReviewTeam(subagents, storedConfig, {
+    availableModelIds: extractAvailableModelIds(rawModels),
+  });
 }
 
 export async function prepareDefaultReviewTeamForLaunch(
@@ -464,6 +740,10 @@ function toManifestMember(
     displayName: member.displayName,
     roleName: member.roleName,
     model: member.model || DEFAULT_REVIEW_TEAM_MODEL,
+    configuredModel: member.configuredModel || member.model || DEFAULT_REVIEW_TEAM_MODEL,
+    modelFallbackReason: member.modelFallbackReason,
+    strategyLevel: member.strategyLevel,
+    strategySource: member.strategySource,
     locked: member.locked,
     source: member.source,
     subagentSource: member.subagentSource,
@@ -504,6 +784,7 @@ export function buildEffectiveReviewTeamManifest(
     reviewMode: 'deep',
     ...(options.workspacePath ? { workspacePath: options.workspacePath } : {}),
     policySource: options.policySource ?? 'default-review-team-config',
+    strategyLevel: team.strategyLevel,
     executionPolicy: team.executionPolicy,
     coreReviewers,
     ...(qualityGateReviewer
@@ -516,6 +797,11 @@ export function buildEffectiveReviewTeamManifest(
 
 function formatResponsibilities(items: string[]): string {
   return items.map((item) => `    - ${item}`).join('\n');
+}
+
+function formatStrategyImpact(strategyLevel: ReviewStrategyLevel): string {
+  const definition = REVIEW_STRATEGY_DEFINITIONS[strategyLevel];
+  return `Token/time impact: approximately ${definition.tokenImpact} token usage and ${definition.runtimeImpact} runtime.`;
 }
 
 function formatManifestList(
@@ -554,7 +840,13 @@ export function buildReviewTeamPromptBlock(
       `  - preferred_task_label: ${member.displayName}`,
       `  - role: ${member.roleName}`,
       `  - locked_core_role: ${member.locked ? 'yes' : 'no'}`,
+      `  - strategy: ${member.strategyLevel}`,
+      `  - strategy_source: ${member.strategySource}`,
       `  - model: ${member.model || DEFAULT_REVIEW_TEAM_MODEL}`,
+      `  - configured_model: ${member.configuredModel || member.model || DEFAULT_REVIEW_TEAM_MODEL}`,
+      ...(member.modelFallbackReason
+        ? [`  - model_fallback: ${member.modelFallbackReason}`]
+        : []),
       '  - responsibilities:',
       formatResponsibilities(member.responsibilities),
     ].join('\n'))
@@ -569,6 +861,7 @@ export function buildReviewTeamPromptBlock(
   const manifestBlock = [
     'Run manifest:',
     `- review_mode: ${manifest.reviewMode}`,
+    `- team_strategy: ${manifest.strategyLevel}`,
     `- workspace_path: ${manifest.workspacePath || 'inherited from current session'}`,
     `- policy_source: ${manifest.policySource}`,
     `- core_reviewers: ${formatManifestList(manifest.coreReviewers, 'none')}`,
@@ -581,6 +874,15 @@ export function buildReviewTeamPromptBlock(
       )
       : ['  - none']),
   ].join('\n');
+  const strategyRules = REVIEW_STRATEGY_LEVELS.map((level) => {
+    const definition = REVIEW_STRATEGY_DEFINITIONS[level];
+    return [
+      `- ${level}: ${definition.summary}`,
+      `  - ${formatStrategyImpact(level)}`,
+      `  - Default model slot: ${definition.defaultModelSlot}`,
+      `  - Prompt directive: ${definition.promptDirective}`,
+    ].join('\n');
+  }).join('\n');
 
   return [
     manifestBlock,
@@ -599,5 +901,9 @@ export function buildReviewTeamPromptBlock(
     '- If auto_fix_enabled is true and validated findings remain, run ReviewFixer and then rerun the team incrementally on the fix diff.',
     '- Stop the auto-fix loop when findings stop shrinking, when the same issues recur, or when the configured round limits are reached.',
     '- The Review Quality Inspector must validate findings from every reviewer before the final report.',
+    'Review strategy rules:',
+    `- Team strategy: ${team.strategyLevel}. ${formatStrategyImpact(team.strategyLevel)}`,
+    '- Each reviewer must follow its own strategy field. Member-level strategy overrides take precedence over the team strategy.',
+    strategyRules,
   ].join('\n');
 }

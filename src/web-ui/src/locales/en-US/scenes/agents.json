@@ -194,6 +194,29 @@
         "saveFailed": "Failed to save the review team configuration."
       }
     },
+    "strategy": {
+      "teamTitle": "Review strategy",
+      "teamDescription": "Choose the default depth for the whole review team. Individual reviewers can override it in their member details.",
+      "memberTitle": "Reviewer strategy",
+      "memberDescription": "Override this reviewer only when a role needs a different depth from the team default.",
+      "impact": "About {{token}} token usage and {{runtime}} runtime.",
+      "inheritLabel": "Inherit team ({{level}})",
+      "inheritSummary": "Use the team-wide review strategy for this reviewer.",
+      "modelFallbackShort": "fallback",
+      "modelFallbackDescription": "The configured model {{configuredModel}} is no longer available, so this reviewer will use {{model}}.",
+      "quick": {
+        "label": "Quick",
+        "summary": "Fast screening for high-confidence issues in the requested diff or scope."
+      },
+      "normal": {
+        "label": "Normal",
+        "summary": "Balanced review depth for day-to-day code review with practical evidence."
+      },
+      "deep": {
+        "label": "Deep",
+        "summary": "Thorough multi-pass review for risky, broad, or release-sensitive changes."
+      }
+    },
     "members": {
       "businessLogic": {
         "funName": "Logic Detective Locke",

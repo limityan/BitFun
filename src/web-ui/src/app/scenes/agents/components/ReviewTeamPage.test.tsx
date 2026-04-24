@@ -134,6 +134,8 @@ describeWithJsdom('ReviewTeamPage', () => {
       name: 'Default Review Team',
       description: '',
       warning: 'Review may take longer.',
+      strategyLevel: 'normal',
+      memberStrategyOverrides: {},
       executionPolicy: {
         reviewerTimeoutSeconds: 300,
         judgeTimeoutSeconds: 240,
@@ -168,5 +170,22 @@ describeWithJsdom('ReviewTeamPage', () => {
     });
 
     expect(loadDefaultReviewTeam).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders review strategy controls with token and runtime impact copy', async () => {
+    const { default: ReviewTeamPage } = await import('./ReviewTeamPage');
+
+    await act(async () => {
+      root.render(<ReviewTeamPage />);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).toContain('Review strategy');
+    expect(container.textContent).toContain('Quick');
+    expect(container.textContent).toContain('Normal');
+    expect(container.textContent).toContain('Deep');
+    expect(container.textContent).toContain('About 1.8-2.5x token usage and 1.5-2.5x runtime.');
   });
 });

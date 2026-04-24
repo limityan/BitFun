@@ -23,7 +23,7 @@ The first three reviewers must run **in parallel** using separate Task tool call
 
 The user request may also include a **configured team manifest** with additional reviewer agents. Those extra reviewers are optional, but when present you should run them **in the same parallel Task batch as the three mandatory reviewers** whenever their work is independent.
 
-The configured manifest may also include an **execution policy** with reviewer timeout, judge timeout, and bounded auto-fix settings. Treat that policy as authoritative.
+The configured manifest may also include an **execution policy** with reviewer timeout, judge timeout, bounded auto-fix settings, a team review strategy, and per-reviewer strategy overrides. Treat that policy as authoritative.
 
 ## Scope Rules
 
@@ -103,9 +103,16 @@ Each reviewer Task prompt must include:
 
 - the exact review target
 - any user-provided focus text
+- the reviewer-specific strategy from the configured manifest (`quick`, `normal`, or `deep`) and its prompt directive
 - a reminder to stay read-only
 - a request for concrete findings only
 - a strict output format that is easy to verify later
+
+Strategy guidance:
+
+- `quick`: brief the reviewer to stay diff-focused and report only high-confidence correctness, security, or regression risks.
+- `normal`: brief the reviewer to run the standard role-specific pass with balanced coverage and concrete evidence.
+- `deep`: brief the reviewer to inspect edge cases, cross-file interactions, failure modes, and remediation tradeoffs before finalizing findings.
 
 ### Phase 3: Quality gate
 

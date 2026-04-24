@@ -42,11 +42,18 @@ import { useAgentsStore } from '../agentsStore';
 import {
   addDefaultReviewTeamMember,
   canAddSubagentToReviewTeam,
+  DEFAULT_REVIEW_MEMBER_STRATEGY_LEVEL,
   DEFAULT_REVIEW_TEAM_EXECUTION_POLICY,
   DEFAULT_REVIEW_TEAM_MODEL,
   loadDefaultReviewTeam,
+  REVIEW_STRATEGY_DEFINITIONS,
+  REVIEW_STRATEGY_LEVELS,
   removeDefaultReviewTeamMember,
   saveDefaultReviewTeamExecutionPolicy,
+  saveDefaultReviewTeamMemberStrategyOverride,
+  saveDefaultReviewTeamStrategyLevel,
+  type ReviewMemberStrategyLevel,
+  type ReviewStrategyLevel,
   type ReviewTeam,
   type ReviewTeamExecutionPolicy,
   type ReviewTeamMember,
@@ -79,6 +86,11 @@ function getSourceVariant(source: SubagentSource): 'neutral' | 'info' | 'purple'
   return 'neutral';
 }
 
+const MEMBER_STRATEGY_OPTIONS: ReviewMemberStrategyLevel[] = [
+  DEFAULT_REVIEW_MEMBER_STRATEGY_LEVEL,
+  ...REVIEW_STRATEGY_LEVELS,
+];
+
 const ReviewTeamPage: React.FC = () => {
   const { t } = useTranslation('scenes/agents');
   const { t: tModel } = useTranslation('settings/default-model');
@@ -94,6 +106,7 @@ const ReviewTeamPage: React.FC = () => {
   const [candidateId, setCandidateId] = useState('');
   const [savingMemberId, setSavingMemberId] = useState<string | null>(null);
   const [savingPolicyKey, setSavingPolicyKey] = useState<keyof ReviewTeamExecutionPolicy | null>(null);
+  const [savingStrategyTarget, setSavingStrategyTarget] = useState<string | null>(null);
   const [addingMember, setAddingMember] = useState(false);
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
 
@@ -124,6 +137,8 @@ const ReviewTeamPage: React.FC = () => {
           defaultValue:
             'Deep review runs locally, may take longer, and usually consumes more tokens than a standard review.',
         }),
+        strategyLevel: 'normal',
+        memberStrategyOverrides: {},
         executionPolicy: { ...DEFAULT_REVIEW_TEAM_EXECUTION_POLICY },
         members: [],
         coreMembers: [],
@@ -198,6 +213,56 @@ const ReviewTeamPage: React.FC = () => {
       { defaultValue: item },
     ));
   }, [t]);
+
+  const getStrategyLabel = useCallback((level: ReviewStrategyLevel): string => {
+    return t(`reviewTeams.strategy.${level}.label`, {
+      defaultValue: REVIEW_STRATEGY_DEFINITIONS[level].label,
+    });
+  }, [t]);
+
+  const getStrategySummary = useCallback((level: ReviewStrategyLevel): string => {
+    return t(`reviewTeams.strategy.${level}.summary`, {
+      defaultValue: REVIEW_STRATEGY_DEFINITIONS[level].summary,
+    });
+  }, [t]);
+
+  const getStrategyImpact = useCallback((level: ReviewStrategyLevel): string => {
+    const definition = REVIEW_STRATEGY_DEFINITIONS[level];
+    return t('reviewTeams.strategy.impact', {
+      token: definition.tokenImpact,
+      runtime: definition.runtimeImpact,
+      defaultValue: `About ${definition.tokenImpact} token usage and ${definition.runtimeImpact} runtime.`,
+    });
+  }, [t]);
+
+  const getMemberStrategyOptionLabel = useCallback((
+    level: ReviewMemberStrategyLevel,
+  ): string => {
+    if (level === DEFAULT_REVIEW_MEMBER_STRATEGY_LEVEL) {
+      return t('reviewTeams.strategy.inheritLabel', {
+        level: team ? getStrategyLabel(team.strategyLevel) : '',
+        defaultValue: team
+          ? `Inherit team (${getStrategyLabel(team.strategyLevel)})`
+          : 'Inherit team',
+      });
+    }
+
+    return getStrategyLabel(level);
+  }, [getStrategyLabel, t, team]);
+
+  const getMemberStrategyOptionSummary = useCallback((
+    level: ReviewMemberStrategyLevel,
+    member: ReviewTeamMember,
+  ): string => {
+    if (level === DEFAULT_REVIEW_MEMBER_STRATEGY_LEVEL) {
+      return t('reviewTeams.strategy.inheritSummary', {
+        level: getStrategyLabel(team?.strategyLevel ?? member.strategyLevel),
+        defaultValue: 'Use the team-wide review strategy for this reviewer.',
+      });
+    }
+
+    return getStrategySummary(level);
+  }, [getStrategyLabel, getStrategySummary, t, team?.strategyLevel]);
 
   const formatModelLabel = useCallback((modelId: string): string => {
     if (!modelId || modelId === DEFAULT_REVIEW_TEAM_MODEL) {
@@ -362,6 +427,57 @@ const ReviewTeamPage: React.FC = () => {
     }
   }, [loadData, notifyError, t, team]);
 
+  const handleTeamStrategyChange = useCallback(async (strategyLevel: ReviewStrategyLevel) => {
+    if (!team || team.strategyLevel === strategyLevel) {
+      return;
+    }
+
+    setSavingStrategyTarget('team');
+    try {
+      await saveDefaultReviewTeamStrategyLevel(strategyLevel);
+      await loadData();
+    } catch (error) {
+      notifyError(
+        error instanceof Error
+          ? error.message
+          : t('reviewTeams.detail.messages.saveFailed', {
+            defaultValue: 'Failed to save the review team configuration.',
+          }),
+      );
+    } finally {
+      setSavingStrategyTarget(null);
+    }
+  }, [loadData, notifyError, t, team]);
+
+  const handleMemberStrategyChange = useCallback(async (
+    member: ReviewTeamMember,
+    strategyLevel: ReviewMemberStrategyLevel,
+  ) => {
+    if (member.strategyOverride === strategyLevel) {
+      return;
+    }
+
+    const target = `member:${member.id}`;
+    setSavingStrategyTarget(target);
+    try {
+      await saveDefaultReviewTeamMemberStrategyOverride(
+        member.subagentId,
+        strategyLevel,
+      );
+      await loadData();
+    } catch (error) {
+      notifyError(
+        error instanceof Error
+          ? error.message
+          : t('reviewTeams.detail.messages.saveFailed', {
+            defaultValue: 'Failed to save the review team configuration.',
+          }),
+      );
+    } finally {
+      setSavingStrategyTarget(null);
+    }
+  }, [loadData, notifyError, t]);
+
   if (loading || !team) {
     return (
       <ConfigPageLayout className="review-team-page">
@@ -471,6 +587,48 @@ const ReviewTeamPage: React.FC = () => {
               'Control reviewer timeouts, whether validated issues trigger automatic fixes, and when the review-fix loop should stop instead of spinning forever.',
           })}
         >
+          <div className="review-team-page__strategy-panel">
+            <div className="review-team-page__strategy-panel-copy">
+              <span className="review-team-page__block-label">
+                {t('reviewTeams.strategy.teamTitle', {
+                  defaultValue: 'Review strategy',
+                })}
+              </span>
+              <p>
+                {t('reviewTeams.strategy.teamDescription', {
+                  defaultValue:
+                    'Choose the default depth for the whole review team. Individual reviewers can override it in their member details.',
+                })}
+              </p>
+            </div>
+
+            <div className="review-team-page__strategy-options">
+              {REVIEW_STRATEGY_LEVELS.map((level) => {
+                const isSelected = team.strategyLevel === level;
+                return (
+                  <button
+                    key={level}
+                    type="button"
+                    className={`review-team-page__strategy-option${isSelected ? ' is-selected' : ''}`}
+                    aria-pressed={isSelected}
+                    disabled={savingStrategyTarget === 'team'}
+                    onClick={() => void handleTeamStrategyChange(level)}
+                  >
+                    <span className="review-team-page__strategy-option-title">
+                      {getStrategyLabel(level)}
+                    </span>
+                    <span className="review-team-page__strategy-option-summary">
+                      {getStrategySummary(level)}
+                    </span>
+                    <span className="review-team-page__strategy-option-impact">
+                      {getStrategyImpact(level)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <ConfigPageRow
             label={t('reviewTeams.detail.reviewerTimeout', {
               defaultValue: 'Reviewer timeout',
@@ -657,6 +815,9 @@ const ReviewTeamPage: React.FC = () => {
                             defaultValue: member.subagentSource,
                           })}
                         </Badge>
+                        <Badge variant={member.strategySource === 'member' ? 'info' : 'neutral'}>
+                          {getStrategyLabel(member.strategyLevel)}
+                        </Badge>
                       </div>
                     </div>
 
@@ -668,6 +829,13 @@ const ReviewTeamPage: React.FC = () => {
                     </p>
                     <span className="review-team-page__member-card-model">
                       {formatModelLabel(member.model)}
+                      {member.modelFallbackReason ? (
+                        <span className="review-team-page__member-card-model-note">
+                          {t('reviewTeams.strategy.modelFallbackShort', {
+                            defaultValue: 'fallback',
+                          })}
+                        </span>
+                      ) : null}
                     </span>
                   </div>
                 </button>
@@ -707,6 +875,16 @@ const ReviewTeamPage: React.FC = () => {
 
                   <div className="review-team-page__detail-badges">
                     <Badge variant="accent">{formatModelLabel(selectedMember.model)}</Badge>
+                    <Badge variant={selectedMember.strategySource === 'member' ? 'info' : 'neutral'}>
+                      {getStrategyLabel(selectedMember.strategyLevel)}
+                    </Badge>
+                    {selectedMember.modelFallbackReason ? (
+                      <Badge variant="neutral">
+                        {t('reviewTeams.strategy.modelFallbackShort', {
+                          defaultValue: 'fallback',
+                        })}
+                      </Badge>
+                    ) : null}
                     {selectedMember.locked ? (
                       <Badge variant="neutral">
                         {t('reviewTeams.detail.memberTypes.core', {
@@ -739,16 +917,67 @@ const ReviewTeamPage: React.FC = () => {
             </div>
 
             <ConfigPageRow
+              label={t('reviewTeams.strategy.memberTitle', {
+                defaultValue: 'Reviewer strategy',
+              })}
+              description={t('reviewTeams.strategy.memberDescription', {
+                defaultValue:
+                  'Override this reviewer only when a role needs a different depth from the team default.',
+              })}
+              multiline
+            >
+              <div className="review-team-page__strategy-options review-team-page__strategy-options--compact">
+                {MEMBER_STRATEGY_OPTIONS.map((level) => {
+                  const isSelected = selectedMember.strategyOverride === level;
+                  const effectiveLevel = level === DEFAULT_REVIEW_MEMBER_STRATEGY_LEVEL
+                    ? team.strategyLevel
+                    : level;
+
+                  return (
+                    <button
+                      key={level}
+                      type="button"
+                      className={`review-team-page__strategy-option${isSelected ? ' is-selected' : ''}`}
+                      aria-pressed={isSelected}
+                      disabled={savingStrategyTarget === `member:${selectedMember.id}`}
+                      onClick={() => void handleMemberStrategyChange(selectedMember, level)}
+                    >
+                      <span className="review-team-page__strategy-option-title">
+                        {getMemberStrategyOptionLabel(level)}
+                      </span>
+                      <span className="review-team-page__strategy-option-summary">
+                        {getMemberStrategyOptionSummary(level, selectedMember)}
+                      </span>
+                      <span className="review-team-page__strategy-option-impact">
+                        {getStrategyImpact(effectiveLevel)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </ConfigPageRow>
+
+            <ConfigPageRow
               label={t('reviewTeams.detail.model', {
                 defaultValue: 'Assigned model',
               })}
               description={t('reviewTeams.detail.modelDescription', {
                 defaultValue:
-                  'Change the model for this reviewer only. Deep review uses Fast by default, and your update applies immediately.',
+                  'Change the model for this reviewer only. Primary/Fast aliases follow the active strategy, while a concrete custom model is kept when available.',
               })}
               multiline
             >
               <div className="review-team-page__model-picker">
+                {selectedMember.modelFallbackReason ? (
+                  <p className="review-team-page__model-fallback-note">
+                    {t('reviewTeams.strategy.modelFallbackDescription', {
+                      configuredModel: selectedMember.configuredModel,
+                      model: formatModelLabel(selectedMember.model),
+                      defaultValue:
+                        `The configured model ${selectedMember.configuredModel} is no longer available, so this reviewer will use ${formatModelLabel(selectedMember.model)}.`,
+                    })}
+                  </p>
+                ) : null}
                 <ModelSelectionRadio
                   value={selectedMember.model || DEFAULT_REVIEW_TEAM_MODEL}
                   models={models}
