@@ -188,4 +188,65 @@ describeWithJsdom('ReviewTeamPage', () => {
     expect(container.textContent).toContain('Deep');
     expect(container.textContent).toContain('About 1.8-2.5x token usage and 1.5-2.5x runtime.');
   });
+
+  it('keeps rendering after selecting a review team member with missing optional fields', async () => {
+    loadDefaultReviewTeam.mockResolvedValue({
+      id: 'default-review-team',
+      name: 'Default Review Team',
+      description: '',
+      warning: 'Review may take longer.',
+      strategyLevel: 'normal',
+      memberStrategyOverrides: {},
+      executionPolicy: {
+        reviewerTimeoutSeconds: 300,
+        judgeTimeoutSeconds: 240,
+        autoFixEnabled: false,
+        autoFixMaxRounds: 2,
+        autoFixMaxStalledRounds: 1,
+      },
+      members: [
+        {
+          id: 'core:review-business-logic',
+          subagentId: 'review-business-logic',
+          definitionKey: 'businessLogic',
+          displayName: 'Logic reviewer',
+          roleName: 'Logic',
+          description: 'Checks behavior.',
+          responsibilities: undefined,
+          model: 'fast',
+          configuredModel: 'fast',
+          strategyOverride: 'inherit',
+          strategyLevel: 'normal',
+          strategySource: 'team',
+          enabled: true,
+          available: true,
+          locked: true,
+          source: 'core',
+          subagentSource: undefined,
+          accentColor: undefined,
+        },
+      ],
+      coreMembers: [],
+      extraMembers: [],
+    });
+    const { default: ReviewTeamPage } = await import('./ReviewTeamPage');
+
+    await act(async () => {
+      root.render(<ReviewTeamPage />);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const memberButton = Array.from(container.querySelectorAll('button'))
+      .find((button) => button.textContent?.includes('Logic reviewer'));
+    expect(memberButton).toBeTruthy();
+
+    await act(async () => {
+      memberButton!.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(container.textContent).toContain('Member Detail');
+    expect(container.textContent).toContain('Logic reviewer');
+  });
 });

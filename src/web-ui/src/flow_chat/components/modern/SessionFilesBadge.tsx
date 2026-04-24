@@ -29,12 +29,17 @@ import {
   buildDeepReviewPromptFromSessionFiles,
   launchDeepReviewSession,
 } from '../../services/DeepReviewService';
+import { insertReviewSessionSummaryMarker } from '../../services/ReviewSessionMarkerService';
 import { useDeepReviewConsent } from '../DeepReviewConsentDialog';
 import {
   REVIEW_READY_GLINT_DURATION_MS,
   shouldTriggerReviewReadyGlint,
 } from './reviewReadyGlint';
+import { flowChatStore } from '../../store/FlowChatStore';
+import type { DialogTurn } from '../../types/flow-chat';
 import { useSessionReviewActivity } from '../../hooks/useSessionReviewActivity';
+import { useSessionStateMachine } from '../../hooks/useSessionStateMachine';
+import { SessionExecutionState } from '../../state-machine/types';
 import { isReviewActivityBlocking } from '../../utils/sessionReviewActivity';
 import './SessionFilesBadge.scss';
 
@@ -113,6 +118,34 @@ interface StatsCache {
   };
 }
 
+type LatestTurnSnapshot = {
+  turnId: string | null;
+  status: DialogTurn['status'] | null;
+};
+
+function getLatestTurnSnapshot(sessionId?: string): LatestTurnSnapshot {
+  if (!sessionId) {
+    return { turnId: null, status: null };
+  }
+
+  const session = flowChatStore.getState().sessions.get(sessionId);
+  const latestTurn = session?.dialogTurns[session.dialogTurns.length - 1];
+  return {
+    turnId: latestTurn?.id ?? null,
+    status: latestTurn?.status ?? null,
+  };
+}
+
+function isTurnActivelyRunning(status: DialogTurn['status'] | null): boolean {
+  return (
+    status === 'pending' ||
+    status === 'image_analyzing' ||
+    status === 'processing' ||
+    status === 'finishing' ||
+    status === 'cancelling'
+  );
+}
+
 /**
  * Session file change badge.
  */
@@ -130,15 +163,23 @@ export const SessionFilesBadge: React.FC<SessionFilesBadgeProps> = ({
   const [fileStats, setFileStats] = useState<Map<string, FileStats>>(new Map());
   const [loadingStats, setLoadingStats] = useState(false);
   const reviewActivity = useSessionReviewActivity(sessionId);
+  const sessionMachine = useSessionStateMachine(sessionId ?? null);
+  const isSessionProcessing =
+    sessionMachine?.currentState === SessionExecutionState.PROCESSING ||
+    sessionMachine?.currentState === SessionExecutionState.FINISHING;
   const isReviewActionLocked =
     loadingStats ||
     launchingReviewMode !== null ||
     isReviewActivityBlocking(reviewActivity);
+  const [latestTurnSnapshot, setLatestTurnSnapshot] = useState<LatestTurnSnapshot>(() =>
+    getLatestTurnSnapshot(sessionId),
+  );
 
   const statsCacheRef = useRef<StatsCache>({});
   const loadingFilesRef = useRef<Set<string>>(new Set());
   const previousSessionIdRef = useRef<string | undefined>(undefined);
-  const previousReviewableFileCountRef = useRef(0);
+  const observedProcessingTurnIdRef = useRef<string | null>(null);
+  const promptedReviewReadyTurnIdRef = useRef<string | null>(null);
   const reviewReadyGlintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const CACHE_TTL = 10000;
 
@@ -146,6 +187,14 @@ export const SessionFilesBadge: React.FC<SessionFilesBadgeProps> = ({
   const popoverRef = useRef<HTMLDivElement>(null);
   const reviewMenuRef = useRef<HTMLDivElement>(null);
   const { confirmDeepReviewLaunch, deepReviewConsentDialog } = useDeepReviewConsent();
+
+  const clearReviewReadyGlint = useCallback(() => {
+    setShowReviewReadyGlint(false);
+    if (reviewReadyGlintTimeoutRef.current) {
+      clearTimeout(reviewReadyGlintTimeoutRef.current);
+      reviewReadyGlintTimeoutRef.current = null;
+    }
+  }, []);
 
   // Reset cached state when the session changes.
   useEffect(() => {
@@ -156,21 +205,51 @@ export const SessionFilesBadge: React.FC<SessionFilesBadgeProps> = ({
       setFileStats(new Map());
       setIsExpanded(false);
       setIsReviewMenuOpen(false);
-      setShowReviewReadyGlint(false);
+      clearReviewReadyGlint();
       setLaunchingReviewMode(null);
-      previousReviewableFileCountRef.current = 0;
-      if (reviewReadyGlintTimeoutRef.current) {
-        clearTimeout(reviewReadyGlintTimeoutRef.current);
-        reviewReadyGlintTimeoutRef.current = null;
-      }
+      observedProcessingTurnIdRef.current = null;
+      promptedReviewReadyTurnIdRef.current = null;
+      setLatestTurnSnapshot(getLatestTurnSnapshot(sessionId));
     }
-  }, [sessionId, t]);
+  }, [clearReviewReadyGlint, sessionId, t]);
 
   useEffect(() => () => {
     if (reviewReadyGlintTimeoutRef.current) {
       clearTimeout(reviewReadyGlintTimeoutRef.current);
     }
   }, []);
+
+  useEffect(() => {
+    const syncLatestTurn = () => {
+      const nextSnapshot = getLatestTurnSnapshot(sessionId);
+      setLatestTurnSnapshot(prev => (
+        prev.turnId === nextSnapshot.turnId && prev.status === nextSnapshot.status
+          ? prev
+          : nextSnapshot
+      ));
+    };
+
+    syncLatestTurn();
+    const unsubscribe = flowChatStore.subscribe(syncLatestTurn);
+    return unsubscribe;
+  }, [sessionId]);
+
+  useEffect(() => {
+    const { turnId, status } = latestTurnSnapshot;
+    if (!turnId) {
+      observedProcessingTurnIdRef.current = null;
+      promptedReviewReadyTurnIdRef.current = null;
+      clearReviewReadyGlint();
+      return;
+    }
+
+    if (isTurnActivelyRunning(status)) {
+      observedProcessingTurnIdRef.current = turnId;
+      promptedReviewReadyTurnIdRef.current = null;
+      clearReviewReadyGlint();
+      setIsReviewMenuOpen(false);
+    }
+  }, [clearReviewReadyGlint, latestTurnSnapshot]);
 
   // Close the popovers when clicking outside.
   useEffect(() => {
@@ -334,15 +413,25 @@ export const SessionFilesBadge: React.FC<SessionFilesBadgeProps> = ({
   const reviewableFileCount = useMemo(() => {
     return Array.from(fileStats.keys()).filter(shouldReviewFile).length;
   }, [fileStats]);
+  const reviewActionAvailable =
+    !disabled &&
+    reviewableFileCount > 0 &&
+    !isReviewActionLocked &&
+    !isSessionProcessing;
 
   useEffect(() => {
-    const previousReviewableCount = previousReviewableFileCountRef.current;
     if (shouldTriggerReviewReadyGlint({
-      previousReviewableCount,
+      currentTurnId: latestTurnSnapshot.turnId,
+      currentTurnStatus: latestTurnSnapshot.status,
+      observedProcessingTurnId: observedProcessingTurnIdRef.current,
+      promptedTurnId: promptedReviewReadyTurnIdRef.current,
       nextReviewableCount: reviewableFileCount,
       loadingStats,
+      reviewActionAvailable,
+      sessionProcessing: isSessionProcessing,
     })) {
       setShowReviewReadyGlint(true);
+      promptedReviewReadyTurnIdRef.current = latestTurnSnapshot.turnId;
       if (reviewReadyGlintTimeoutRef.current) {
         clearTimeout(reviewReadyGlintTimeoutRef.current);
       }
@@ -351,8 +440,13 @@ export const SessionFilesBadge: React.FC<SessionFilesBadgeProps> = ({
         reviewReadyGlintTimeoutRef.current = null;
       }, REVIEW_READY_GLINT_DURATION_MS);
     }
-    previousReviewableFileCountRef.current = reviewableFileCount;
-  }, [loadingStats, reviewableFileCount]);
+  }, [isSessionProcessing, latestTurnSnapshot, loadingStats, reviewActionAvailable, reviewableFileCount]);
+
+  useEffect(() => {
+    if (showReviewReadyGlint && !reviewActionAvailable) {
+      clearReviewReadyGlint();
+    }
+  }, [clearReviewReadyGlint, reviewActionAvailable, showReviewReadyGlint]);
 
   // Open diff for the selected file.
   const handleFileClick = useCallback(async (filePath: string) => {
@@ -448,12 +542,13 @@ export const SessionFilesBadge: React.FC<SessionFilesBadgeProps> = ({
     try {
       const { FlowChatManager } = await import('../../services/FlowChatManager');
       const flowChatManager = FlowChatManager.getInstance();
-      const { childSessionId } = await createBtwChildSession({
+      const reviewThreadTitle = t('sessionFilesBadge.review.threadTitle', {
+        defaultValue: 'Code review',
+      });
+      const created = await createBtwChildSession({
         parentSessionId: sessionId,
         workspacePath: currentWorkspace?.rootPath,
-        childSessionName: t('sessionFilesBadge.review.threadTitle', {
-          defaultValue: 'Code review',
-        }),
+        childSessionName: reviewThreadTitle,
         sessionKind: 'review',
         agentType: 'CodeReview',
         enableTools: true,
@@ -461,6 +556,15 @@ export const SessionFilesBadge: React.FC<SessionFilesBadgeProps> = ({
         autoCompact: true,
         enableContextCompression: true,
         addMarker: false,
+      });
+      const { childSessionId } = created;
+      insertReviewSessionSummaryMarker({
+        parentSessionId: sessionId,
+        childSessionId,
+        kind: 'review',
+        title: reviewThreadTitle,
+        requestedFiles: reviewableFilePaths,
+        parentDialogTurnId: created.parentDialogTurnId,
       });
 
       openBtwSessionInAuxPane({
@@ -554,6 +658,7 @@ export const SessionFilesBadge: React.FC<SessionFilesBadgeProps> = ({
         childSessionName: t('sessionFilesBadge.deepReview.threadTitle', {
           defaultValue: 'Deep review',
         }),
+        requestedFiles: reviewableFilePaths,
       });
 
       setIsExpanded(false);

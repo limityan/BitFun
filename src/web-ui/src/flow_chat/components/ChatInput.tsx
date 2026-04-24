@@ -35,7 +35,9 @@ import { useInputHistoryStore } from '../store/inputHistoryStore';
 import { startBtwThread } from '../services/BtwThreadService';
 import { FlowChatManager } from '../services/FlowChatManager';
 import {
+  DEEP_REVIEW_SLASH_COMMAND,
   buildDeepReviewPromptFromSlashCommand,
+  isDeepReviewSlashCommand,
   launchDeepReviewSession,
 } from '../services/DeepReviewService';
 import { createLogger } from '@/shared/utils/logger';
@@ -976,7 +978,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       {
         kind: 'action',
         id: 'deepreview',
-        command: '/deepreview',
+        command: DEEP_REVIEW_SLASH_COMMAND,
         label: t('chatInput.deepreviewAction', { defaultValue: 'Deep review' }),
       },
       ...(!derivedState?.isProcessing
@@ -1081,7 +1083,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const trimmedLower = text.trim().toLowerCase();
     const isBtwCommand = trimmedLower.startsWith('/btw');
     const isCompactCommand = trimmedLower.startsWith('/compact');
-    const isDeepReviewCommand = trimmedLower.startsWith('/deepreview');
+    const isDeepReviewCommand = isDeepReviewSlashCommand(text);
     const isProcessing = !!derivedState?.isProcessing;
 
     // Don't queue /btw while the main session is processing; /btw runs independently.
@@ -1100,7 +1102,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       if (isProcessing) {
         // Only show the picker for "/..." patterns that are plausibly a command (/ or /b... /d...).
         // Once the user types a space (starts composing the real question), stop showing the picker
-        // so Enter can submit "/btw ..." or "/deepreview ..." instead of selecting from the picker.
+        // so Enter can submit "/btw ..." or "/DeepReview ..." instead of selecting from the picker.
         if (!hasWhitespace && (query === '' || query.startsWith('b') || query.startsWith('d'))) {
           setSlashCommandState({
             isActive: true,
@@ -1335,16 +1337,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const submitDeepreviewFromInput = useCallback(async () => {
     if (!effectiveTargetSessionId || !effectiveTargetSession) {
       notificationService.error(
-        t('chatInput.deepreviewNoSession', { defaultValue: 'No active session for /deepreview' })
+        t('chatInput.deepreviewNoSession', { defaultValue: 'No active session for /DeepReview' })
       );
       return;
     }
 
     const message = inputState.value.trim();
-    if (!/^\/deepreview(\s+.*)?$/i.test(message)) {
+    if (!isDeepReviewSlashCommand(message)) {
       notificationService.warning(
         t('chatInput.deepreviewUsage', {
-          defaultValue: 'Use /deepreview with optional focus text, for example /deepreview review commit abc123 for security.',
+          defaultValue: 'Use /DeepReview with optional focus text, for example /DeepReview review commit abc123 for security.',
         })
       );
       return;
@@ -1383,7 +1385,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       });
       dispatchInput({ type: 'DEACTIVATE' });
     } catch (error) {
-      log.error('Failed to trigger /deepreview', {
+      log.error('Failed to trigger /DeepReview', {
         error,
         sessionId: effectiveTargetSessionId,
       });
@@ -1545,7 +1547,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       return;
     }
 
-    if (/^\/deepreview(\s+.*)?$/i.test(message)) {
+    if (isDeepReviewSlashCommand(message)) {
       await submitDeepreviewFromInput();
       return;
     }
@@ -1716,7 +1718,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     } else if (actionId === 'init') {
       next = '/init';
     } else if (actionId === 'deepreview') {
-      next = '/deepreview ';
+      next = `${DEEP_REVIEW_SLASH_COMMAND} `;
     } else {
       return;
     }

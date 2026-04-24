@@ -137,7 +137,7 @@
   },
   "teamsZone": {
     "title": "智能體團隊",
-    "subtitle": "將多個專業智能體組成固定工作流，適合需要多視角協作的複雜任務。",
+    "subtitle": "為更深入的任務組織多智能體陣容，當前已提供專業的審核團隊。",
     "empty": "暫無可用的智能體團隊"
   },
   "reviewTeams": {
@@ -150,7 +150,7 @@
       "open": "打開團隊",
       "back": "返回專業智能體",
       "title": "預設審核團隊",
-      "subtitle": "配置 Deep Review 與 /deepreview 使用的本地審核團隊。每個審核員預設使用快速模型，也可以單獨修改。",
+      "subtitle": "配置 Deep Review 與 /DeepReview 使用的本地審核團隊。每個審核員預設使用快速模型，也可以單獨修改。",
       "summaryTitle": "團隊概覽",
       "summaryDescription": "預設審核團隊會在本地並行拉起多個審核員，並始終以質檢員的覆核結果作為最終結論。",
       "membersTitle": "團隊成員",

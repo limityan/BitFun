@@ -508,7 +508,7 @@ const AgentsHomeView: React.FC = () => {
           })}
           subtitle={t('teamsZone.subtitle', {
             defaultValue:
-              'Launch specialized multi-agent lineups for deeper tasks. Start with the default local review team.',
+              'Organize multi-agent lineups for deeper tasks. A professional review team is now available.',
           })}
           tools={(
             <>

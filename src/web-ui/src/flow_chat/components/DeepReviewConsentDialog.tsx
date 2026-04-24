@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Clock, Coins, ShieldCheck, Sparkles } from 'lucide-react';
+import { Clock, Coins, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button, Checkbox, Modal } from '@/component-library';
 import { createLogger } from '@/shared/utils/logger';
@@ -59,52 +59,94 @@ export function useDeepReviewConsent(): DeepReviewConsentControls {
     <Modal
       isOpen={true}
       onClose={() => void settleConsent(false)}
-      title={t('deepReviewConsent.title')}
-      size="small"
+      size="large"
       closeOnOverlayClick={false}
+      showCloseButton={false}
+      contentClassName="deep-review-consent-modal"
     >
       <div className="deep-review-consent">
-        <div className="deep-review-consent__hero" aria-hidden="true">
-          <Sparkles size={18} />
+        <div className="deep-review-consent__header">
+          <div className="deep-review-consent__badge" aria-hidden="true">
+            <Sparkles size={18} />
+          </div>
+          <div className="deep-review-consent__heading">
+            <span className="deep-review-consent__eyebrow">
+              {t('deepReviewConsent.eyebrow', { defaultValue: 'Local review team' })}
+            </span>
+            <h3>{t('deepReviewConsent.title')}</h3>
+          </div>
+          <button
+            type="button"
+            className="deep-review-consent__close"
+            aria-label={t('deepReviewConsent.cancel')}
+            onClick={() => void settleConsent(false)}
+          >
+            <X size={16} />
+          </button>
         </div>
-        <div className="deep-review-consent__body">
-          <p>{t('deepReviewConsent.body')}</p>
-          <div className="deep-review-consent__facts">
-            <div className="deep-review-consent__fact">
-              <ShieldCheck size={15} />
-              <span>{t('deepReviewConsent.readonly')}</span>
+
+        <p className="deep-review-consent__lead">{t('deepReviewConsent.body')}</p>
+
+        <div className="deep-review-consent__safety-note">
+          <div className="deep-review-consent__fact-icon">
+            <ShieldCheck size={16} />
+          </div>
+          <div>
+            <span className="deep-review-consent__fact-title">
+              {t('deepReviewConsent.readonlyLabel', { defaultValue: 'Read-only first pass' })}
+            </span>
+            <p>{t('deepReviewConsent.readonly')}</p>
+          </div>
+        </div>
+
+        <div className="deep-review-consent__facts" aria-label={t('deepReviewConsent.windowTitle', { defaultValue: 'Deep Review' })}>
+          <div className="deep-review-consent__fact">
+            <div className="deep-review-consent__fact-icon">
+              <Coins size={16} />
             </div>
-            <div className="deep-review-consent__fact">
-              <Coins size={15} />
-              <span>{t('deepReviewConsent.cost')}</span>
+            <div>
+              <span className="deep-review-consent__fact-title">
+                {t('deepReviewConsent.costLabel', { defaultValue: 'Higher token usage' })}
+              </span>
+              <p>{t('deepReviewConsent.cost')}</p>
             </div>
-            <div className="deep-review-consent__fact">
-              <Clock size={15} />
-              <span>{t('deepReviewConsent.time')}</span>
+          </div>
+          <div className="deep-review-consent__fact">
+            <div className="deep-review-consent__fact-icon">
+              <Clock size={16} />
+            </div>
+            <div>
+              <span className="deep-review-consent__fact-title">
+                {t('deepReviewConsent.timeLabel', { defaultValue: 'Longer runtime' })}
+              </span>
+              <p>{t('deepReviewConsent.time')}</p>
             </div>
           </div>
         </div>
-        <Checkbox
-          className="deep-review-consent__checkbox"
-          checked={dontShowAgain}
-          onChange={(event) => setDontShowAgain(event.target.checked)}
-          label={t('deepReviewConsent.dontShowAgain')}
-        />
-        <div className="deep-review-consent__actions">
-          <Button
-            variant="secondary"
-            size="small"
-            onClick={() => void settleConsent(false)}
-          >
-            {t('deepReviewConsent.cancel')}
-          </Button>
-          <Button
-            variant="primary"
-            size="small"
-            onClick={() => void settleConsent(true)}
-          >
-            {t('deepReviewConsent.confirm')}
-          </Button>
+
+        <div className="deep-review-consent__footer">
+          <Checkbox
+            className="deep-review-consent__checkbox"
+            checked={dontShowAgain}
+            onChange={(event) => setDontShowAgain(event.target.checked)}
+            label={t('deepReviewConsent.dontShowAgain')}
+          />
+          <div className="deep-review-consent__actions">
+            <Button
+              variant="secondary"
+              size="small"
+              onClick={() => void settleConsent(false)}
+            >
+              {t('deepReviewConsent.cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              size="small"
+              onClick={() => void settleConsent(true)}
+            >
+              {t('deepReviewConsent.confirm')}
+            </Button>
+          </div>
         </div>
       </div>
     </Modal>

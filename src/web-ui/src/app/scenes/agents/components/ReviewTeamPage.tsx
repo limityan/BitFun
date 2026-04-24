@@ -76,7 +76,7 @@ function getMemberIcon(member: ReviewTeamMember) {
   }
 }
 
-function getSourceVariant(source: SubagentSource): 'neutral' | 'info' | 'purple' {
+function getSourceVariant(source?: SubagentSource): 'neutral' | 'info' | 'purple' {
   if (source === 'user') {
     return 'info';
   }
@@ -90,6 +90,11 @@ const MEMBER_STRATEGY_OPTIONS: ReviewMemberStrategyLevel[] = [
   DEFAULT_REVIEW_MEMBER_STRATEGY_LEVEL,
   ...REVIEW_STRATEGY_LEVELS,
 ];
+const DEFAULT_MEMBER_ACCENT = '#64748b';
+
+function getMemberResponsibilities(member: ReviewTeamMember): string[] {
+  return Array.isArray(member.responsibilities) ? member.responsibilities : [];
+}
 
 const ReviewTeamPage: React.FC = () => {
   const { t } = useTranslation('scenes/agents');
@@ -202,13 +207,13 @@ const ReviewTeamPage: React.FC = () => {
 
   const getLocalizedResponsibilities = useCallback((member: ReviewTeamMember): string[] => {
     if (!member.definitionKey) {
-      return member.responsibilities.map((item, index) => t(
+      return getMemberResponsibilities(member).map((item, index) => t(
         `reviewTeams.extraReviewer.responsibilities.${index}`,
         { defaultValue: item },
       ));
     }
 
-    return member.responsibilities.map((item, index) => t(
+    return getMemberResponsibilities(member).map((item, index) => t(
       `reviewTeams.members.${member.definitionKey}.responsibilities.${index}`,
       { defaultValue: item },
     ));
@@ -503,8 +508,8 @@ const ReviewTeamPage: React.FC = () => {
           defaultValue: 'Default Review Team',
         })}
         subtitle={t('reviewTeams.detail.subtitle', {
-          defaultValue:
-            'Configure the local deep-review team used by Deep Review and /deepreview. Every reviewer starts on the Fast model unless you change it.',
+            defaultValue:
+            'Configure the local deep-review team used by Deep Review and /DeepReview. Every reviewer starts on the Fast model unless you change it.',
         })}
         extra={(
           <Button variant="secondary" size="small" onClick={openHome}>
@@ -783,7 +788,7 @@ const ReviewTeamPage: React.FC = () => {
                   key={member.id}
                   type="button"
                   className={`review-team-page__member-card${isSelected ? ' is-selected' : ''}`}
-                  style={{ '--member-accent': member.accentColor } as React.CSSProperties}
+                  style={{ '--member-accent': member.accentColor || DEFAULT_MEMBER_ACCENT } as React.CSSProperties}
                   onClick={() => setSelectedMemberId(member.id)}
                 >
                   <div className="review-team-page__member-card-icon">
@@ -811,8 +816,8 @@ const ReviewTeamPage: React.FC = () => {
                           </Badge>
                         )}
                         <Badge variant={getSourceVariant(member.subagentSource)}>
-                          {t(`reviewTeams.detail.memberTypes.${member.subagentSource}`, {
-                            defaultValue: member.subagentSource,
+                          {t(`reviewTeams.detail.memberTypes.${member.subagentSource ?? 'builtin'}`, {
+                            defaultValue: member.subagentSource ?? 'builtin',
                           })}
                         </Badge>
                         <Badge variant={member.strategySource === 'member' ? 'info' : 'neutral'}>
@@ -857,7 +862,7 @@ const ReviewTeamPage: React.FC = () => {
             <div className="review-team-page__detail-hero">
               <div
                 className="review-team-page__detail-icon"
-                style={{ '--member-accent': selectedMember.accentColor } as React.CSSProperties}
+                style={{ '--member-accent': selectedMember.accentColor || DEFAULT_MEMBER_ACCENT } as React.CSSProperties}
               >
                 <SelectedIcon size={18} strokeWidth={1.9} />
               </div>

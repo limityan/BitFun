@@ -5,6 +5,7 @@ import { Link2, CornerUpLeft, Square } from 'lucide-react';
 import { FlowChatContext } from '../modern/FlowChatContext';
 import { VirtualItemRenderer } from '../modern/VirtualItemRenderer';
 import { ProcessingIndicator } from '../modern/ProcessingIndicator';
+import { ScrollToBottomButton } from '../ScrollToBottomButton';
 import { flowChatStore } from '../../store/FlowChatStore';
 import type { FlowChatConfig, FlowChatState, Session } from '../../types/flow-chat';
 import { sessionToVirtualItems } from '../../store/modernFlowChatStore';
@@ -46,6 +47,7 @@ export const BtwSessionPanel: React.FC<BtwSessionPanelProps> = ({
   const { t } = useTranslation('flow-chat');
   const [flowChatState, setFlowChatState] = useState<FlowChatState>(() => flowChatStore.getState());
   const [stoppingReview, setStoppingReview] = useState(false);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
 
@@ -87,10 +89,19 @@ export const BtwSessionPanel: React.FC<BtwSessionPanelProps> = ({
     });
   }, [childSessionId, childSession, workspacePath]);
 
+  const updateScrollAffordance = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    setShowScrollToBottom(distanceFromBottom > 120);
+    if (distanceFromBottom < 80) {
+      shouldAutoScrollRef.current = true;
+    }
+  }, []);
+
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
-
     const handleWheel = (e: WheelEvent) => {
       if (e.deltaY < 0) {
         shouldAutoScrollRef.current = false;
@@ -104,16 +115,30 @@ export const BtwSessionPanel: React.FC<BtwSessionPanelProps> = ({
     };
 
     container.addEventListener('wheel', handleWheel, { passive: true });
-    return () => container.removeEventListener('wheel', handleWheel);
-  }, []);
+    container.addEventListener('scroll', updateScrollAffordance, { passive: true });
+    updateScrollAffordance();
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+      container.removeEventListener('scroll', updateScrollAffordance);
+    };
+  }, [updateScrollAffordance]);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container || !shouldAutoScrollRef.current) return;
     requestAnimationFrame(() => {
       container.scrollTop = container.scrollHeight;
+      setShowScrollToBottom(false);
     });
   }, [virtualItems]);
+
+  const handleScrollToBottom = useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    shouldAutoScrollRef.current = true;
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+    setShowScrollToBottom(false);
+  }, []);
 
   const handleFileViewRequest = useCallback((
     filePath: string,
@@ -352,6 +377,11 @@ export const BtwSessionPanel: React.FC<BtwSessionPanelProps> = ({
             </>
           )}
         </div>
+        <ScrollToBottomButton
+          visible={showScrollToBottom}
+          onClick={handleScrollToBottom}
+          className="btw-session-panel__scroll-to-bottom"
+        />
       </div>
     </FlowChatContext.Provider>
   );

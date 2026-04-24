@@ -1,22 +1,36 @@
-export const REVIEW_READY_GLINT_THRESHOLD = 8;
-export const REVIEW_READY_GLINT_DURATION_MS = 1400;
+import type { DialogTurn } from '../../types/flow-chat';
+
+export const REVIEW_READY_GLINT_DURATION_MS = 5200;
 
 export interface ReviewReadyGlintInput {
-  previousReviewableCount: number;
+  currentTurnId?: string | null;
+  currentTurnStatus?: DialogTurn['status'] | null;
+  observedProcessingTurnId?: string | null;
+  promptedTurnId?: string | null;
   nextReviewableCount: number;
   loadingStats: boolean;
-  threshold?: number;
+  reviewActionAvailable: boolean;
+  sessionProcessing?: boolean;
 }
 
 export function shouldTriggerReviewReadyGlint({
-  previousReviewableCount,
+  currentTurnId,
+  currentTurnStatus,
+  observedProcessingTurnId,
+  promptedTurnId,
   nextReviewableCount,
   loadingStats,
-  threshold = REVIEW_READY_GLINT_THRESHOLD,
+  reviewActionAvailable,
+  sessionProcessing = false,
 }: ReviewReadyGlintInput): boolean {
   return (
+    Boolean(currentTurnId) &&
+    currentTurnStatus === 'completed' &&
+    observedProcessingTurnId === currentTurnId &&
+    promptedTurnId !== currentTurnId &&
     !loadingStats &&
-    previousReviewableCount < threshold &&
-    nextReviewableCount >= threshold
+    !sessionProcessing &&
+    reviewActionAvailable &&
+    nextReviewableCount > 0
   );
 }

@@ -4,6 +4,7 @@ import { createBtwChildSession } from './BtwThreadService';
 import { closeBtwSessionInAuxPane, openBtwSessionInAuxPane } from './openBtwSession';
 import { FlowChatManager } from './FlowChatManager';
 import { flowChatStore } from '../store/FlowChatStore';
+import { insertReviewSessionSummaryMarker } from './ReviewSessionMarkerService';
 import {
   buildEffectiveReviewTeamManifest,
   buildReviewTeamPromptBlock,
@@ -12,12 +13,15 @@ import {
 
 const log = createLogger('DeepReviewService');
 
+export const DEEP_REVIEW_SLASH_COMMAND = '/DeepReview';
+
 interface LaunchDeepReviewSessionParams {
   parentSessionId: string;
   workspacePath?: string;
   prompt: string;
   displayMessage: string;
   childSessionName?: string;
+  requestedFiles?: string[];
 }
 
 type DeepReviewLaunchStep =
@@ -142,6 +146,14 @@ function formatFileList(filePaths: string[]): string {
   return filePaths.map(filePath => `- ${filePath}`).join('\n');
 }
 
+export function isDeepReviewSlashCommand(commandText: string): boolean {
+  return /^\/DeepReview(\s+.*)?$/i.test(commandText.trim());
+}
+
+function getDeepReviewCommandFocus(commandText: string): string {
+  return commandText.trim().replace(/^\/DeepReview\b/i, '').trim();
+}
+
 export async function buildDeepReviewPromptFromSessionFiles(
   filePaths: string[],
   extraContext?: string,
@@ -171,7 +183,7 @@ export async function buildDeepReviewPromptFromSlashCommand(
   const team = await prepareDefaultReviewTeamForLaunch(workspacePath);
   const manifest = buildEffectiveReviewTeamManifest(team, { workspacePath });
   const trimmed = commandText.trim();
-  const extraContext = trimmed.replace(/^\/deepreview\b/i, '').trim();
+  const extraContext = getDeepReviewCommandFocus(trimmed);
   const contextBlock = extraContext
     ? `User-provided focus or target:\n${extraContext}`
     : 'User-provided focus or target:\nNone. If no explicit target is given, review the current workspace changes relative to HEAD.';
@@ -193,6 +205,7 @@ export async function launchDeepReviewSession({
   prompt,
   displayMessage,
   childSessionName = 'Deep review',
+  requestedFiles = [],
 }: LaunchDeepReviewSessionParams): Promise<{ childSessionId: string }> {
   let childSessionId: string | null = null;
   let launchStep: DeepReviewLaunchStep = 'create_child_session';
@@ -211,6 +224,14 @@ export async function launchDeepReviewSession({
       addMarker: false,
     });
     childSessionId = created.childSessionId;
+    insertReviewSessionSummaryMarker({
+      parentSessionId,
+      childSessionId,
+      kind: 'deep_review',
+      title: childSessionName,
+      requestedFiles,
+      parentDialogTurnId: created.parentDialogTurnId,
+    });
 
     launchStep = 'open_aux_pane';
     openBtwSessionInAuxPane({

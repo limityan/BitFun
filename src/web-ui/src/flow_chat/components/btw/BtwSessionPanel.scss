@@ -4,6 +4,7 @@
  */
 
 .btw-session-panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -158,5 +159,14 @@
     color: var(--color-text-muted);
     font-size: 13px;
     text-align: center;
+  }
+
+  &__scroll-to-bottom {
+    bottom: 18px;
+    right: 18px;
+    width: 34px;
+    height: 34px;
+    border-width: 1px;
+    z-index: 12;
   }
 }

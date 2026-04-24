@@ -16,15 +16,18 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Button, InputDialog, Tooltip } from '@/component-library';
+import { Button, Checkbox, Tooltip } from '@/component-library';
 import type { ToolCardProps } from '../types/flow-chat';
 import { BaseToolCard, ToolCardHeader } from './BaseToolCard';
 import { createLogger } from '@/shared/utils/logger';
 import { useToolCardHeightContract } from './useToolCardHeightContract';
 import { flowChatManager } from '../services/FlowChatManager';
-import { flowChatStore } from '../store/FlowChatStore';
-import { workspaceAPI } from '@/infrastructure/api/service-api/WorkspaceAPI';
 import { notificationService } from '@/shared/notification-system';
+import {
+  buildReviewRemediationItems,
+  buildSelectedRemediationPrompt,
+  getDefaultSelectedRemediationIds,
+} from '../utils/codeReviewRemediation';
 import './CodeReviewToolCard.scss';
 
 const log = createLogger('CodeReviewToolCard');
@@ -74,45 +77,6 @@ const riskLevelColors: Record<string, string> = {
   critical: '#ef4444',
 };
 
-const isAbsoluteArchivePath = (filePath: string): boolean =>
-  /^[A-Za-z]:[\\/]/.test(filePath) || filePath.startsWith('/') || filePath.startsWith('\\\\');
-
-function createArchiveTimestamp(): string {
-  return new Date().toISOString().replace(/[:.]/g, '-');
-}
-
-function buildRemediationMarkdown(reviewData: CodeReviewResult): string {
-  const issueLines = reviewData.issues.length > 0
-    ? reviewData.issues
-        .map((issue, index) => {
-          const location = issue.line ? `${issue.file}:${issue.line}` : issue.file;
-          return `${index + 1}. [${issue.severity}/${issue.certainty}] ${issue.title} (${location})\n   - ${issue.description}\n   - Suggestion: ${issue.suggestion ?? 'N/A'}`;
-        })
-        .join('\n')
-    : 'No issues reported.';
-
-  const planLines = (reviewData.remediation_plan ?? []).length > 0
-    ? reviewData.remediation_plan!.map((step, index) => `${index + 1}. ${step}`).join('\n')
-    : 'No remediation plan provided.';
-
-  return [
-    '# Deep Review Remediation Plan',
-    '',
-    '## Summary',
-    reviewData.summary.overall_assessment,
-    '',
-    `Risk level: ${reviewData.summary.risk_level}`,
-    `Recommended action: ${reviewData.summary.recommended_action}`,
-    '',
-    '## Issues',
-    issueLines,
-    '',
-    '## Remediation Plan',
-    planLines,
-    '',
-  ].join('\n');
-}
-
 export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
   toolItem,
   sessionId,
@@ -121,9 +85,9 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
   const { toolResult, status } = toolItem;
   const [isExpanded, setIsExpanded] = useState(false);
   const [remediationActionsDismissed, setRemediationActionsDismissed] = useState(false);
-  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [activeRemediationAction, setActiveRemediationAction] = useState<'fix' | 'fix-review' | null>(null);
-  const [isArchiving, setIsArchiving] = useState(false);
+  const [selectedRemediationIds, setSelectedRemediationIds] = useState<Set<string>>(new Set());
+  const [expandedRemediationIds, setExpandedRemediationIds] = useState<Set<string>>(new Set());
   const autoExpandedResultRef = useRef<string | null>(null);
   const toolId = toolItem.id ?? toolItem.toolCall?.id;
   const { cardRootRef, applyExpandedState } = useToolCardHeightContract({
@@ -168,7 +132,14 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
 
   useEffect(() => {
     setRemediationActionsDismissed(false);
-  }, [toolResult?.result]);
+    setExpandedRemediationIds(new Set());
+    if (!reviewData) {
+      setSelectedRemediationIds(new Set());
+      return;
+    }
+    const remediationItems = buildReviewRemediationItems(reviewData);
+    setSelectedRemediationIds(new Set(getDefaultSelectedRemediationIds(remediationItems)));
+  }, [reviewData, toolResult?.result]);
 
   const issueStats = useMemo(() => {
     if (!reviewData) return null;
@@ -225,7 +196,17 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
 
   const hasIssues = issueStats && issueStats.total > 0;
   const hasData = reviewData !== null;
-  const [defaultArchivePath] = useState(() => `.bitfun/deep-review-${createArchiveTimestamp()}.md`);
+  const remediationItems = useMemo(
+    () => reviewData ? buildReviewRemediationItems(reviewData) : [],
+    [reviewData],
+  );
+  const selectedRemediationCount = selectedRemediationIds.size;
+  const allRemediationSelected =
+    remediationItems.length > 0 &&
+    selectedRemediationCount === remediationItems.length;
+  const someRemediationSelected =
+    selectedRemediationCount > 0 &&
+    selectedRemediationCount < remediationItems.length;
 
   useEffect(() => {
     const resultKey = typeof toolResult?.result === 'string'
@@ -245,35 +226,12 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
 
   const buildFixPrompt = useCallback((rerunReview: boolean) => {
     if (!reviewData) return '';
-
-    const issuesBlock = reviewData.issues.length > 0
-      ? reviewData.issues
-          .map((issue, index) => {
-            const location = issue.line ? `${issue.file}:${issue.line}` : issue.file;
-            return `${index + 1}. [${issue.severity}/${issue.certainty}] ${issue.title} (${location})\n   Description: ${issue.description}\n   Suggestion: ${issue.suggestion ?? 'N/A'}`;
-          })
-          .join('\n\n')
-      : 'No concrete issues were reported.';
-
-    const planBlock = (reviewData.remediation_plan ?? []).length > 0
-      ? reviewData.remediation_plan!.map((step, index) => `${index + 1}. ${step}`).join('\n')
-      : 'No remediation plan was provided.';
-
-    return [
-      'The user approved remediation for this Deep Review result.',
-      '',
-      'Please implement the remediation plan safely and minimally. Do not broaden scope beyond the reviewed changes unless required for correctness.',
-      rerunReview
-        ? 'After implementing fixes, run the most relevant verification and perform a follow-up review of the fix diff.'
-        : 'After implementing fixes, summarize what changed and what verification was run.',
-      '',
-      '## Remediation Plan',
-      planBlock,
-      '',
-      '## Review Findings',
-      issuesBlock,
-    ].join('\n');
-  }, [reviewData]);
+    return buildSelectedRemediationPrompt({
+      reviewData,
+      selectedIds: selectedRemediationIds,
+      rerunReview,
+    });
+  }, [reviewData, selectedRemediationIds]);
 
   const handleStartFixing = useCallback(async (
     event: React.MouseEvent,
@@ -292,10 +250,15 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
     }
 
     const action = rerunReview ? 'fix-review' : 'fix';
+    const prompt = buildFixPrompt(rerunReview);
+    if (!prompt) {
+      return;
+    }
+
     setActiveRemediationAction(action);
     try {
       await flowChatManager.sendMessage(
-        buildFixPrompt(rerunReview),
+        prompt,
         sessionId,
         rerunReview
           ? t('toolCards.codeReview.remediationActions.fixAndReviewRequestDisplay', {
@@ -323,63 +286,6 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
     }
   }, [buildFixPrompt, reviewData, sessionId, t]);
 
-  const handleArchivePlan = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    setArchiveDialogOpen(true);
-  }, []);
-
-  const handleArchiveConfirm = useCallback((archivePath: string) => {
-    if (!reviewData) return;
-
-    const trimmedPath = archivePath.trim();
-    if (!trimmedPath) {
-      return;
-    }
-
-    const archivePlan = async () => {
-      const content = buildRemediationMarkdown(reviewData);
-      const session = sessionId
-        ? flowChatStore.getState().sessions.get(sessionId)
-        : undefined;
-      const workspacePath = session?.workspacePath;
-
-      if (!isAbsoluteArchivePath(trimmedPath) && !workspacePath) {
-        throw new Error('Workspace path is required for relative archive paths');
-      }
-
-      if (isAbsoluteArchivePath(trimmedPath)) {
-        await workspaceAPI.writeFile(trimmedPath, content);
-      } else {
-        await workspaceAPI.writeFileContent(workspacePath!, trimmedPath, content);
-      }
-
-      return trimmedPath;
-    };
-
-    setIsArchiving(true);
-    archivePlan()
-      .then((savedPath) => {
-        notificationService.success(
-          t('toolCards.codeReview.remediationActions.archiveSuccess', {
-            path: savedPath,
-            defaultValue: 'Remediation plan archived to {{path}}',
-          }),
-          { duration: 3000 },
-        );
-        setRemediationActionsDismissed(true);
-      })
-      .catch((error) => {
-        log.error('Failed to archive Deep Review remediation plan', { sessionId, archivePath: trimmedPath, error });
-        notificationService.error(
-          t('toolCards.codeReview.remediationActions.archiveFailed', {
-            defaultValue: 'Failed to archive remediation plan',
-          }),
-          { duration: 5000 },
-        );
-      })
-      .finally(() => setIsArchiving(false));
-  }, [reviewData, sessionId, t]);
-
   const toggleExpanded = useCallback(() => {
     applyExpandedState(isExpanded, !isExpanded, setIsExpanded);
   }, [applyExpandedState, isExpanded]);
@@ -399,6 +305,38 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
     e.stopPropagation();
     toggleExpanded();
   }, [toggleExpanded]);
+
+  const handleToggleAllRemediation = useCallback((checked: boolean) => {
+    setSelectedRemediationIds(
+      checked
+        ? new Set(remediationItems.map((item) => item.id))
+        : new Set(),
+    );
+  }, [remediationItems]);
+
+  const handleToggleRemediation = useCallback((itemId: string, checked: boolean) => {
+    setSelectedRemediationIds((current) => {
+      const next = new Set(current);
+      if (checked) {
+        next.add(itemId);
+      } else {
+        next.delete(itemId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleToggleRemediationDetails = useCallback((itemId: string) => {
+    setExpandedRemediationIds((current) => {
+      const next = new Set(current);
+      if (next.has(itemId)) {
+        next.delete(itemId);
+      } else {
+        next.add(itemId);
+      }
+      return next;
+    });
+  }, []);
 
   const renderContent = () => {
     if (status === 'completed' && reviewData) {
@@ -511,7 +449,7 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
       review_scope,
     } = reviewData;
     const reviewers = reviewData.reviewers ?? [];
-    const remediationPlan = reviewData.remediation_plan ?? [];
+    const isFixActionDisabled = activeRemediationAction !== null || selectedRemediationCount === 0;
 
     return (
       <div className="code-review-details">
@@ -634,17 +572,150 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
           </div>
         )}
 
-        {remediationPlan.length > 0 && (
+        {remediationItems.length > 0 && (
           <div className="review-remediation">
-            <div className="remediation-header">{t('toolCards.codeReview.remediationPlan', { defaultValue: 'Remediation Plan' })}</div>
-            <div className="remediation-list">
-              {remediationPlan.map((step, index) => (
-                <div key={index} className="remediation-item">
-                  <span className="remediation-index">{index + 1}</span>
-                  <span>{step}</span>
+            <div className="remediation-header-row">
+              <div>
+                <div className="remediation-header">
+                  {t('toolCards.codeReview.remediationPlan', { defaultValue: 'Remediation Plan' })}
                 </div>
-              ))}
+                <div className="remediation-selection-count">
+                  {t('toolCards.codeReview.remediationActions.selectionCount', {
+                    selected: selectedRemediationCount,
+                    total: remediationItems.length,
+                    defaultValue: '{{selected}}/{{total}} selected',
+                  })}
+                </div>
+              </div>
+              {review_mode === 'deep' && !remediationActionsDismissed && (
+                <Checkbox
+                  className="remediation-select-all"
+                  size="small"
+                  checked={allRemediationSelected}
+                  indeterminate={someRemediationSelected}
+                  onChange={(event) => handleToggleAllRemediation(event.target.checked)}
+                  label={t('toolCards.codeReview.remediationActions.selectAll', {
+                    defaultValue: 'Select all',
+                  })}
+                />
+              )}
             </div>
+            <div className="remediation-list">
+              {remediationItems.map((item) => {
+                const issue = item.issue;
+                const expanded = expandedRemediationIds.has(item.id);
+                const selected = selectedRemediationIds.has(item.id);
+                const location = issue?.file
+                  ? `${issue.file}${issue.line ? `:${issue.line}` : ''}`
+                  : null;
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`remediation-item ${selected ? 'is-selected' : ''}`}
+                  >
+                    <div className="remediation-item__topline">
+                      {review_mode === 'deep' && !remediationActionsDismissed ? (
+                        <Checkbox
+                          className="remediation-item__checkbox"
+                          size="small"
+                          checked={selected}
+                          onChange={(event) => handleToggleRemediation(item.id, event.target.checked)}
+                          label={(
+                            <span className="remediation-item__label">
+                              <span className="remediation-index">{item.index + 1}</span>
+                              <span>{item.plan}</span>
+                            </span>
+                          )}
+                        />
+                      ) : (
+                        <span className="remediation-item__label">
+                          <span className="remediation-index">{item.index + 1}</span>
+                          <span>{item.plan}</span>
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        className="remediation-item__expand"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleToggleRemediationDetails(item.id);
+                        }}
+                        aria-expanded={expanded}
+                      >
+                        {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                        <span>
+                          {expanded
+                            ? t('toolCards.codeReview.remediationActions.collapsePlan', {
+                                defaultValue: 'Collapse',
+                              })
+                            : t('toolCards.codeReview.remediationActions.expandPlan', {
+                                defaultValue: 'Details',
+                              })}
+                        </span>
+                      </button>
+                    </div>
+                    {expanded && (
+                      <div className="remediation-item__details">
+                        {issue ? (
+                          <>
+                            <div className="remediation-detail-row">
+                              <span>{t('toolCards.codeReview.remediationActions.relatedIssue', { defaultValue: 'Related issue' })}</span>
+                              <strong>{issue.title}</strong>
+                            </div>
+                            <div className="remediation-detail-grid">
+                              {issue.severity && (
+                                <div>
+                                  <span>{t('toolCards.codeReview.remediationActions.severity', { defaultValue: 'Severity' })}</span>
+                                  <strong>{t(`toolCards.codeReview.severities.${issue.severity}`, { defaultValue: issue.severity })}</strong>
+                                </div>
+                              )}
+                              {issue.certainty && (
+                                <div>
+                                  <span>{t('toolCards.codeReview.remediationActions.certainty', { defaultValue: 'Certainty' })}</span>
+                                  <strong>{t(`toolCards.codeReview.certainties.${issue.certainty}`, { defaultValue: issue.certainty })}</strong>
+                                </div>
+                              )}
+                              {location && (
+                                <div>
+                                  <span>{t('toolCards.codeReview.remediationActions.location', { defaultValue: 'Location' })}</span>
+                                  <strong>{location}</strong>
+                                </div>
+                              )}
+                            </div>
+                            {issue.description && (
+                              <p>{issue.description}</p>
+                            )}
+                            {issue.suggestion && (
+                              <p className="remediation-item__suggestion">
+                                <span>{t('toolCards.codeReview.suggestion')}:</span>
+                                {issue.suggestion}
+                              </p>
+                            )}
+                            {issue.validation_note && (
+                              <p className="remediation-item__validation">{issue.validation_note}</p>
+                            )}
+                          </>
+                        ) : (
+                          <p>
+                            {t('toolCards.codeReview.remediationActions.noRelatedIssue', {
+                              defaultValue: 'No directly-linked issue was provided for this remediation item. Use the plan text itself as the implementation scope.',
+                            })}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {review_mode === 'deep' && !remediationActionsDismissed && selectedRemediationCount === 0 && (
+              <div className="review-remediation-actions__empty-selection">
+                {t('toolCards.codeReview.remediationActions.noSelectionHint', {
+                  defaultValue: 'Select at least one remediation item to start fixing.',
+                })}
+              </div>
+            )}
             {review_mode === 'deep' && !remediationActionsDismissed && (
               <div className="review-remediation-actions" onClick={(event) => event.stopPropagation()}>
                 <div className="review-remediation-actions__copy">
@@ -653,7 +724,7 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
                   </div>
                   <div className="review-remediation-actions__hint">
                     {t('toolCards.codeReview.remediationActions.hint', {
-                      defaultValue: 'Deep Review is read-only by default. Choose what to do with the remediation plan.',
+                      defaultValue: 'Deep Review is read-only by default. Select the remediation items to fix.',
                     })}
                   </div>
                 </div>
@@ -662,7 +733,7 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
                     variant="primary"
                     size="small"
                     isLoading={activeRemediationAction === 'fix'}
-                    disabled={activeRemediationAction !== null || isArchiving}
+                    disabled={isFixActionDisabled}
                     onClick={(event) => void handleStartFixing(event, false)}
                   >
                     {t('toolCards.codeReview.remediationActions.startFix', { defaultValue: 'Start fixing' })}
@@ -671,7 +742,7 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
                     variant="secondary"
                     size="small"
                     isLoading={activeRemediationAction === 'fix-review'}
-                    disabled={activeRemediationAction !== null || isArchiving}
+                    disabled={isFixActionDisabled}
                     onClick={(event) => void handleStartFixing(event, true)}
                   >
                     {t('toolCards.codeReview.remediationActions.fixAndReview', { defaultValue: 'Fix and re-review' })}
@@ -679,15 +750,7 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
                   <Button
                     variant="ghost"
                     size="small"
-                    disabled={activeRemediationAction !== null || isArchiving}
-                    onClick={handleArchivePlan}
-                  >
-                    {t('toolCards.codeReview.remediationActions.archive', { defaultValue: 'Archive plan' })}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="small"
-                    disabled={activeRemediationAction !== null || isArchiving}
+                    disabled={activeRemediationAction !== null}
                     onClick={(event) => {
                       event.stopPropagation();
                       setRemediationActionsDismissed(true);
@@ -718,50 +781,33 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
     );
   }, [
     activeRemediationAction,
-    handleArchivePlan,
+    allRemediationSelected,
+    expandedRemediationIds,
+    handleToggleAllRemediation,
+    handleToggleRemediation,
+    handleToggleRemediationDetails,
     handleStartFixing,
-    isArchiving,
+    remediationItems,
     remediationActionsDismissed,
     reviewData,
+    selectedRemediationCount,
+    selectedRemediationIds,
+    someRemediationSelected,
     t,
   ]);
 
   const normalizedStatus = status === 'analyzing' ? 'running' : status;
 
   return (
-    <>
-      <div ref={cardRootRef} data-tool-card-id={toolId ?? ''}>
-        <BaseToolCard
-          status={normalizedStatus as 'pending' | 'preparing' | 'streaming' | 'running' | 'completed' | 'error' | 'cancelled'}
-          isExpanded={isExpanded}
-          onClick={handleCardClick}
-          className="code-review-card"
-          header={renderHeader()}
-          expandedContent={expandedContent ?? undefined}
-        />
-      </div>
-      <InputDialog
-        isOpen={archiveDialogOpen}
-        onClose={() => setArchiveDialogOpen(false)}
-        onConfirm={handleArchiveConfirm}
-        title={t('toolCards.codeReview.remediationActions.archiveTitle', {
-          defaultValue: 'Archive remediation plan',
-        })}
-        description={t('toolCards.codeReview.remediationActions.archiveDescription', {
-          defaultValue: 'Enter a workspace-relative path or an absolute file path.',
-        })}
-        placeholder={t('toolCards.codeReview.remediationActions.archivePlaceholder', {
-          timestamp: createArchiveTimestamp(),
-          defaultValue: '.bitfun/deep-review-{{timestamp}}.md',
-        })}
-        defaultValue={defaultArchivePath}
-        confirmText={t('toolCards.codeReview.remediationActions.archive', {
-          defaultValue: 'Archive plan',
-        })}
-        cancelText={t('toolCards.codeReview.remediationActions.cancel', {
-          defaultValue: 'Cancel',
-        })}
+    <div ref={cardRootRef} data-tool-card-id={toolId ?? ''}>
+      <BaseToolCard
+        status={normalizedStatus as 'pending' | 'preparing' | 'streaming' | 'running' | 'completed' | 'error' | 'cancelled'}
+        isExpanded={isExpanded}
+        onClick={handleCardClick}
+        className="code-review-card"
+        header={renderHeader()}
+        expandedContent={expandedContent ?? undefined}
       />
-    </>
+    </div>
   );
 });

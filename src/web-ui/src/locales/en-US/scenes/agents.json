@@ -20,7 +20,7 @@
   },
   "teamsZone": {
     "title": "Agent Teams",
-    "subtitle": "Organize specialized agent lineups for deeper tasks. Start with the default local review team.",
+    "subtitle": "Organize multi-agent lineups for deeper tasks. A professional review team is now available.",
     "empty": "No agent teams are available right now"
   },
   "filters": {
@@ -150,7 +150,7 @@
       "open": "Open team",
       "back": "Back to Agents",
       "title": "Default Review Team",
-      "subtitle": "Configure the local deep-review team used by Deep Review and /deepreview. Every reviewer starts on the Fast model unless you change it.",
+      "subtitle": "Configure the local deep-review team used by Deep Review and /DeepReview. Every reviewer starts on the Fast model unless you change it.",
       "summaryTitle": "Team Overview",
       "summaryDescription": "The default review team runs locally, launches reviewers in parallel, and always finishes with a quality-gate pass.",
       "membersTitle": "Team Members",

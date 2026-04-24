@@ -226,8 +226,8 @@
     "initFailed": "AGENTS.md initialization failed",
     "initPrompt": "Please generate or update AGENTS.md based on the current project content",
     "deepreviewAction": "Deep review",
-    "deepreviewNoSession": "No active session for /deepreview",
-    "deepreviewUsage": "Use /deepreview with optional focus text, for example /deepreview review commit abc123 for security.",
+    "deepreviewNoSession": "No active session for /DeepReview",
+    "deepreviewUsage": "Use /DeepReview with optional focus text, for example /DeepReview review commit abc123 for security.",
     "deepreviewFailed": "Deep review failed",
     "deepreviewInfo": "Deep review launches a local parallel review team. It may take longer and use more tokens than a normal review.",
     "deepreviewThreadTitle": "Deep review",
@@ -356,10 +356,15 @@
     }
   },
   "deepReviewConsent": {
+    "windowTitle": "Deep Review",
+    "eyebrow": "Local review team",
     "title": "Start Deep Review?",
     "body": "Deep Review launches a local parallel review team. It can take longer and consume noticeably more tokens than a standard review.",
+    "readonlyLabel": "Read-only first pass",
     "readonly": "The first pass is read-only. It will produce findings and a remediation plan before any code changes.",
+    "costLabel": "Higher token usage",
     "cost": "Expected cost: multiple reviewers plus a quality gate, so runtime and token use may be several times higher than a standard review.",
+    "timeLabel": "Longer runtime",
     "time": "You can keep working while it runs; we will only notify you when the whole Deep Review finishes in the background.",
     "dontShowAgain": "Do not show this again",
     "cancel": "Cancel",
@@ -416,7 +421,9 @@
   "sessionFileModificationsBar": {
     "filesCount": "{{count}} files",
     "expandList": "Expand list",
-    "collapseList": "Collapse list"
+    "collapseList": "Collapse list",
+    "reviewSource": "Review",
+    "deepReviewSource": "Deep review"
   },
   "snapshotSystem": {
     "errors": {
@@ -923,6 +930,19 @@
       "rollback": "Rollback",
       "rollbackTooltip": "Rollback to this turn"
     },
+    "reviewSessionSummary": {
+      "standardTitle": "Review",
+      "deepTitle": "Deep review",
+      "running": "in progress",
+      "failed": "failed",
+      "issueCount": "{{count}} issues",
+      "noIssues": "no blocking issues",
+      "filesChanged": "{{count}} files",
+      "waitingSummary": "The review is still running. Results will appear here when the review team finishes.",
+      "emptySummary": "No structured review summary is available yet.",
+      "changedFilesTitle": "Files from this review",
+      "openReview": "Open review page"
+    },
     "codeReview": {
       "reviewResult": "Review Result",
       "deepReviewResult": "Deep Review Result",
@@ -951,16 +971,20 @@
       },
       "remediationActions": {
         "title": "Next steps",
-        "hint": "Deep Review is read-only by default. Choose what to do with the remediation plan.",
+        "hint": "Deep Review is read-only by default. Select the remediation items to fix.",
+        "selectAll": "Select all",
+        "selectionCount": "{{selected}}/{{total}} selected",
+        "expandPlan": "Details",
+        "collapsePlan": "Collapse",
+        "relatedIssue": "Related issue",
+        "noRelatedIssue": "No directly-linked issue was provided for this remediation item. Use the plan text itself as the implementation scope.",
+        "severity": "Severity",
+        "certainty": "Certainty",
+        "location": "Location",
+        "noSelectionHint": "Select at least one remediation item to start fixing.",
         "startFix": "Start fixing",
         "fixAndReview": "Fix and re-review",
-        "archive": "Archive plan",
         "cancel": "Cancel",
-        "archiveTitle": "Archive remediation plan",
-        "archiveDescription": "Enter a workspace-relative path or an absolute file path.",
-        "archivePlaceholder": ".bitfun/deep-review-{{timestamp}}.md",
-        "archiveSuccess": "Remediation plan archived to {{path}}",
-        "archiveFailed": "Failed to archive remediation plan",
         "fixUnavailable": "Unable to start remediation because the review session is unavailable.",
         "fixRequestDisplay": "Start fixing Deep Review findings",
         "fixAndReviewRequestDisplay": "Fix Deep Review findings and re-review"
