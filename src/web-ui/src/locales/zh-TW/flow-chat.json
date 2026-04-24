@@ -225,6 +225,12 @@
     "initUsage": "請直接使用 /init，不要附加額外參數。",
     "initFailed": "初始化 AGENTS.md 失敗",
     "initPrompt": "請根據當前項目內容生成或更新 AGENTS.md",
+    "deepreviewAction": "深度審查",
+    "deepreviewNoSession": "當前沒有可用於 /deepreview 的會話",
+    "deepreviewUsage": "請使用 /deepreview，可選附加聚焦說明，例如 /deepreview review commit abc123 for security。",
+    "deepreviewFailed": "深度審查失敗",
+    "deepreviewInfo": "深度審查會在本地拉起並行審查團隊，可能會比普通審查耗時更長且 Token 消耗更高。",
+    "deepreviewThreadTitle": "深度審查",
     "currentMode": "當前模式: {{mode}}",
     "noMatchingMode": "沒有匹配的模式",
     "noMatchingCommand": "沒有匹配的命令",
@@ -327,6 +333,35 @@
     "close": "關閉",
     "noSession": "當前沒有可用於 /btw 的會話"
   },
+  "childSession": {
+    "kinds": {
+      "btw": {
+        "short": "側問",
+        "title": "側問",
+        "origin": "來自"
+      },
+      "review": {
+        "short": "審查",
+        "title": "代碼審查",
+        "origin": "審查來源"
+      },
+      "deep_review": {
+        "short": "深審",
+        "title": "深度審查",
+        "origin": "審查來源"
+      }
+    }
+  },
+  "deepReviewConsent": {
+    "title": "開始深度審查？",
+    "body": "深度審查會在本地啟動並行審查團隊，通常比普通審查耗時更久，也會消耗更多 Token。",
+    "readonly": "首次審查默認只讀：它會先輸出問題和修復計劃，不會直接修改代碼。",
+    "cost": "預期消耗：多個審查角色加質量門禁，運行時間和 Token 可能達到普通審查的數倍。",
+    "time": "運行期間可以繼續工作；只有整個深度審查在後台完成時才會通知你。",
+    "dontShowAgain": "下次不再提示",
+    "cancel": "取消",
+    "confirm": "開始深度審查"
+  },
   "flowChatHeader": {
     "turnList": "輪次列表",
     "untitledTurn": "未命名輪次",
@@ -348,6 +383,12 @@
     "files": "文件",
     "reviewLabel": "審查",
     "reviewAll": "全部審查",
+    "reviewMenuLabel": "審查",
+    "reviewMenuHint": "選擇審查深度",
+    "reviewModeStandard": "普通審查",
+    "reviewModeDeep": "深度審查",
+    "deepReviewLabel": "深審",
+    "deepReviewAll": "深度審查",
     "loadFailed": "加載失敗",
     "clickToViewDiff": "點擊查看 Diff",
     "review": {
@@ -358,6 +399,12 @@
       "prompt": "請審查本次會話中修改的以下文件：\n\n{{files}}",
       "promptFiltered": "請審查本次會話中修改的以下文件：\n\n{{files}}\n\n請不要審查另外 {{skipped}} 個已跳過的文件，因為它們命中了鎖文件、生成物或二進制文件的排除規則。",
       "threadTitle": "代碼審查"
+    },
+    "deepReview": {
+      "info": "深度審查會在本地啟動並行審查團隊，可能更耗時並消耗更多 Token。",
+      "displayMessage": "深度審查修改的文件：\n{{files}}",
+      "displayMessageFiltered": "深度審查過濾後的文件：\n{{files}}\n\n已跳過 {{skipped}} 個命中排除規則的文件。",
+      "threadTitle": "深度審查"
     }
   },
   "sessionFileModificationsBar": {
@@ -881,10 +928,37 @@
       "overallAssessment": "總體評估",
       "riskLevel": "風險等級",
       "recommendedAction": "建議操作",
+      "deepReviewResult": "深度審查結果",
+      "reviewMode": "審查模式",
+      "reviewScope": "範圍",
       "contextLimitations": "上下文限制",
       "issuesCount": "問題 ({{count}})",
       "suggestion": "建議",
       "codeStrengths": "代碼優點",
+      "reviewerTeam": "審查團隊",
+      "reviewerIssues": "{{count}} 個問題",
+      "reviewerIssuesUnknown": "問題數量不可用",
+      "remediationPlan": "修復計劃",
+      "reviewModes": {
+        "standard": "普通",
+        "deep": "深度"
+      },
+      "remediationActions": {
+        "title": "下一步",
+        "hint": "深度審查默認只讀。請選擇如何處理這份修復計劃。",
+        "startFix": "開始修復",
+        "fixAndReview": "修復後重新審查",
+        "archive": "存檔計劃",
+        "cancel": "取消",
+        "archiveTitle": "存檔修復計劃",
+        "archiveDescription": "請輸入工作區相對路徑或絕對文件路徑。",
+        "archivePlaceholder": ".bitfun/deep-review-{{timestamp}}.md",
+        "archiveSuccess": "修復計劃已存檔到 {{path}}",
+        "archiveFailed": "修復計劃存檔失敗",
+        "fixUnavailable": "無法開始修復：審查會話不可用。",
+        "fixRequestDisplay": "開始修復深度審查問題",
+        "fixAndReviewRequestDisplay": "修復深度審查問題並重新審查"
+      },
       "riskLevels": {
         "low": "低風險",
         "medium": "中風險",

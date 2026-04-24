@@ -383,6 +383,36 @@
     }
   }
 
+  .review-remediation-actions {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid color-mix(in srgb, var(--color-accent-400, #8b5cf6) 24%, var(--border-base));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--color-accent-400, #8b5cf6) 8%, var(--color-bg-elevated, transparent));
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+
+    &__title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: 3px;
+    }
+
+    &__hint {
+      font-size: 11px;
+      line-height: 1.45;
+      color: var(--color-text-muted);
+    }
+
+    &__buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+  }
+
   /* ---------- Positive points section ---------- */
   .review-positive {
     .positive-header {

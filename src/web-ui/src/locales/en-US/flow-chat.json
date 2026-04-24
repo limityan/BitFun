@@ -333,6 +333,35 @@
     "close": "Close",
     "noSession": "No active session for /btw"
   },
+  "childSession": {
+    "kinds": {
+      "btw": {
+        "short": "Side",
+        "title": "Side thread",
+        "origin": "Asked from"
+      },
+      "review": {
+        "short": "Review",
+        "title": "Code review",
+        "origin": "Review source"
+      },
+      "deep_review": {
+        "short": "Deep",
+        "title": "Deep review",
+        "origin": "Review source"
+      }
+    }
+  },
+  "deepReviewConsent": {
+    "title": "Start Deep Review?",
+    "body": "Deep Review launches a local parallel review team. It can take longer and consume noticeably more tokens than a standard review.",
+    "readonly": "The first pass is read-only. It will produce findings and a remediation plan before any code changes.",
+    "cost": "Expected cost: multiple reviewers plus a quality gate, so runtime and token use may be several times higher than a standard review.",
+    "time": "You can keep working while it runs; we will only notify you when the whole Deep Review finishes in the background.",
+    "dontShowAgain": "Do not show this again",
+    "cancel": "Cancel",
+    "confirm": "Start Deep Review"
+  },
   "flowChatHeader": {
     "turnList": "Turn list",
     "untitledTurn": "Untitled turn",
@@ -354,6 +383,10 @@
     "files": "files",
     "reviewLabel": "Review",
     "reviewAll": "Review All",
+    "reviewMenuLabel": "Review",
+    "reviewMenuHint": "Choose review depth",
+    "reviewModeStandard": "Standard review",
+    "reviewModeDeep": "Deep review",
     "deepReviewLabel": "Deep",
     "deepReviewAll": "Deep Review",
     "loadFailed": "Load failed",
@@ -909,6 +942,22 @@
       "reviewModes": {
         "standard": "Standard",
         "deep": "Deep"
+      },
+      "remediationActions": {
+        "title": "Next steps",
+        "hint": "Deep Review is read-only by default. Choose what to do with the remediation plan.",
+        "startFix": "Start fixing",
+        "fixAndReview": "Fix and re-review",
+        "archive": "Archive plan",
+        "cancel": "Cancel",
+        "archiveTitle": "Archive remediation plan",
+        "archiveDescription": "Enter a workspace-relative path or an absolute file path.",
+        "archivePlaceholder": ".bitfun/deep-review-{{timestamp}}.md",
+        "archiveSuccess": "Remediation plan archived to {{path}}",
+        "archiveFailed": "Failed to archive remediation plan",
+        "fixUnavailable": "Unable to start remediation because the review session is unavailable.",
+        "fixRequestDisplay": "Start fixing Deep Review findings",
+        "fixAndReviewRequestDisplay": "Fix Deep Review findings and re-review"
       },
       "riskLevels": {
         "low": "Low Risk",

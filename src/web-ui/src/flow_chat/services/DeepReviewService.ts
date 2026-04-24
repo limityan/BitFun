@@ -202,6 +202,7 @@ export async function launchDeepReviewSession({
       parentSessionId,
       workspacePath,
       childSessionName,
+      sessionKind: 'deep_review',
       agentType: 'DeepReview',
       enableTools: true,
       safeMode: true,

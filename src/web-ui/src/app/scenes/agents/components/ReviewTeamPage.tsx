@@ -84,7 +84,7 @@ const ReviewTeamPage: React.FC = () => {
   const { t: tModel } = useTranslation('settings/default-model');
   const { openHome } = useAgentsStore();
   const { workspacePath } = useCurrentWorkspace();
-  const notification = useNotification();
+  const { error: notifyError, success: notifySuccess } = useNotification();
 
   const [loading, setLoading] = useState(true);
   const [team, setTeam] = useState<ReviewTeam | null>(null);
@@ -131,7 +131,7 @@ const ReviewTeamPage: React.FC = () => {
       });
       setModels([]);
       setSubagents([]);
-      notification.error(
+      notifyError(
         error instanceof Error
           ? error.message
           : t('reviewTeams.detail.messages.saveFailed', {
@@ -141,7 +141,7 @@ const ReviewTeamPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [notification, t, workspacePath]);
+  }, [notifyError, t, workspacePath]);
 
   useEffect(() => {
     void loadData();
@@ -248,7 +248,7 @@ const ReviewTeamPage: React.FC = () => {
         model: modelId,
         workspacePath: workspacePath || undefined,
       });
-      notification.success(
+      notifySuccess(
         t('reviewTeams.detail.messages.modelUpdated', {
           name: getLocalizedMemberName(member),
           defaultValue: `Updated ${getLocalizedMemberName(member)} model.`,
@@ -256,7 +256,7 @@ const ReviewTeamPage: React.FC = () => {
       );
       await loadData();
     } catch (error) {
-      notification.error(
+      notifyError(
         error instanceof Error
           ? error.message
           : t('reviewTeams.detail.messages.saveFailed', {
@@ -266,7 +266,7 @@ const ReviewTeamPage: React.FC = () => {
     } finally {
       setSavingMemberId(null);
     }
-  }, [getLocalizedMemberName, loadData, notification, t, workspacePath]);
+  }, [getLocalizedMemberName, loadData, notifyError, notifySuccess, t, workspacePath]);
 
   const handleAddMember = useCallback(async () => {
     if (!candidateId) {
@@ -283,13 +283,13 @@ const ReviewTeamPage: React.FC = () => {
       });
       await loadData();
       setSelectedMemberId(`extra:${candidateId}`);
-      notification.success(
+      notifySuccess(
         t('reviewTeams.detail.messages.memberAdded', {
           defaultValue: 'Added the extra reviewer to the team.',
         }),
       );
     } catch (error) {
-      notification.error(
+      notifyError(
         error instanceof Error
           ? error.message
           : t('reviewTeams.detail.messages.saveFailed', {
@@ -299,7 +299,7 @@ const ReviewTeamPage: React.FC = () => {
     } finally {
       setAddingMember(false);
     }
-  }, [candidateId, loadData, notification, t, workspacePath]);
+  }, [candidateId, loadData, notifyError, notifySuccess, t, workspacePath]);
 
   const handleRemoveMember = useCallback(async (member: ReviewTeamMember) => {
     if (member.locked) {
@@ -311,13 +311,13 @@ const ReviewTeamPage: React.FC = () => {
       await removeDefaultReviewTeamMember(member.subagentId);
       await loadData();
       setSelectedMemberId((currentId) => (currentId === member.id ? null : currentId));
-      notification.success(
+      notifySuccess(
         t('reviewTeams.detail.messages.memberRemoved', {
           defaultValue: 'Removed the extra reviewer from the team.',
         }),
       );
     } catch (error) {
-      notification.error(
+      notifyError(
         error instanceof Error
           ? error.message
           : t('reviewTeams.detail.messages.saveFailed', {
@@ -327,7 +327,7 @@ const ReviewTeamPage: React.FC = () => {
     } finally {
       setRemovingMemberId(null);
     }
-  }, [loadData, notification, t]);
+  }, [loadData, notifyError, notifySuccess, t]);
 
   const handleExecutionPolicyChange = useCallback(async (
     key: keyof ReviewTeamExecutionPolicy,
@@ -350,7 +350,7 @@ const ReviewTeamPage: React.FC = () => {
       await loadData();
     } catch (error) {
       await loadData();
-      notification.error(
+      notifyError(
         error instanceof Error
           ? error.message
           : t('reviewTeams.detail.messages.saveFailed', {
@@ -360,7 +360,7 @@ const ReviewTeamPage: React.FC = () => {
     } finally {
       setSavingPolicyKey(null);
     }
-  }, [loadData, notification, t, team]);
+  }, [loadData, notifyError, t, team]);
 
   if (loading || !team) {
     return (

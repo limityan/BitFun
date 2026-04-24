@@ -50,6 +50,7 @@ import { aiExperienceConfigService } from '@/infrastructure/config/services/AIEx
 import MCPAPI, { type MCPPrompt, type MCPPromptMessage, type MCPServerInfo } from '@/infrastructure/api/service-api/MCPAPI';
 import { deriveChatInputPetMood } from '../utils/chatInputPetMood';
 import { ChatInputPixelPet } from './ChatInputPixelPet';
+import { useDeepReviewConsent } from './DeepReviewConsentDialog';
 import './ChatInput.scss';
 
 const log = createLogger('ChatInput');
@@ -234,11 +235,24 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const effectiveTargetSession = effectiveTargetSessionId
     ? flowChatState.sessions.get(effectiveTargetSessionId)
     : undefined;
-  const isBtwSession = resolveSessionRelationship(effectiveTargetSession).isBtw;
+  const effectiveTargetRelationship = resolveSessionRelationship(effectiveTargetSession);
+  const isBtwSession = effectiveTargetRelationship.displayAsChild;
   const showTargetSwitcher = !!activeBtwSessionId;
   const currentSessionTitle = currentSession?.title?.trim() || t('session.untitled');
-  const activeBtwSessionTitle = activeBtwSessionId
-    ? flowChatState.sessions.get(activeBtwSessionId)?.title?.trim() || t('btw.threadLabel')
+  const activeBtwSession = activeBtwSessionId
+    ? flowChatState.sessions.get(activeBtwSessionId)
+    : undefined;
+  const activeBtwRelationship = resolveSessionRelationship(activeBtwSession);
+  const activeBtwKind = activeBtwRelationship.kind === 'review' || activeBtwRelationship.kind === 'deep_review'
+    ? activeBtwRelationship.kind
+    : 'btw';
+  const activeBtwTargetLabel = t(`childSession.kinds.${activeBtwKind}.short`, {
+    defaultValue: t('chatInput.targetBtw'),
+  });
+  const activeBtwSessionTitle = activeBtwSession
+    ? activeBtwSession.title?.trim() || t(`childSession.kinds.${activeBtwKind}.title`, {
+        defaultValue: t('btw.threadLabel'),
+      })
     : '';
   
   // Memoize history so keyboard handlers don't see a fresh [] on every render.
@@ -251,6 +265,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     inputState.value.trim()
   );
   const sessionMachineSnapshot = useSessionStateMachine(effectiveTargetSessionId);
+  const { confirmDeepReviewLaunch, deepReviewConsentDialog } = useDeepReviewConsent();
   const petMood = useMemo(
     () => deriveChatInputPetMood(sessionMachineSnapshot),
     [sessionMachineSnapshot],
@@ -1335,6 +1350,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       return;
     }
 
+    const confirmed = await confirmDeepReviewLaunch();
+    if (!confirmed) {
+      return;
+    }
+
     const originalPendingLargePastes = { ...pendingLargePastesRef.current };
     if (effectiveTargetSessionId) {
       addToHistory(effectiveTargetSessionId, message);
@@ -1345,13 +1365,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     clearPendingLargePastes();
     setQueuedInput(null);
     setSlashCommandState({ isActive: false, kind: 'modes', query: '', selectedIndex: 0 });
-
-    notificationService.info(
-      t('chatInput.deepreviewInfo', {
-        defaultValue: 'Deep review launches a local parallel review team. It may take longer and use more tokens than a normal review.',
-      }),
-      { duration: 4500 }
-    );
 
     try {
       const prompt = await buildDeepReviewPromptFromSlashCommand(
@@ -1388,6 +1401,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   }, [
     addToHistory,
     clearPendingLargePastes,
+    confirmDeepReviewLaunch,
     effectiveTargetSession,
     effectiveTargetSessionId,
     inputState.value,
@@ -2277,6 +2291,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   return (
     <>
+      {deepReviewConsentDialog}
       <ContextDropZone
         acceptedTypes={['file', 'directory', 'image', 'code-snippet', 'mermaid-diagram']}
         className="bitfun-chat-input-drop-zone"
@@ -2369,7 +2384,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   className={`bitfun-chat-input__target-tab ${inputTarget === 'btw' ? 'bitfun-chat-input__target-tab--active' : ''}`}
                   onClick={() => setInputTarget('btw')}
                 >
-                  {t('chatInput.targetBtw')}
+                  {activeBtwTargetLabel}
                   {inputTarget === 'btw' && activeBtwSessionTitle && (
                     <span className="bitfun-chat-input__target-tab-name">{activeBtwSessionTitle}</span>
                   )}

@@ -28,8 +28,8 @@
   border-radius: 0 0 8px 8px;
   backdrop-filter: blur(8px);
 
-  // Fixed height; overflow scrolls.
-  height: 400px;
+  // Keep concurrent subagents scannable; overflow keeps details reachable.
+  max-height: clamp(160px, 28vh, 260px);
   overflow-y: auto;
 }
 

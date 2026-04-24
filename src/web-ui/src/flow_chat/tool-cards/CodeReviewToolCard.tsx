@@ -4,7 +4,7 @@
  * Refactored based on BaseToolCard
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import {
   Loader2,
   CheckCircle,
@@ -16,11 +16,15 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Tooltip } from '@/component-library';
+import { Button, InputDialog, Tooltip } from '@/component-library';
 import type { ToolCardProps } from '../types/flow-chat';
 import { BaseToolCard, ToolCardHeader } from './BaseToolCard';
 import { createLogger } from '@/shared/utils/logger';
 import { useToolCardHeightContract } from './useToolCardHeightContract';
+import { flowChatManager } from '../services/FlowChatManager';
+import { flowChatStore } from '../store/FlowChatStore';
+import { workspaceAPI } from '@/infrastructure/api/service-api/WorkspaceAPI';
+import { notificationService } from '@/shared/notification-system';
 import './CodeReviewToolCard.scss';
 
 const log = createLogger('CodeReviewToolCard');
@@ -70,12 +74,57 @@ const riskLevelColors: Record<string, string> = {
   critical: '#ef4444',
 };
 
+const isAbsoluteArchivePath = (filePath: string): boolean =>
+  /^[A-Za-z]:[\\/]/.test(filePath) || filePath.startsWith('/') || filePath.startsWith('\\\\');
+
+function createArchiveTimestamp(): string {
+  return new Date().toISOString().replace(/[:.]/g, '-');
+}
+
+function buildRemediationMarkdown(reviewData: CodeReviewResult): string {
+  const issueLines = reviewData.issues.length > 0
+    ? reviewData.issues
+        .map((issue, index) => {
+          const location = issue.line ? `${issue.file}:${issue.line}` : issue.file;
+          return `${index + 1}. [${issue.severity}/${issue.certainty}] ${issue.title} (${location})\n   - ${issue.description}\n   - Suggestion: ${issue.suggestion ?? 'N/A'}`;
+        })
+        .join('\n')
+    : 'No issues reported.';
+
+  const planLines = (reviewData.remediation_plan ?? []).length > 0
+    ? reviewData.remediation_plan!.map((step, index) => `${index + 1}. ${step}`).join('\n')
+    : 'No remediation plan provided.';
+
+  return [
+    '# Deep Review Remediation Plan',
+    '',
+    '## Summary',
+    reviewData.summary.overall_assessment,
+    '',
+    `Risk level: ${reviewData.summary.risk_level}`,
+    `Recommended action: ${reviewData.summary.recommended_action}`,
+    '',
+    '## Issues',
+    issueLines,
+    '',
+    '## Remediation Plan',
+    planLines,
+    '',
+  ].join('\n');
+}
+
 export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
   toolItem,
+  sessionId,
 }) => {
   const { t } = useTranslation('flow-chat');
   const { toolResult, status } = toolItem;
   const [isExpanded, setIsExpanded] = useState(false);
+  const [remediationActionsDismissed, setRemediationActionsDismissed] = useState(false);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
+  const [activeRemediationAction, setActiveRemediationAction] = useState<'fix' | 'fix-review' | null>(null);
+  const [isArchiving, setIsArchiving] = useState(false);
+  const autoExpandedResultRef = useRef<string | null>(null);
   const toolId = toolItem.id ?? toolItem.toolCall?.id;
   const { cardRootRef, applyExpandedState } = useToolCardHeightContract({
     toolId,
@@ -115,6 +164,10 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
       log.error('Failed to parse result', error);
       return null;
     }
+  }, [toolResult?.result]);
+
+  useEffect(() => {
+    setRemediationActionsDismissed(false);
   }, [toolResult?.result]);
 
   const issueStats = useMemo(() => {
@@ -172,6 +225,160 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
 
   const hasIssues = issueStats && issueStats.total > 0;
   const hasData = reviewData !== null;
+  const [defaultArchivePath] = useState(() => `.bitfun/deep-review-${createArchiveTimestamp()}.md`);
+
+  useEffect(() => {
+    const resultKey = typeof toolResult?.result === 'string'
+      ? toolResult.result
+      : JSON.stringify(toolResult?.result ?? null);
+    const shouldAutoExpand =
+      status === 'completed' &&
+      reviewData?.review_mode === 'deep' &&
+      (reviewData.remediation_plan ?? []).length > 0 &&
+      autoExpandedResultRef.current !== resultKey;
+
+    if (shouldAutoExpand) {
+      autoExpandedResultRef.current = resultKey;
+      setIsExpanded(true);
+    }
+  }, [reviewData, status, toolResult?.result]);
+
+  const buildFixPrompt = useCallback((rerunReview: boolean) => {
+    if (!reviewData) return '';
+
+    const issuesBlock = reviewData.issues.length > 0
+      ? reviewData.issues
+          .map((issue, index) => {
+            const location = issue.line ? `${issue.file}:${issue.line}` : issue.file;
+            return `${index + 1}. [${issue.severity}/${issue.certainty}] ${issue.title} (${location})\n   Description: ${issue.description}\n   Suggestion: ${issue.suggestion ?? 'N/A'}`;
+          })
+          .join('\n\n')
+      : 'No concrete issues were reported.';
+
+    const planBlock = (reviewData.remediation_plan ?? []).length > 0
+      ? reviewData.remediation_plan!.map((step, index) => `${index + 1}. ${step}`).join('\n')
+      : 'No remediation plan was provided.';
+
+    return [
+      'The user approved remediation for this Deep Review result.',
+      '',
+      'Please implement the remediation plan safely and minimally. Do not broaden scope beyond the reviewed changes unless required for correctness.',
+      rerunReview
+        ? 'After implementing fixes, run the most relevant verification and perform a follow-up review of the fix diff.'
+        : 'After implementing fixes, summarize what changed and what verification was run.',
+      '',
+      '## Remediation Plan',
+      planBlock,
+      '',
+      '## Review Findings',
+      issuesBlock,
+    ].join('\n');
+  }, [reviewData]);
+
+  const handleStartFixing = useCallback(async (
+    event: React.MouseEvent,
+    rerunReview: boolean,
+  ) => {
+    event.stopPropagation();
+    if (!reviewData) return;
+
+    if (!sessionId) {
+      notificationService.error(
+        t('toolCards.codeReview.remediationActions.fixUnavailable', {
+          defaultValue: 'Unable to start remediation because the review session is unavailable.',
+        }),
+      );
+      return;
+    }
+
+    const action = rerunReview ? 'fix-review' : 'fix';
+    setActiveRemediationAction(action);
+    try {
+      await flowChatManager.sendMessage(
+        buildFixPrompt(rerunReview),
+        sessionId,
+        rerunReview
+          ? t('toolCards.codeReview.remediationActions.fixAndReviewRequestDisplay', {
+              defaultValue: 'Fix Deep Review findings and re-review',
+            })
+          : t('toolCards.codeReview.remediationActions.fixRequestDisplay', {
+              defaultValue: 'Start fixing Deep Review findings',
+            }),
+        'ReviewFixer',
+        'agentic',
+      );
+      setRemediationActionsDismissed(true);
+    } catch (error) {
+      log.error('Failed to start Deep Review remediation', { sessionId, rerunReview, error });
+      notificationService.error(
+        error instanceof Error
+          ? error.message
+          : t('toolCards.codeReview.reviewFailed', {
+              error: t('toolCards.codeReview.unknownError'),
+            }),
+        { duration: 5000 },
+      );
+    } finally {
+      setActiveRemediationAction(null);
+    }
+  }, [buildFixPrompt, reviewData, sessionId, t]);
+
+  const handleArchivePlan = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
+    setArchiveDialogOpen(true);
+  }, []);
+
+  const handleArchiveConfirm = useCallback((archivePath: string) => {
+    if (!reviewData) return;
+
+    const trimmedPath = archivePath.trim();
+    if (!trimmedPath) {
+      return;
+    }
+
+    const archivePlan = async () => {
+      const content = buildRemediationMarkdown(reviewData);
+      const session = sessionId
+        ? flowChatStore.getState().sessions.get(sessionId)
+        : undefined;
+      const workspacePath = session?.workspacePath;
+
+      if (!isAbsoluteArchivePath(trimmedPath) && !workspacePath) {
+        throw new Error('Workspace path is required for relative archive paths');
+      }
+
+      if (isAbsoluteArchivePath(trimmedPath)) {
+        await workspaceAPI.writeFile(trimmedPath, content);
+      } else {
+        await workspaceAPI.writeFileContent(workspacePath!, trimmedPath, content);
+      }
+
+      return trimmedPath;
+    };
+
+    setIsArchiving(true);
+    archivePlan()
+      .then((savedPath) => {
+        notificationService.success(
+          t('toolCards.codeReview.remediationActions.archiveSuccess', {
+            path: savedPath,
+            defaultValue: 'Remediation plan archived to {{path}}',
+          }),
+          { duration: 3000 },
+        );
+        setRemediationActionsDismissed(true);
+      })
+      .catch((error) => {
+        log.error('Failed to archive Deep Review remediation plan', { sessionId, archivePath: trimmedPath, error });
+        notificationService.error(
+          t('toolCards.codeReview.remediationActions.archiveFailed', {
+            defaultValue: 'Failed to archive remediation plan',
+          }),
+          { duration: 5000 },
+        );
+      })
+      .finally(() => setIsArchiving(false));
+  }, [reviewData, sessionId, t]);
 
   const toggleExpanded = useCallback(() => {
     applyExpandedState(isExpanded, !isExpanded, setIsExpanded);
@@ -438,6 +645,59 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
                 </div>
               ))}
             </div>
+            {review_mode === 'deep' && !remediationActionsDismissed && (
+              <div className="review-remediation-actions" onClick={(event) => event.stopPropagation()}>
+                <div className="review-remediation-actions__copy">
+                  <div className="review-remediation-actions__title">
+                    {t('toolCards.codeReview.remediationActions.title', { defaultValue: 'Next steps' })}
+                  </div>
+                  <div className="review-remediation-actions__hint">
+                    {t('toolCards.codeReview.remediationActions.hint', {
+                      defaultValue: 'Deep Review is read-only by default. Choose what to do with the remediation plan.',
+                    })}
+                  </div>
+                </div>
+                <div className="review-remediation-actions__buttons">
+                  <Button
+                    variant="primary"
+                    size="small"
+                    isLoading={activeRemediationAction === 'fix'}
+                    disabled={activeRemediationAction !== null || isArchiving}
+                    onClick={(event) => void handleStartFixing(event, false)}
+                  >
+                    {t('toolCards.codeReview.remediationActions.startFix', { defaultValue: 'Start fixing' })}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="small"
+                    isLoading={activeRemediationAction === 'fix-review'}
+                    disabled={activeRemediationAction !== null || isArchiving}
+                    onClick={(event) => void handleStartFixing(event, true)}
+                  >
+                    {t('toolCards.codeReview.remediationActions.fixAndReview', { defaultValue: 'Fix and re-review' })}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="small"
+                    disabled={activeRemediationAction !== null || isArchiving}
+                    onClick={handleArchivePlan}
+                  >
+                    {t('toolCards.codeReview.remediationActions.archive', { defaultValue: 'Archive plan' })}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="small"
+                    disabled={activeRemediationAction !== null || isArchiving}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setRemediationActionsDismissed(true);
+                    }}
+                  >
+                    {t('toolCards.codeReview.remediationActions.cancel', { defaultValue: 'Cancel' })}
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -456,20 +716,52 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
         )}
       </div>
     );
-  }, [reviewData, t]);
+  }, [
+    activeRemediationAction,
+    handleArchivePlan,
+    handleStartFixing,
+    isArchiving,
+    remediationActionsDismissed,
+    reviewData,
+    t,
+  ]);
 
   const normalizedStatus = status === 'analyzing' ? 'running' : status;
 
   return (
-    <div ref={cardRootRef} data-tool-card-id={toolId ?? ''}>
-      <BaseToolCard
-        status={normalizedStatus as 'pending' | 'preparing' | 'streaming' | 'running' | 'completed' | 'error' | 'cancelled'}
-        isExpanded={isExpanded}
-        onClick={handleCardClick}
-        className="code-review-card"
-        header={renderHeader()}
-        expandedContent={expandedContent ?? undefined}
+    <>
+      <div ref={cardRootRef} data-tool-card-id={toolId ?? ''}>
+        <BaseToolCard
+          status={normalizedStatus as 'pending' | 'preparing' | 'streaming' | 'running' | 'completed' | 'error' | 'cancelled'}
+          isExpanded={isExpanded}
+          onClick={handleCardClick}
+          className="code-review-card"
+          header={renderHeader()}
+          expandedContent={expandedContent ?? undefined}
+        />
+      </div>
+      <InputDialog
+        isOpen={archiveDialogOpen}
+        onClose={() => setArchiveDialogOpen(false)}
+        onConfirm={handleArchiveConfirm}
+        title={t('toolCards.codeReview.remediationActions.archiveTitle', {
+          defaultValue: 'Archive remediation plan',
+        })}
+        description={t('toolCards.codeReview.remediationActions.archiveDescription', {
+          defaultValue: 'Enter a workspace-relative path or an absolute file path.',
+        })}
+        placeholder={t('toolCards.codeReview.remediationActions.archivePlaceholder', {
+          timestamp: createArchiveTimestamp(),
+          defaultValue: '.bitfun/deep-review-{{timestamp}}.md',
+        })}
+        defaultValue={defaultArchivePath}
+        confirmText={t('toolCards.codeReview.remediationActions.archive', {
+          defaultValue: 'Archive plan',
+        })}
+        cancelText={t('toolCards.codeReview.remediationActions.cancel', {
+          defaultValue: 'Cancel',
+        })}
       />
-    </div>
+    </>
   );
 });

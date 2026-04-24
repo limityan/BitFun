@@ -431,13 +431,17 @@ export class FlowChatStore {
     });
   }
 
-  public updateSessionBtwOrigin(sessionId: string, origin: Session['btwOrigin']): void {
+  public updateSessionBtwOrigin(
+    sessionId: string,
+    origin: Session['btwOrigin'],
+    sessionKind: SessionKind = 'btw'
+  ): void {
     this.setState(prev => {
       const session = prev.sessions.get(sessionId);
       if (!session) return prev;
 
       const relationship = normalizeSessionRelationship({
-        sessionKind: 'btw',
+        sessionKind,
         parentSessionId: origin?.parentSessionId ?? session.parentSessionId,
         btwOrigin: { ...(session.btwOrigin || {}), ...(origin || {}) },
       });

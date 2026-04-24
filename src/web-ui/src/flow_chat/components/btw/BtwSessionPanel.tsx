@@ -13,6 +13,7 @@ import { fileTabManager } from '@/shared/services/FileTabManager';
 import { createTab } from '@/shared/utils/tabUtils';
 import { IconButton, type LineRange } from '@/component-library';
 import { globalEventBus } from '@/infrastructure/event-bus';
+import { resolveSessionRelationship } from '../../utils/sessionMetadata';
 import './BtwSessionPanel.scss';
 
 export interface BtwSessionPanelProps {
@@ -50,6 +51,19 @@ export const BtwSessionPanel: React.FC<BtwSessionPanelProps> = ({
 
   const childSession = childSessionId ? flowChatState.sessions.get(childSessionId) : undefined;
   const parentSession = parentSessionId ? flowChatState.sessions.get(parentSessionId) : undefined;
+  const childRelationship = resolveSessionRelationship(childSession);
+  const childKind = childRelationship.kind === 'review' || childRelationship.kind === 'deep_review'
+    ? childRelationship.kind
+    : 'btw';
+  const childBadgeLabel = t(`childSession.kinds.${childKind}.short`, {
+    defaultValue: childKind === 'deep_review' ? 'Deep' : childKind === 'review' ? 'Review' : t('btw.shortLabel'),
+  });
+  const childTitleFallback = t(`childSession.kinds.${childKind}.title`, {
+    defaultValue: t('btw.threadLabel'),
+  });
+  const childOriginLabel = t(`childSession.kinds.${childKind}.origin`, {
+    defaultValue: t('btw.origin'),
+  });
   const virtualItems = useMemo(() => sessionToVirtualItems(childSession ?? null), [childSession]);
 
   // Load history for historical sessions that have not yet had their turns loaded.
@@ -243,14 +257,14 @@ export const BtwSessionPanel: React.FC<BtwSessionPanelProps> = ({
       <div className="btw-session-panel">
         <div className="btw-session-panel__header">
           <div className="btw-session-panel__header-left">
-            <span className="btw-session-panel__badge">{t('btw.shortLabel')}</span>
+            <span className="btw-session-panel__badge">{childBadgeLabel}</span>
           </div>
           <div className="btw-session-panel__header-title-wrap">
-            <span className="btw-session-panel__title">{resolveSessionTitle(childSession, t('btw.threadLabel'))}</span>
+            <span className="btw-session-panel__title">{resolveSessionTitle(childSession, childTitleFallback)}</span>
           </div>
           <div className="btw-session-panel__header-right">
             <div className="btw-session-panel__meta">
-              <span className="btw-session-panel__meta-label">{t('btw.origin')}</span>
+              <span className="btw-session-panel__meta-label">{childOriginLabel}</span>
               <Link2 size={11} />
               <span className="btw-session-panel__meta-title">{resolveSessionTitle(parentSession, t('btw.parent'))}</span>
             </div>

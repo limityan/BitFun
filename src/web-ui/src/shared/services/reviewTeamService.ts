@@ -11,7 +11,7 @@ export const DEFAULT_REVIEW_TEAM_MODEL = 'fast';
 export const DEFAULT_REVIEW_TEAM_EXECUTION_POLICY = {
   reviewerTimeoutSeconds: 300,
   judgeTimeoutSeconds: 240,
-  autoFixEnabled: true,
+  autoFixEnabled: false,
   autoFixMaxRounds: 2,
   autoFixMaxStalledRounds: 1,
 } as const;
@@ -594,6 +594,8 @@ export function buildReviewTeamPromptBlock(
     '- If extra reviewers are configured and enabled, run them in parallel with the three locked reviewers whenever possible.',
     '- If reviewer_timeout_seconds is greater than 0, pass timeout_seconds with that value to every reviewer Task call.',
     '- If judge_timeout_seconds is greater than 0, pass timeout_seconds with that value to the ReviewJudge Task call.',
+    '- Do not run ReviewFixer during the initial review pass.',
+    '- Wait for explicit user approval before starting any remediation.',
     '- If auto_fix_enabled is true and validated findings remain, run ReviewFixer and then rerun the team incrementally on the fix diff.',
     '- Stop the auto-fix loop when findings stop shrinking, when the same issues recur, or when the configured round limits are reached.',
     '- The Review Quality Inspector must validate findings from every reviewer before the final report.',

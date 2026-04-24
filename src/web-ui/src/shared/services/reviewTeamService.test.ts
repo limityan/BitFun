@@ -84,6 +84,17 @@ describe('reviewTeamService', () => {
     });
   });
 
+  it('defaults deep review launches to read-only mode without automatic fixing', async () => {
+    vi.mocked(configAPI.getConfig).mockRejectedValueOnce(
+      new Error("Config path 'ai.review_teams.default' not found"),
+    );
+
+    const config = await loadDefaultReviewTeamConfig();
+
+    expect(config.auto_fix_enabled).toBe(false);
+    expect(DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.autoFixEnabled).toBe(false);
+  });
+
   it('propagates config errors that are not missing review team config paths', async () => {
     const error = new Error('Config service unavailable');
     vi.mocked(configAPI.getConfig).mockRejectedValueOnce(error);
@@ -209,5 +220,21 @@ describe('reviewTeamService', () => {
     expect(promptBlock).toContain('skipped_reviewers:');
     expect(promptBlock).toContain('- ExtraDisabled: disabled');
     expect(promptBlock).not.toContain('subagent_type: ExtraDisabled');
+  });
+
+  it('tells DeepReview to wait for user approval before running ReviewFixer', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      {
+        ...storedConfigWithExtra(),
+        auto_fix_enabled: false,
+      },
+    );
+
+    const promptBlock = buildReviewTeamPromptBlock(team);
+
+    expect(promptBlock).toContain('- auto_fix_enabled: false');
+    expect(promptBlock).toContain('Do not run ReviewFixer during the initial review pass.');
+    expect(promptBlock).toContain('Wait for explicit user approval before starting any remediation.');
   });
 });

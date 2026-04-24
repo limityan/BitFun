@@ -55,6 +55,18 @@ const resolveSessionModeType = (session: Session): SessionMode => {
 const getTitle = (session: Session): string =>
   resolveSessionTitle(session, (key, options) => i18nService.t(key, options));
 
+const getChildSessionBadge = (kind: Session['sessionKind']): string => {
+  const normalizedKind = kind === 'review' || kind === 'deep_review' ? kind : 'btw';
+  const fallback = normalizedKind === 'deep_review'
+    ? 'Deep'
+    : normalizedKind === 'review'
+      ? 'Review'
+      : 'btw';
+  return i18nService.t(`flow-chat:childSession.kinds.${normalizedKind}.short`, {
+    defaultValue: fallback,
+  });
+};
+
 interface SessionsSectionProps {
   workspaceId?: string;
   workspacePath?: string;
@@ -378,7 +390,8 @@ const SessionsSection: React.FC<SessionsSectionProps> = ({
       {visibleItems.map(({ session, level }) => {
           const isEditing = editingSessionId === session.sessionId;
           const relationship = resolveSessionRelationship(session);
-          const isBtwChild = level === 1 && relationship.isBtw;
+          const isChildSession = level === 1 && relationship.displayAsChild;
+          const childSessionBadge = getChildSessionBadge(relationship.kind);
           const sessionModeKey = resolveSessionModeType(session);
           const sessionTitle = resolveSessionTitle(session);
           const parentSessionId = relationship.parentSessionId;
@@ -387,7 +400,7 @@ const SessionsSection: React.FC<SessionsSectionProps> = ({
           const parentTurnIndex = relationship.origin?.parentTurnIndex;
           const trimmedAssistant = assistantLabel?.trim() ?? '';
           const showAssistantInTooltip = trimmedAssistant.length > 0;
-          const showRichTooltip = showAssistantInTooltip || isBtwChild;
+          const showRichTooltip = showAssistantInTooltip || isChildSession;
           const tooltipContent = showRichTooltip ? (
             <div className="bitfun-nav-panel__inline-item-tooltip">
               <div className="bitfun-nav-panel__inline-item-tooltip-title">{sessionTitle}</div>
@@ -396,7 +409,7 @@ const SessionsSection: React.FC<SessionsSectionProps> = ({
                   {t('nav.sessions.assistantOwner', { name: trimmedAssistant })}
                 </div>
               ) : null}
-              {isBtwChild ? (
+              {isChildSession ? (
                 <div className="bitfun-nav-panel__inline-item-tooltip-meta">
                   {parentTurnIndex
                     ? t('nav.sessions.childSourceWithTurn', {
@@ -429,7 +442,7 @@ const SessionsSection: React.FC<SessionsSectionProps> = ({
               className={[
                 'bitfun-nav-panel__inline-item',
                 level === 1 && 'is-child',
-                isBtwChild && 'is-btw-child',
+                isChildSession && 'is-btw-child',
                 isRowActive && 'is-active',
                 isEditing && 'is-editing',
               ]
@@ -437,7 +450,7 @@ const SessionsSection: React.FC<SessionsSectionProps> = ({
                 .join(' ')}
               onClick={() => handleSwitch(session.sessionId)}
             >
-              {showSessionModeIcon && !isBtwChild ? (
+              {showSessionModeIcon && !isChildSession ? (
                 isRunning ? (
                   <Loader2
                     size={14}
@@ -498,8 +511,8 @@ const SessionsSection: React.FC<SessionsSectionProps> = ({
                 <>
                   <span className="bitfun-nav-panel__inline-item-main">
                     <span className="bitfun-nav-panel__inline-item-label">{sessionTitle}</span>
-                    {isBtwChild ? (
-                      <span className="bitfun-nav-panel__inline-item-btw-badge">btw</span>
+                    {isChildSession ? (
+                      <span className="bitfun-nav-panel__inline-item-btw-badge">{childSessionBadge}</span>
                     ) : null}
                   </span>
                   <div className="bitfun-nav-panel__inline-item-actions">
