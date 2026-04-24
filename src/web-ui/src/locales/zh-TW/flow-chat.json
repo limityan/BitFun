@@ -334,6 +334,9 @@
     "noSession": "當前沒有可用於 /btw 的會話"
   },
   "childSession": {
+    "stopReview": "中止審查",
+    "stoppingReview": "正在中止審查...",
+    "stopReviewFailed": "中止審查會話失敗。",
     "kinds": {
       "btw": {
         "short": "側問",
@@ -387,6 +390,9 @@
     "reviewMenuHint": "選擇審查深度",
     "reviewModeStandard": "普通審查",
     "reviewModeDeep": "深度審查",
+    "reviewRunningStandard": "審查中",
+    "reviewRunningDeep": "深度審查中",
+    "reviewRunningHint": "請等待當前審查完成，或在審查頁面中止它。",
     "deepReviewLabel": "深審",
     "deepReviewAll": "深度審查",
     "loadFailed": "加載失敗",

@@ -199,6 +199,26 @@
     opacity: 0.78;
   }
 
+  &__inline-item-review-badge {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    height: 14px;
+    padding: 0 5px;
+    border: 1px solid color-mix(in srgb, var(--color-accent-400, #8b5cf6) 28%, var(--border-subtle));
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-accent-400, #8b5cf6) 10%, transparent);
+    color: color-mix(in srgb, var(--color-accent-400, #8b5cf6) 72%, var(--color-text-primary));
+    font-size: var(--font-size-xxs);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+
+    svg {
+      animation: bitfun-nav-session-spin 1s linear infinite;
+    }
+  }
+
   &__inline-item-tooltip {
     display: flex;
     flex-direction: column;
@@ -486,6 +506,10 @@
   .bitfun-nav-panel__inline-item-icon.is-running {
     animation: none;
     opacity: 0.8;
+  }
+
+  .bitfun-nav-panel__inline-item-review-badge svg {
+    animation: none;
   }
 
   .bitfun-nav-panel__items--session-blocks .bitfun-nav-panel__inline-item:hover .bitfun-nav-panel__inline-item-icon:not(.is-running) {

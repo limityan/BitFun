@@ -179,6 +179,8 @@
       "parentSession": "Parent session",
       "childSourceWithoutTurn": "From {{parentTitle}}",
       "childSourceWithTurn": "From {{parentTitle}} · Turn {{turnIndex}}",
+      "reviewRunning": "Reviewing",
+      "deepReviewRunning": "Deep reviewing",
       "needProjectWorkspaceForSession": "Open or add a project workspace first. Code and Cowork sessions cannot be created in the assistant area."
     },
     "scheduledJobs": {

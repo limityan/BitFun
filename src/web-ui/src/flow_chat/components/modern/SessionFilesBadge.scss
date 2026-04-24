@@ -101,7 +101,7 @@
     }
 
     &:disabled {
-      opacity: 0.5;
+      opacity: 0.68;
       cursor: not-allowed;
     }
 
@@ -135,6 +135,30 @@
       &:hover:not(:disabled) {
         background: color-mix(in srgb, var(--color-accent-400, #8b5cf6) 12%, transparent);
         color: var(--color-text-primary);
+      }
+    }
+
+    &--running {
+      position: relative;
+      overflow: hidden;
+      color: var(--color-text-primary);
+      background: color-mix(in srgb, var(--element-bg-soft) 86%, transparent);
+      box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border-medium) 72%, transparent);
+
+      &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          color-mix(in srgb, var(--color-accent-400, #8b5cf6) 18%, transparent),
+          transparent
+        );
+        transform: translateX(-100%);
+        animation: session-files-review-running-sheen 1.8s ease-in-out infinite;
+        pointer-events: none;
       }
     }
   }
@@ -197,9 +221,27 @@
 
   &__review-icon {
     flex-shrink: 0;
+
+    &--standard {
+      color: var(--color-text-secondary);
+    }
+  }
+
+  &__review-main-icon,
+  &__review-running-icon {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+  }
+
+  &__review-running-icon {
+    animation: session-files-review-spin 1s linear infinite;
+    color: color-mix(in srgb, var(--color-accent-400, #8b5cf6) 72%, var(--color-text-primary));
   }
 
   &__review-text {
+    position: relative;
+    z-index: 1;
     font-size: var(--flowchat-font-size-xs);
     font-weight: $font-weight-normal;
     line-height: 1;
@@ -387,9 +429,35 @@
   }
 }
 
+@keyframes session-files-review-running-sheen {
+  0% {
+    transform: translateX(-105%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  65%,
+  100% {
+    transform: translateX(105%);
+    opacity: 0;
+  }
+}
+
+@keyframes session-files-review-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .session-files-badge__review-btn--glint::after {
     animation: none;
     display: none;
+  }
+
+  .session-files-badge__review-btn--running::before,
+  .session-files-badge__review-running-icon {
+    animation: none;
   }
 }

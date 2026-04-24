@@ -334,6 +334,9 @@
     "noSession": "No active session for /btw"
   },
   "childSession": {
+    "stopReview": "Stop review",
+    "stoppingReview": "Stopping review...",
+    "stopReviewFailed": "Failed to stop the review session.",
     "kinds": {
       "btw": {
         "short": "Side",
@@ -387,6 +390,9 @@
     "reviewMenuHint": "Choose review depth",
     "reviewModeStandard": "Standard review",
     "reviewModeDeep": "Deep review",
+    "reviewRunningStandard": "Review in progress",
+    "reviewRunningDeep": "Deep review in progress",
+    "reviewRunningHint": "Wait for the current review to finish or stop it from the review page.",
     "deepReviewLabel": "Deep",
     "deepReviewAll": "Deep Review",
     "loadFailed": "Load failed",

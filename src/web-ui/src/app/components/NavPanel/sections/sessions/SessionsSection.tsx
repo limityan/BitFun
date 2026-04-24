@@ -32,6 +32,10 @@ import { SessionExecutionState } from '@/flow_chat/state-machine/types';
 import { i18nService } from '@/infrastructure/i18n';
 import { resolveSessionTitle } from '@/flow_chat/utils/sessionTitle';
 import { isSessionNavRowActive } from './sessionNavSelection';
+import {
+  deriveSessionReviewActivity,
+  isReviewActivityBlocking,
+} from '@/flow_chat/utils/sessionReviewActivity';
 import './SessionsSection.scss';
 
 /** Top-level parent sessions shown at each expand step (children still nest under visible parents). */
@@ -65,6 +69,16 @@ const getChildSessionBadge = (kind: Session['sessionKind']): string => {
     defaultValue: fallback,
   });
 };
+
+const getReviewActivityBadge = (kind: 'review' | 'deep_review'): string =>
+  i18nService.t(
+    kind === 'deep_review'
+      ? 'common:nav.sessions.deepReviewRunning'
+      : 'common:nav.sessions.reviewRunning',
+    {
+      defaultValue: kind === 'deep_review' ? 'Deep reviewing' : 'Reviewing',
+    },
+  );
 
 interface SessionsSectionProps {
   workspaceId?: string;
@@ -391,6 +405,20 @@ const SessionsSection: React.FC<SessionsSectionProps> = ({
           const relationship = resolveSessionRelationship(session);
           const isChildSession = level === 1 && relationship.displayAsChild;
           const childSessionBadge = getChildSessionBadge(relationship.kind);
+          const parentReviewActivity = deriveSessionReviewActivity(
+            flowChatState,
+            session.sessionId,
+            id => stateMachineManager.getCurrentState(id),
+          );
+          const showParentReviewActivity = !isChildSession && isReviewActivityBlocking(parentReviewActivity);
+          const showChildReviewActivity =
+            isChildSession && relationship.isReview && runningSessionIds.has(session.sessionId);
+          const reviewActivityKind =
+            showParentReviewActivity
+              ? parentReviewActivity!.kind
+              : showChildReviewActivity && (relationship.kind === 'review' || relationship.kind === 'deep_review')
+                ? relationship.kind
+                : null;
           const sessionModeKey = resolveSessionModeType(session);
           const sessionTitle = resolveSessionTitle(session);
           const parentSessionId = relationship.parentSessionId;
@@ -516,6 +544,12 @@ const SessionsSection: React.FC<SessionsSectionProps> = ({
                     <span className="bitfun-nav-panel__inline-item-label">{sessionTitle}</span>
                     {isChildSession ? (
                       <span className="bitfun-nav-panel__inline-item-btw-badge">{childSessionBadge}</span>
+                    ) : null}
+                    {reviewActivityKind ? (
+                      <span className="bitfun-nav-panel__inline-item-review-badge">
+                        <Loader2 size={9} aria-hidden />
+                        {getReviewActivityBadge(reviewActivityKind)}
+                      </span>
                     ) : null}
                   </span>
                   <div className="bitfun-nav-panel__inline-item-actions">

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import path from 'path-browserify';
-import { Link2, CornerUpLeft } from 'lucide-react';
+import { Link2, CornerUpLeft, Square } from 'lucide-react';
 import { FlowChatContext } from '../modern/FlowChatContext';
 import { VirtualItemRenderer } from '../modern/VirtualItemRenderer';
 import { ProcessingIndicator } from '../modern/ProcessingIndicator';
@@ -14,6 +14,9 @@ import { createTab } from '@/shared/utils/tabUtils';
 import { IconButton, type LineRange } from '@/component-library';
 import { globalEventBus } from '@/infrastructure/event-bus';
 import { resolveSessionRelationship } from '../../utils/sessionMetadata';
+import { agentAPI } from '@/infrastructure/api';
+import { notificationService } from '@/shared/notification-system';
+import { createLogger } from '@/shared/utils/logger';
 import './BtwSessionPanel.scss';
 
 export interface BtwSessionPanelProps {
@@ -33,6 +36,7 @@ const PANEL_CONFIG: FlowChatConfig = {
 
 const resolveSessionTitle = (session?: Session | null, fallback = 'Side thread') =>
   session?.title?.trim() || fallback;
+const log = createLogger('BtwSessionPanel');
 
 export const BtwSessionPanel: React.FC<BtwSessionPanelProps> = ({
   childSessionId,
@@ -41,6 +45,7 @@ export const BtwSessionPanel: React.FC<BtwSessionPanelProps> = ({
 }) => {
   const { t } = useTranslation('flow-chat');
   const [flowChatState, setFlowChatState] = useState<FlowChatState>(() => flowChatStore.getState());
+  const [stoppingReview, setStoppingReview] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScrollRef = useRef(true);
 
@@ -209,6 +214,11 @@ export const BtwSessionPanel: React.FC<BtwSessionPanelProps> = ({
     return true;
   }, [isTurnProcessing, lastItem, isContentGrowing]);
 
+  const canStopReviewSession =
+    (childKind === 'review' || childKind === 'deep_review') &&
+    isTurnProcessing &&
+    !stoppingReview;
+
   const btwOrigin = childSession?.btwOrigin;
   const parentLabel = resolveSessionTitle(parentSession, t('btw.parent'));
   const backTooltip = btwOrigin?.parentTurnIndex
@@ -242,6 +252,27 @@ export const BtwSessionPanel: React.FC<BtwSessionPanelProps> = ({
     );
   }, [btwOrigin, parentSessionId]);
 
+  const handleStopReviewSession = useCallback(async () => {
+    if (!childSessionId || stoppingReview) {
+      return;
+    }
+
+    setStoppingReview(true);
+    try {
+      await agentAPI.cancelSession(childSessionId);
+      flowChatStore.cancelSessionTask(childSessionId);
+    } catch (error) {
+      log.error('Failed to stop review session', { childSessionId, error });
+      notificationService.error(
+        t('childSession.stopReviewFailed', {
+          defaultValue: 'Failed to stop the review session.',
+        }),
+      );
+    } finally {
+      setStoppingReview(false);
+    }
+  }, [childSessionId, stoppingReview, t]);
+
   if (!childSessionId || !childSession) {
     return (
       <div className="btw-session-panel btw-session-panel--empty">
@@ -268,6 +299,24 @@ export const BtwSessionPanel: React.FC<BtwSessionPanelProps> = ({
               <Link2 size={11} />
               <span className="btw-session-panel__meta-title">{resolveSessionTitle(parentSession, t('btw.parent'))}</span>
             </div>
+            {(childKind === 'review' || childKind === 'deep_review') && (
+              <IconButton
+                className="btw-session-panel__stop-button"
+                variant="ghost"
+                size="xs"
+                onClick={() => void handleStopReviewSession()}
+                disabled={!canStopReviewSession}
+                tooltip={stoppingReview
+                  ? t('childSession.stoppingReview', { defaultValue: 'Stopping review...' })
+                  : t('childSession.stopReview', { defaultValue: 'Stop review' })}
+                aria-label={stoppingReview
+                  ? t('childSession.stoppingReview', { defaultValue: 'Stopping review...' })
+                  : t('childSession.stopReview', { defaultValue: 'Stop review' })}
+                data-testid="btw-session-panel-stop-review"
+              >
+                <Square size={11} />
+              </IconButton>
+            )}
             {!!(btwOrigin?.parentSessionId || parentSessionId) && (
               <IconButton
                 className="btw-session-panel__origin-button"

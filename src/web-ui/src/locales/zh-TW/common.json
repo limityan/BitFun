@@ -179,6 +179,8 @@
       "parentSession": "父會話",
       "childSourceWithoutTurn": "來自 {{parentTitle}}",
       "childSourceWithTurn": "來自 {{parentTitle}} · 第 {{turnIndex}} 輪",
+      "reviewRunning": "審查中",
+      "deepReviewRunning": "深度審查中",
       "needProjectWorkspaceForSession": "請先打開或添加項目工作區。編碼與工作（Cowork）會話不能在助理區域創建。"
     },
     "scheduledJobs": {

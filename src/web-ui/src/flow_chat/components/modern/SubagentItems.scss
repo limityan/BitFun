@@ -29,8 +29,25 @@
   backdrop-filter: blur(8px);
 
   // Keep concurrent subagents scannable; overflow keeps details reachable.
-  max-height: clamp(160px, 28vh, 260px);
+  // The detail panel remains the place for reading long subagent output.
+  max-height: clamp(78px, 12vh, 118px);
   overflow-y: auto;
+
+  .flow-text-block--subagent-compact {
+    margin-bottom: 0.25rem;
+    max-height: calc(var(--flowchat-font-size-base) * 1.45 * 3);
+    overflow: hidden;
+    line-height: 1.45;
+
+    .markdown-renderer,
+    .text-content {
+      line-height: 1.45;
+    }
+
+    .markdown-renderer {
+      --markdown-block-gap: 0.25em;
+    }
+  }
 }
 
 .subagent-items-container--collapsed {
