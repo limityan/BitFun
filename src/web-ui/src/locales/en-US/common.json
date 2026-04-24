@@ -990,6 +990,9 @@
     }
   },
   "notify": {
-    "dialogCompleted": "AI agent has finished the task."
+    "dialogCompleted": "AI agent has finished the task.",
+    "dialogCompletedTitle": "BitFun task finished",
+    "dialogCompletedWithSession": "\"{{sessionTitle}}\" is ready. Return to BitFun to review the result.",
+    "dialogCompletedFallback": "A BitFun session is ready. Return to BitFun to review the result."
   }
 }

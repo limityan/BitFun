@@ -990,6 +990,9 @@
     }
   },
   "notify": {
-    "dialogCompleted": "AI 助手已完成任务。"
+    "dialogCompleted": "AI 助手已完成任务。",
+    "dialogCompletedTitle": "BitFun 任务已完成",
+    "dialogCompletedWithSession": "“{{sessionTitle}}” 已完成，可以回到 BitFun 查看结果。",
+    "dialogCompletedFallback": "有一个 BitFun 会话已完成，可以回到应用查看结果。"
   }
 }

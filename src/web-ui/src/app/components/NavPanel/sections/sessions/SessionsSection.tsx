@@ -14,7 +14,6 @@ import { flowChatStore } from '../../../../../flow_chat/store/FlowChatStore';
 import { flowChatManager } from '../../../../../flow_chat/services/FlowChatManager';
 import type { FlowChatState, Session } from '../../../../../flow_chat/types/flow-chat';
 import { useSceneStore } from '../../../../stores/sceneStore';
-import type { SceneTabId } from '../../../SceneBar/types';
 import { useWorkspaceContext } from '@/infrastructure/contexts/WorkspaceContext';
 import { createLogger } from '@/shared/utils/logger';
 import { useAgentCanvasStore } from '@/app/components/panels/content-canvas/stores';
@@ -32,13 +31,13 @@ import { stateMachineManager } from '@/flow_chat/state-machine';
 import { SessionExecutionState } from '@/flow_chat/state-machine/types';
 import { i18nService } from '@/infrastructure/i18n';
 import { resolveSessionTitle } from '@/flow_chat/utils/sessionTitle';
+import { isSessionNavRowActive } from './sessionNavSelection';
 import './SessionsSection.scss';
 
 /** Top-level parent sessions shown at each expand step (children still nest under visible parents). */
 const SESSIONS_LEVEL_0 = 5;
 const SESSIONS_LEVEL_1 = 10;
 const log = createLogger('SessionsSection');
-const AGENT_SCENE: SceneTabId = 'session';
 
 type SessionMode = 'code' | 'cowork' | 'claw';
 
@@ -434,9 +433,13 @@ const SessionsSection: React.FC<SessionsSectionProps> = ({
                   : Bot
                 : Code2;
           const isRunning = runningSessionIds.has(session.sessionId);
-          const isRowActive = activeBtwSessionData?.childSessionId
-            ? session.sessionId === activeBtwSessionData.childSessionId
-            : activeTabId === AGENT_SCENE && session.sessionId === activeSessionId;
+          const isRowActive = isSessionNavRowActive({
+            rowSessionId: session.sessionId,
+            activeTabId,
+            activeSessionId,
+            activeChildSessionId: activeBtwSessionData?.childSessionId,
+            activeChildParentSessionId: activeBtwSessionData?.parentSessionId,
+          });
           const row = (
             <div
               className={[

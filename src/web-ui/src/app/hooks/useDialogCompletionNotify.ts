@@ -5,7 +5,10 @@ import { configManager } from '@/infrastructure/config';
 import { flowChatStore } from '@/flow_chat/store/FlowChatStore';
 import { useI18n } from '@/infrastructure/i18n';
 import { createLogger } from '@/shared/utils/logger';
-import { shouldSendDialogCompletionNotification } from './dialogCompletionNotifyPolicy';
+import {
+  buildDialogCompletionNotificationCopy,
+  shouldSendDialogCompletionNotification,
+} from './dialogCompletionNotifyPolicy';
 
 const log = createLogger('useDialogCompletionNotify');
 
@@ -61,13 +64,14 @@ export const useDialogCompletionNotify = () => {
         return;
       }
 
-      const sessionTitle =
-        session?.title?.trim() ||
-        (sessionId ? `Session ${sessionId.slice(0, 6)}` : 'BitFun');
+      const notificationCopy = buildDialogCompletionNotificationCopy({
+        sessionTitle: session?.title,
+        t,
+      });
 
       await systemAPI.sendSystemNotification(
-        sessionTitle,
-        t('notify.dialogCompleted'),
+        notificationCopy.title,
+        notificationCopy.body,
       );
     });
 
