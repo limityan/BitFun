@@ -45,9 +45,9 @@
     "notGranted": "Not granted",
     "refreshStatus": "Refresh capture status",
     "privacyConsent": "Shared privacy notice",
-    "privacyConsentDesc": "Users confirm once before screenshots or recordings can be attached.",
+    "privacyConsentDesc": "Users confirm before capture; the choice is remembered only after they continue with \"do not show again\" selected.",
     "recordingNotice": "Recording notice",
-    "recordingNoticeDesc": "First-time recording shows a short limitations notice with a 3 second countdown.",
+    "recordingNoticeDesc": "Recording shows a short limitations notice until the user continues with \"do not show again\" selected.",
     "notConfirmed": "Not confirmed yet",
     "resetConsent": "Reset",
     "featureGuide": "Feature guide",
@@ -57,7 +57,7 @@
     "maxImagesPerTurnDesc": "Screenshots and uploaded images share the same limit.",
     "maxVideosPerTurn": "Per-message video limit",
     "maxVideosPerTurnDesc": "Recordings and uploaded videos share the same limit.",
-    "resetConsentSuccess": "Capture privacy and recording reminders will be requested again."
+    "resetConsentSuccess": "Capture privacy and recording reminders will be requested again until remembered."
   },
   "browserControl": {
     "sectionTitle": "Browser control",

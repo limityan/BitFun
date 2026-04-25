@@ -45,9 +45,9 @@
     "notGranted": "未授权",
     "refreshStatus": "刷新捕获状态",
     "privacyConsent": "共享隐私提示",
-    "privacyConsentDesc": "在截图或录屏可附加到会话前，用户需要先确认一次。",
+    "privacyConsentDesc": "用户需要在捕获前确认；只有勾选“不再提示”并继续后，才会记住此选择。",
     "recordingNotice": "录屏说明",
-    "recordingNoticeDesc": "首次录屏时会显示一个 3 秒倒计时的能力限制提示。",
+    "recordingNoticeDesc": "录屏前会显示带 3 秒倒计时的能力限制提示，直到用户勾选“不再提示”并继续。",
     "notConfirmed": "尚未确认",
     "resetConsent": "重置",
     "featureGuide": "功能介绍",
@@ -57,7 +57,7 @@
     "maxImagesPerTurnDesc": "截图和手动上传的图片共享同一上限。",
     "maxVideosPerTurn": "单条消息视频上限",
     "maxVideosPerTurnDesc": "录屏和手动上传的视频共享同一上限。",
-    "resetConsentSuccess": "下次使用时会再次请求隐私确认和录屏说明。"
+    "resetConsentSuccess": "下次使用时会再次请求隐私确认和录屏说明，直到用户选择记住。"
   },
   "browserControl": {
     "sectionTitle": "浏览器控制",

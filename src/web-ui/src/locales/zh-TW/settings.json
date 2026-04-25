@@ -205,7 +205,11 @@
         "btwFill": "開啟側問會話",
         "stopGeneration": "停止生成",
         "activateInput": "激活輸入框",
-        "newSession": "新建會話"
+        "newSession": "新建會話",
+        "captureScreenshot": "截取屏幕",
+        "captureScreenshotMinimized": "最小化後截圖",
+        "toggleRecording": "開始或停止錄屏",
+        "toggleRecordingMinimized": "最小化後開始錄屏"
       },
       "filetree": {
         "rename": "重命名",
