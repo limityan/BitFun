@@ -24,6 +24,18 @@ interface UserMessageItemProps {
   turnId: string;
 }
 
+function isRecordingFrameImage(image: {
+  metadata?: Record<string, any>;
+}): boolean {
+  return image.metadata?.captureKind === 'recording_frame';
+}
+
+function isRecordingVideo(video: {
+  metadata?: Record<string, any>;
+}): boolean {
+  return video.metadata?.captureKind === 'recording';
+}
+
 export const UserMessageItem = React.memo<UserMessageItemProps>(
   ({ message, turnId }) => {
     const { t } = useTranslation('flow-chat');
@@ -35,10 +47,12 @@ export const UserMessageItem = React.memo<UserMessageItemProps>(
     const [hasOverflow, setHasOverflow] = useState(false);
     const [isRollingBack, setIsRollingBack] = useState(false);
     const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+    const [lightboxVideo, setLightboxVideo] = useState<string | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const messageContent = typeof message?.content === 'string' ? message.content : String(message?.content || '');
     const messageImages = useMemo(() => message?.images ?? [], [message?.images]);
+    const messageVideos = useMemo(() => message?.videos ?? [], [message?.videos]);
 
     const turnIndex = activeSession?.dialogTurns.findIndex(t => t.id === turnId) ?? -1;
     const dialogTurn = turnIndex >= 0 ? activeSession?.dialogTurns[turnIndex] : null;
@@ -53,14 +67,14 @@ export const UserMessageItem = React.memo<UserMessageItemProps>(
       let cleaned = messageContent.replace(reproductionRegex, '').trim();
 
       // Strip [Image: ...] context lines when images are shown as thumbnails.
-      if (messageImages.length > 0) {
+      if (messageImages.length > 0 || messageVideos.length > 0) {
         cleaned = cleaned
           .replace(/\[Image:.*?\]\n(?:Path:.*?\n|Image ID:.*?\n)?/g, '')
           .trim();
       }
 
       return { displayText: cleaned, reproductionSteps: reproduction };
-    }, [messageContent, messageImages]);
+    }, [messageContent, messageImages, messageVideos]);
     
     // Check whether content overflows.
     useEffect(() => {
@@ -249,7 +263,43 @@ export const UserMessageItem = React.memo<UserMessageItemProps>(
               const src = img.dataUrl || (img.imagePath ? `https://asset.localhost/${encodeURIComponent(img.imagePath)}` : undefined);
               return src ? (
                 <div key={img.id} className="user-message-item__image-thumb" onClick={(e) => { e.stopPropagation(); setLightboxImage(src); }}>
+                  {isRecordingFrameImage(img) && (
+                    <span className="user-message-item__image-badge">
+                      {t('contextCapture.recordingBadge', { defaultValue: 'REC' })}
+                    </span>
+                  )}
                   <img src={src} alt={img.name} />
+                </div>
+              ) : null;
+            })}
+          </div>
+        )}
+
+        {message.videos && message.videos.length > 0 && (
+          <div className="user-message-item__images">
+            {message.videos.map(video => {
+              const src =
+                video.previewUrl
+                || (video.videoPath
+                  ? `https://asset.localhost/${encodeURIComponent(video.videoPath)}`
+                  : undefined);
+              const poster = video.thumbnailUrl;
+
+              return src ? (
+                <div
+                  key={video.id}
+                  className="user-message-item__image-thumb"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLightboxVideo(src);
+                  }}
+                >
+                  {isRecordingVideo(video) && (
+                    <span className="user-message-item__image-badge">
+                      {t('contextCapture.recordingBadge', { defaultValue: 'REC' })}
+                    </span>
+                  )}
+                  <video src={src} poster={poster} muted playsInline preload="metadata" />
                 </div>
               ) : null;
             })}
@@ -268,6 +318,15 @@ export const UserMessageItem = React.memo<UserMessageItemProps>(
               <X size={20} />
             </button>
             <img src={lightboxImage} alt="Preview" onClick={(e) => e.stopPropagation()} />
+          </div>
+        )}
+
+        {lightboxVideo && (
+          <div className="user-message-item__lightbox" onClick={() => setLightboxVideo(null)}>
+            <button className="user-message-item__lightbox-close" onClick={() => setLightboxVideo(null)}>
+              <X size={20} />
+            </button>
+            <video src={lightboxVideo} controls autoPlay onClick={(e) => e.stopPropagation()} />
           </div>
         )}
       </div>

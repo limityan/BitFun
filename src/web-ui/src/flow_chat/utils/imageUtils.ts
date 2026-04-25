@@ -1,12 +1,20 @@
 /**
- * Image processing utility functions
+ * Media processing utility functions
  */
 
-import type { ImageContext } from '@/shared/types/context';
-import { isImageFile as checkIsImageFile } from '@/infrastructure/language-detection';
+import type { ImageContext, VideoContext } from '@/shared/types/context';
+import { CHAT_INPUT_CONFIG } from '../constants/chatInputConfig';
+import {
+  isImageFile as checkIsImageFile,
+  isVideoFile as checkIsVideoFile,
+} from '@/infrastructure/language-detection';
 import { createLogger } from '@/shared/utils/logger';
 
 const log = createLogger('imageUtils');
+const IMAGE_TYPES = [...CHAT_INPUT_CONFIG.media.image.acceptedTypes];
+const VIDEO_TYPES = [...CHAT_INPUT_CONFIG.media.video.acceptedTypes];
+const IMAGE_MAX_BYTES = CHAT_INPUT_CONFIG.media.image.maxFileSizeBytes;
+const VIDEO_MAX_BYTES = CHAT_INPUT_CONFIG.media.video.maxFileSizeBytes;
 
 /**
  * Build a human-readable, unique-ish filename for an image that came from the
@@ -112,29 +120,41 @@ export function validateImageFile(file: File): {
   valid: boolean;
   error?: string;
 } {
-  const supportedTypes = [
-    'image/png',
-    'image/jpeg',
-    'image/jpg',
-    'image/gif',
-    'image/webp'
-  ];
-  
-  if (!supportedTypes.includes(file.type)) {
+  if (!IMAGE_TYPES.includes(file.type as typeof IMAGE_TYPES[number])) {
     return {
       valid: false,
       error: `Unsupported image format: ${file.type}`
     };
   }
   
-  const maxSize = 20 * 1024 * 1024;
-  if (file.size > maxSize) {
+  if (file.size >= IMAGE_MAX_BYTES) {
     return {
       valid: false,
-      error: `Image too large (${(file.size / 1024 / 1024).toFixed(2)}MB), maximum supported 20MB`
+      error: `Image too large (${(file.size / 1024 / 1024).toFixed(2)}MB), maximum supported 10MB`
     };
   }
   
+  return { valid: true };
+}
+
+export function validateVideoFile(file: File): {
+  valid: boolean;
+  error?: string;
+} {
+  if (!VIDEO_TYPES.includes(file.type as typeof VIDEO_TYPES[number])) {
+    return {
+      valid: false,
+      error: `Unsupported video format: ${file.type}`
+    };
+  }
+
+  if (file.size > VIDEO_MAX_BYTES) {
+    return {
+      valid: false,
+      error: `Video too large (${(file.size / 1024 / 1024).toFixed(2)}MB), maximum supported 50MB`
+    };
+  }
+
   return { valid: true };
 }
 
@@ -191,6 +211,18 @@ export function getMimeTypeFromFilename(filename: string): string {
   };
   
   return mimeMap[ext || ''] || 'image/jpeg';
+}
+
+export function getVideoMimeTypeFromFilename(filename: string): string {
+  const ext = filename.toLowerCase().split('.').pop();
+
+  const mimeMap: Record<string, string> = {
+    'mp4': 'video/mp4',
+    'webm': 'video/webm',
+    'mov': 'video/quicktime',
+  };
+
+  return mimeMap[ext || ''] || 'video/webm';
 }
 
 /**
@@ -327,6 +359,126 @@ export async function createImageContextFromClipboard(
  */
 export function isImageFile(filename: string): boolean {
   return checkIsImageFile(filename);
+}
+
+export function isVideoFile(filename: string): boolean {
+  return checkIsVideoFile(filename);
+}
+
+async function getVideoMetadata(file: File): Promise<{
+  width: number;
+  height: number;
+  durationMs: number;
+  previewUrl: string | undefined;
+  thumbnailUrl: string | undefined;
+}> {
+  const previewUrl = URL.createObjectURL(file);
+
+  try {
+    const metadata = await new Promise<{
+      width: number;
+      height: number;
+      durationMs: number;
+      thumbnailUrl?: string;
+    }>((resolve, reject) => {
+      const video = document.createElement('video');
+      video.preload = 'metadata';
+      video.muted = true;
+      video.playsInline = true;
+
+      const cleanup = () => {
+        video.removeAttribute('src');
+        video.load();
+      };
+
+      video.onloadeddata = () => {
+        const width = video.videoWidth || 0;
+        const height = video.videoHeight || 0;
+        const durationMs = Number.isFinite(video.duration) ? Math.round(video.duration * 1000) : 0;
+        let thumbnailUrl: string | undefined;
+
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, width || 1);
+          canvas.height = Math.max(1, height || 1);
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            thumbnailUrl = canvas.toDataURL('image/jpeg', 0.72);
+          }
+        } catch (error) {
+          log.warn('Failed to generate video thumbnail', { fileName: file.name, error });
+        }
+
+        cleanup();
+        resolve({ width, height, durationMs, thumbnailUrl });
+      };
+
+      video.onerror = () => {
+        cleanup();
+        reject(new Error('Failed to load video metadata'));
+      };
+
+      video.src = previewUrl;
+    });
+
+    return {
+      ...metadata,
+      previewUrl,
+      thumbnailUrl: metadata.thumbnailUrl,
+    };
+  } catch (error) {
+    URL.revokeObjectURL(previewUrl);
+    throw error;
+  }
+}
+
+export async function createVideoContextFromFile(
+  file: File
+): Promise<VideoContext> {
+  const validation = validateVideoFile(file);
+  if (!validation.valid) {
+    throw new Error(validation.error);
+  }
+
+  let metadata = {
+    width: 0,
+    height: 0,
+    durationMs: 0,
+    previewUrl: undefined as string | undefined,
+    thumbnailUrl: undefined as string | undefined,
+  };
+
+  try {
+    metadata = await getVideoMetadata(file);
+  } catch (error) {
+    log.warn('Failed to get video metadata', { fileName: file.name, error });
+  }
+
+  const context: VideoContext = {
+    id: `vid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    type: 'video',
+    videoPath: (file as any).path || '',
+    videoName: file.name,
+    width: metadata.width,
+    height: metadata.height,
+    durationMs: metadata.durationMs,
+    fileSize: file.size,
+    mimeType: file.type || getVideoMimeTypeFromFilename(file.name),
+    previewUrl: metadata.previewUrl,
+    thumbnailUrl: metadata.thumbnailUrl,
+    source: 'file',
+    isLocal: Boolean((file as any).path),
+    timestamp: Date.now(),
+    metadata: {},
+  };
+
+  if (!context.videoPath) {
+    context.dataUrl = await readFileAsDataUrl(file);
+    context.isLocal = false;
+  }
+
+  return context;
 }
 
 /**

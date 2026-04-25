@@ -11,6 +11,12 @@ export class ChatInput extends BasePage {
     sendBtn: '[data-testid="chat-input-send-btn"], button.bitfun-chat-input__send-button, button.chat-input__send-btn, button[class*="send"]',
     attachmentBtn: '[data-testid="chat-input-attachment-btn"], .chat-input__attachment-btn',
     cancelBtn: '[data-testid="chat-input-cancel-btn"], .bitfun-chat-input__send-button--breathing, .chat-input__cancel-btn, button[class*="cancel"]',
+    screenshotBtn: '[data-testid="chat-input-screenshot-btn"]',
+    recordingBtn: '[data-testid="chat-input-recording-btn"]',
+    imageChip: '[data-testid="chat-input-image-chip"]',
+    videoChip: '[data-testid="chat-input-video-chip"]',
+    videoChipRemoveBtn: '[data-testid="chat-input-video-chip-remove"]',
+    recordingBadge: '[data-testid="chat-input-recording-badge"]',
   };
 
   private getSelectAllModifier(): 'Meta' | 'Control' {
@@ -61,7 +67,7 @@ export class ChatInput extends BasePage {
     await this.wait(1000);
   }
 
-  private async findTextarea(): Promise<WebdriverIO.Element | null> {
+  private async findTextarea(): Promise<any> {
     const selectors = [
       '.rich-text-input[contenteditable="true"]',
       '.bitfun-chat-input__input-area [contenteditable="true"]',
@@ -148,7 +154,7 @@ export class ChatInput extends BasePage {
         return await input.getText();
       } else {
         // Regular textarea
-        return await input.getValue();
+        return String(await input.getValue());
       }
     }
     return '';
@@ -284,6 +290,179 @@ export class ChatInput extends BasePage {
 
   async isCancelButtonVisible(): Promise<boolean> {
     return this.isElementVisible(this.selectors.cancelBtn);
+  }
+
+  async isScreenshotButtonVisible(): Promise<boolean> {
+    try {
+      const element = await $(this.selectors.screenshotBtn);
+      return await element.isExisting() && await element.isDisplayed();
+    } catch {
+      return false;
+    }
+  }
+
+  async isRecordingButtonVisible(): Promise<boolean> {
+    try {
+      const element = await $(this.selectors.recordingBtn);
+      return await element.isExisting() && await element.isDisplayed();
+    } catch {
+      return false;
+    }
+  }
+
+  async isScreenshotButtonEnabled(): Promise<boolean> {
+    try {
+      const element = await $(this.selectors.screenshotBtn);
+      return await element.isExisting() && await element.isEnabled();
+    } catch {
+      return false;
+    }
+  }
+
+  async isRecordingButtonEnabled(): Promise<boolean> {
+    try {
+      const element = await $(this.selectors.recordingBtn);
+      return await element.isExisting() && await element.isEnabled();
+    } catch {
+      return false;
+    }
+  }
+
+  async clickScreenshot(): Promise<void> {
+    const element = await $(this.selectors.screenshotBtn);
+    if (await element.isExisting()) {
+      try {
+        if (await element.isDisplayed()) {
+          await element.click();
+          return;
+        }
+      } catch {
+        // Fall through to DOM click fallback.
+      }
+
+      await browser.execute((selector) => {
+        const target = document.querySelector<HTMLButtonElement>(selector);
+        if (!target) {
+          throw new Error(`Element ${selector} not found`);
+        }
+        if (target.disabled || target.getAttribute('aria-disabled') === 'true') {
+          throw new Error(`Element ${selector} is disabled`);
+        }
+        target.click();
+      }, this.selectors.screenshotBtn);
+      return;
+    }
+
+    await this.safeClick(this.selectors.screenshotBtn);
+  }
+
+  async clickRecording(): Promise<void> {
+    const element = await $(this.selectors.recordingBtn);
+    if (await element.isExisting()) {
+      try {
+        if (await element.isDisplayed()) {
+          await element.click();
+          return;
+        }
+      } catch {
+        // Fall through to DOM click fallback.
+      }
+
+      await browser.execute((selector) => {
+        const target = document.querySelector<HTMLButtonElement>(selector);
+        if (!target) {
+          throw new Error(`Element ${selector} not found`);
+        }
+        if (target.disabled || target.getAttribute('aria-disabled') === 'true') {
+          throw new Error(`Element ${selector} is disabled`);
+        }
+        target.click();
+      }, this.selectors.recordingBtn);
+      return;
+    }
+
+    await this.safeClick(this.selectors.recordingBtn);
+  }
+
+  async getImageChipCount(): Promise<number> {
+    return browser.execute((selector) => {
+      return document.querySelectorAll(selector).length;
+    }, this.selectors.imageChip);
+  }
+
+  async getVideoChipCount(): Promise<number> {
+    return browser.execute((selector) => {
+      return document.querySelectorAll(selector).length;
+    }, this.selectors.videoChip);
+  }
+
+  async waitForImageChipCount(expectedCount: number, timeout = 10000): Promise<void> {
+    await browser.waitUntil(async () => {
+      return (await this.getImageChipCount()) === expectedCount;
+    }, {
+      timeout,
+      interval: 200,
+      timeoutMsg: `Expected image chip count to become ${expectedCount}`,
+    });
+  }
+
+  async waitForImageChipCountAtLeast(minCount: number, timeout = 10000): Promise<void> {
+    await browser.waitUntil(async () => {
+      return (await this.getImageChipCount()) >= minCount;
+    }, {
+      timeout,
+      interval: 200,
+      timeoutMsg: `Expected image chip count to become at least ${minCount}`,
+    });
+  }
+
+  async waitForVideoChipCount(expectedCount: number, timeout = 10000): Promise<void> {
+    await browser.waitUntil(async () => {
+      return (await this.getVideoChipCount()) === expectedCount;
+    }, {
+      timeout,
+      interval: 200,
+      timeoutMsg: `Expected video chip count to become ${expectedCount}`,
+    });
+  }
+
+  async getRecordingBadgeCount(): Promise<number> {
+    return browser.execute((selector) => {
+      return document.querySelectorAll(selector).length;
+    }, this.selectors.recordingBadge);
+  }
+
+  async clickFirstVideoRemove(): Promise<void> {
+    const element = await $(this.selectors.videoChipRemoveBtn);
+    if (await element.isExisting()) {
+      try {
+        if (await element.isDisplayed()) {
+          await element.click();
+          return;
+        }
+      } catch {
+        // Fall through to DOM click fallback.
+      }
+
+      await browser.execute((selector) => {
+        const target = document.querySelector<HTMLButtonElement>(selector);
+        if (!target) {
+          throw new Error(`Element ${selector} not found`);
+        }
+        if (target.disabled || target.getAttribute('aria-disabled') === 'true') {
+          throw new Error(`Element ${selector} is disabled`);
+        }
+        target.click();
+      }, this.selectors.videoChipRemoveBtn);
+      return;
+    }
+
+    await this.safeClick(this.selectors.videoChipRemoveBtn);
+  }
+
+  async getRecordingButtonAriaLabel(): Promise<string> {
+    const element = await $(this.selectors.recordingBtn);
+    return (await element.getAttribute('aria-label')) || '';
   }
 
   async getPlaceholder(): Promise<string> {

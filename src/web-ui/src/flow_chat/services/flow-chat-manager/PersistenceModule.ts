@@ -17,6 +17,20 @@ function requireWorkspacePath(sessionId: string, workspacePath?: string): string
   return workspacePath;
 }
 
+type DialogTurnVideo = NonNullable<DialogTurn['userMessage']['videos']>[number];
+
+function serializeVideoForPersistence(video: DialogTurnVideo): Record<string, unknown> {
+  return {
+    id: video.id,
+    name: video.name,
+    video_path: video.videoPath,
+    thumbnail_url: video.thumbnailUrl,
+    mime_type: video.mimeType,
+    duration_ms: video.durationMs,
+    ...(video.metadata ? { metadata: video.metadata } : {}),
+  };
+}
+
 async function runSerialDialogTurnSave(
   context: FlowChatContext,
   sessionId: string,
@@ -309,10 +323,22 @@ export function convertDialogTurnToBackendFormat(dialogTurn: DialogTurn, turnInd
             data_url: img.dataUrl,
             image_path: img.imagePath,
             mime_type: img.mimeType,
+            ...(img.metadata ? { metadata: img.metadata } : {}),
           })),
+          ...(dialogTurn.userMessage.videos?.length
+            ? {
+                videos: dialogTurn.userMessage.videos.map(serializeVideoForPersistence),
+              }
+            : {}),
           original_text: dialogTurn.userMessage.content,
         }
-      : userMetadata;
+      : dialogTurn.userMessage.videos?.length
+        ? {
+            ...(userMetadata || {}),
+            videos: dialogTurn.userMessage.videos.map(serializeVideoForPersistence),
+            original_text: dialogTurn.userMessage.content,
+          }
+        : userMetadata;
 
   return {
     turnId: dialogTurn.id,

@@ -117,6 +117,7 @@ export interface DialogTurn {
     content: string;
     timestamp: number;
     hasImages?: boolean;
+    hasVideos?: boolean;
     metadata?: Record<string, any>;
     images?: Array<{
       id: string;
@@ -124,6 +125,18 @@ export interface DialogTurn {
       dataUrl?: string;
       imagePath?: string;
       mimeType?: string;
+      metadata?: Record<string, any>;
+    }>;
+    videos?: Array<{
+      id: string;
+      name: string;
+      dataUrl?: string;
+      previewUrl?: string;
+      videoPath?: string;
+      thumbnailUrl?: string;
+      mimeType?: string;
+      durationMs?: number;
+      metadata?: Record<string, any>;
     }>;
   };
   

@@ -284,7 +284,25 @@ export class FlowChatManager {
     switchToMode?: string,
     options?: {
       imageContexts?: import('@/infrastructure/api/service-api/ImageContextTypes').ImageContextData[];
-      imageDisplayData?: Array<{ id: string; name: string; dataUrl?: string; imagePath?: string; mimeType?: string }>;
+      imageDisplayData?: Array<{
+        id: string;
+        name: string;
+        dataUrl?: string;
+        imagePath?: string;
+        mimeType?: string;
+        metadata?: Record<string, any>;
+      }>;
+      videoDisplayData?: Array<{
+        id: string;
+        name: string;
+        dataUrl?: string;
+        previewUrl?: string;
+        videoPath?: string;
+        thumbnailUrl?: string;
+        mimeType?: string;
+        durationMs?: number;
+        metadata?: Record<string, any>;
+      }>;
     }
   ): Promise<void> {
     const targetSessionId = sessionId || this.context.flowChatStore.getState().activeSessionId;

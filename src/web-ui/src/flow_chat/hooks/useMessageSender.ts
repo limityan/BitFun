@@ -11,31 +11,25 @@
 import { useCallback } from 'react';
 import { FlowChatManager } from '../services/FlowChatManager';
 import { notificationService } from '@/shared/notification-system';
-import type { ContextItem, ImageContext } from '@/shared/types/context';
+import type { ContextItem, ImageContext, VideoContext } from '@/shared/types/context';
 import type { AIModelConfig, DefaultModelsConfig } from '@/infrastructure/config/types';
 import { createLogger } from '@/shared/utils/logger';
+import { configManager } from '@/infrastructure/config/services/ConfigManager';
+import { confirmWarning } from '@/component-library/components/ConfirmDialog/confirmService';
+import { i18nService } from '@/infrastructure/i18n';
+import {
+  findRecommendedMultimodalModel,
+  getSelectedModelActiveMediaStrategy,
+  getSelectedModelDisplayName,
+  normalizeModelSelection,
+} from '../utils/modelImageSupport';
+import {
+  prepareVideoDigestForModel,
+  resolveVideoFrameBudgetForModel,
+} from '../utils/videoUtils';
 
 const log = createLogger('FlowChat');
-
-function normalizeModelSelection(
-  modelId: string | undefined,
-  models: AIModelConfig[],
-  defaultModels: DefaultModelsConfig,
-): string {
-  const value = modelId?.trim();
-  if (!value || value === 'auto') return 'auto';
-
-  if (value === 'primary' || value === 'fast') {
-    const resolvedDefaultId = value === 'primary' ? defaultModels.primary : defaultModels.fast;
-    const matchedModel = models.find(model => model.id === resolvedDefaultId);
-    return matchedModel ? value : 'auto';
-  }
-
-  const matchedModel = models.find(model =>
-    model.id === value || model.name === value || model.model_name === value,
-  );
-  return matchedModel ? value : 'auto';
-}
+const t = (key: string, options?: Record<string, unknown>) => i18nService.t(key, options);
 
 interface UseMessageSenderProps {
   /** Current session ID */
@@ -108,15 +102,14 @@ export function useMessageSender(props: UseMessageSenderProps): UseMessageSender
 
     try {
       const flowChatManager = FlowChatManager.getInstance();
+      const [agentModels, allModels, defaultModels] = await Promise.all([
+        configManager.getConfig<Record<string, string>>('ai.agent_models') || {},
+        configManager.getConfig<AIModelConfig[]>('ai.models') || [],
+        configManager.getConfig<DefaultModelsConfig>('ai.default_models') || {},
+      ]);
+      const agentType = currentAgentType || 'agentic';
 
       if (!sessionId) {
-        const { configManager } = await import('@/infrastructure/config/services/ConfigManager');
-        const [agentModels, allModels, defaultModels] = await Promise.all([
-          configManager.getConfig<Record<string, string>>('ai.agent_models') || {},
-          configManager.getConfig<AIModelConfig[]>('ai.models') || [],
-          configManager.getConfig<DefaultModelsConfig>('ai.default_models') || {},
-        ]);
-        const agentType = currentAgentType || 'agentic';
         const modelId = normalizeModelSelection(agentModels[agentType], allModels, defaultModels);
 
         sessionId = await flowChatManager.createChatSession({
@@ -128,7 +121,110 @@ export function useMessageSender(props: UseMessageSenderProps): UseMessageSender
       }
 
       const imageContexts = contexts.filter(ctx => ctx.type === 'image') as ImageContext[];
-      const clipboardImages = imageContexts.filter(ctx => !ctx.isLocal && ctx.dataUrl);
+      const videoContexts = contexts.filter(ctx => ctx.type === 'video') as VideoContext[];
+      const selectedModelId = agentModels[agentType];
+      const mediaStrategy = getSelectedModelActiveMediaStrategy(
+        selectedModelId,
+        allModels,
+        defaultModels,
+      );
+
+      if (
+        (imageContexts.length > 0 || videoContexts.length > 0)
+        && !mediaStrategy.imageInput
+        && mediaStrategy.videoTransport === 'none'
+      ) {
+        const selectedModelName = getSelectedModelDisplayName(
+          selectedModelId,
+          allModels,
+          defaultModels,
+        );
+        const recommendedModel = findRecommendedMultimodalModel(allModels);
+        const recommendedModelName = recommendedModel
+          ? recommendedModel.model_name || recommendedModel.name || recommendedModel.id
+          : null;
+
+        const shouldOpenModelSettings = await confirmWarning(
+          t('contextCapture.unsupportedModelTitle', {
+            defaultValue: 'Selected model cannot process media attachments',
+          }),
+          recommendedModelName
+            ? t('contextCapture.unsupportedModelMessageRecommended', {
+                defaultValue:
+                  'The current model{{modelSuffix}} does not support screenshot, image, or video attachments.\n\nOpen model settings and switch to "{{recommendedModelName}}" or another multimodal model, or remove the media attachments and send text only.',
+                modelSuffix: selectedModelName ? ` "${selectedModelName}"` : '',
+                recommendedModelName,
+              })
+            : selectedModelName
+            ? t('contextCapture.unsupportedModelMessageNamed', {
+                defaultValue:
+                  'The current model "{{modelName}}" does not support screenshot, image, or video attachments.\n\nOpen model settings and switch to a multimodal model, or remove the media attachments and send text only.',
+                modelName: selectedModelName,
+              })
+            : t('contextCapture.unsupportedModelMessage', {
+                defaultValue:
+                  'The current model does not support screenshot, image, or video attachments.\n\nOpen model settings and switch to a multimodal model, or remove the media attachments and send text only.',
+              }),
+          {
+            confirmText: t('contextCapture.unsupportedModelOpenSettings', {
+              defaultValue: 'Open model settings',
+            }),
+            cancelText: t('contextCapture.unsupportedModelKeepEditing', {
+              defaultValue: 'Keep editing',
+            }),
+          }
+        );
+        if (shouldOpenModelSettings) {
+          const { quickActions } = await import('@/shared/services/ide-control');
+          quickActions.openSettings('models');
+        }
+
+        throw new Error('Selected model does not support media attachments');
+      }
+
+      let extractedVideoFrames: ImageContext[] = [];
+      let videoTimelineText = '';
+      if (videoContexts.length > 0) {
+        try {
+          const videoFrameCount = resolveVideoFrameBudgetForModel({
+            attachedImageCount: imageContexts.length,
+            attachedVideoCount: videoContexts.length,
+          });
+          const videoDigests = await Promise.all(
+            videoContexts.map(context => prepareVideoDigestForModel(context, {
+              strategy: mediaStrategy.videoTransport === 'none'
+                ? 'frames'
+                : mediaStrategy.videoTransport,
+              frameCount: videoFrameCount,
+            }))
+          );
+          extractedVideoFrames = videoDigests.flatMap(digest =>
+            digest.frames.map(frame => frame.imageContext)
+          );
+          videoTimelineText = videoDigests
+            .map(digest => digest.timelineText)
+            .filter(Boolean)
+            .join('\n\n');
+          if (extractedVideoFrames.length === 0) {
+            throw new Error('No frames could be extracted from the attached video.');
+          }
+        } catch (error) {
+          log.error('Failed to extract frames from attached videos', {
+            videoCount: videoContexts.length,
+            error: (error as Error)?.message ?? 'unknown',
+          });
+          notificationService.error(
+            t('contextCapture.videoFrameExtractionFailed', {
+              defaultValue: 'Video analysis preparation failed. Please try another video or record again.',
+            }),
+            { duration: 4000 }
+          );
+          throw error;
+        }
+      }
+
+      const modelImageContexts = [...imageContexts, ...extractedVideoFrames];
+      const clipboardImages = modelImageContexts.filter(ctx => !ctx.isLocal && ctx.dataUrl);
 
       if (clipboardImages.length > 0) {
         try {
@@ -177,6 +273,7 @@ export function useMessageSender(props: UseMessageSenderProps): UseMessageSender
             case 'code-snippet':
               return `[Code Snippet: ${ctx.filePath}:${ctx.startLine}-${ctx.endLine}]`;
             case 'image':
+            case 'video':
               // Images are sent out-of-band via `imageContexts` so the backend can attach them
               // for multimodal models or convert to text placeholders for text-only models. Avoid embedding
               // "Image ID" references into the user prompt, which can cause redundant tool calls.
@@ -211,17 +308,24 @@ export function useMessageSender(props: UseMessageSenderProps): UseMessageSender
 
         fullMessage = `${fullContextSection}\n\n${aiTrimmedMessage}`;
       }
+      if (videoTimelineText) {
+        const videoContextSection = `[Video Context]\n${videoTimelineText}`;
+        fullMessage = fullMessage
+          ? `${videoContextSection}\n\n${fullMessage}`
+          : videoContextSection;
+      }
 
       // Always pass imageContexts to the backend; the coordinator decides
       // whether to pre-analyse via a vision model or attach directly.
-      const imageContextsForBackend = imageContexts.length > 0
+      const imageContextsForBackend = modelImageContexts.length > 0
         ? {
-            imageContexts: imageContexts.map(ctx => ({
+            imageContexts: modelImageContexts.map(ctx => ({
               id: ctx.id,
               image_path: ctx.isLocal ? ctx.imagePath : undefined,
               data_url: undefined,
               mime_type: ctx.mimeType,
               metadata: {
+                ...(ctx.metadata || {}),
                 name: ctx.imageName,
                 width: ctx.width,
                 height: ctx.height,
@@ -235,6 +339,18 @@ export function useMessageSender(props: UseMessageSenderProps): UseMessageSender
               dataUrl: ctx.dataUrl,
               imagePath: ctx.isLocal ? ctx.imagePath : undefined,
               mimeType: ctx.mimeType,
+              metadata: ctx.metadata,
+            })),
+            videoDisplayData: videoContexts.map(video => ({
+              id: video.id,
+              name: video.videoName || 'Video',
+              dataUrl: video.dataUrl,
+              previewUrl: video.previewUrl,
+              videoPath: video.isLocal ? video.videoPath : undefined,
+              thumbnailUrl: video.thumbnailUrl,
+              mimeType: video.mimeType,
+              durationMs: video.durationMs,
+              metadata: video.metadata,
             })),
           }
         : undefined;
@@ -258,6 +374,7 @@ export function useMessageSender(props: UseMessageSenderProps): UseMessageSender
         agentType: currentAgentType || 'agentic',
         contextCount: contexts.length,
         imageCount: imageContexts.length,
+        videoCount: videoContexts.length,
       });
     } catch (error) {
       log.error('Failed to send message', {

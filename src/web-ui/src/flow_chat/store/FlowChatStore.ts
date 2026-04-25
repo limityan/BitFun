@@ -1657,7 +1657,9 @@ export class FlowChatStore {
     return turns.map(turn => {
       const metadata = turn.userMessage.metadata;
       const metaImages = metadata?.images;
+      const metaVideos = metadata?.videos;
       const hasImages = Array.isArray(metaImages) && metaImages.length > 0;
+      const hasVideos = Array.isArray(metaVideos) && metaVideos.length > 0;
       const images = hasImages
         ? metaImages.map((img: any) => ({
             id: img.id || img.name || `img-${Date.now()}`,
@@ -1665,6 +1667,20 @@ export class FlowChatStore {
             dataUrl: img.data_url,
             imagePath: img.image_path,
             mimeType: img.mime_type,
+            metadata: img.metadata,
+          }))
+        : undefined;
+      const videos = hasVideos
+        ? metaVideos.map((video: any) => ({
+            id: video.id || video.name || `video-${Date.now()}`,
+            name: video.name || 'video',
+            dataUrl: video.data_url,
+            previewUrl: video.preview_url,
+            videoPath: video.video_path,
+            thumbnailUrl: video.thumbnail_url,
+            mimeType: video.mime_type,
+            durationMs: video.duration_ms,
+            metadata: video.metadata,
           }))
         : undefined;
 
@@ -1682,8 +1698,10 @@ export class FlowChatStore {
         content: displayContent,
         timestamp: turn.userMessage.timestamp,
         hasImages,
+        hasVideos,
         metadata,
         images,
+        videos,
       },
       modelRounds: turn.modelRounds.map((round: any) => {
         const normalizedRoundStatus = normalizeRecoveredRoundStatus(round.status, normalizedTurnStatus);

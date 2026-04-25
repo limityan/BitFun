@@ -102,7 +102,25 @@ export async function sendMessage(
   switchToMode?: string,
   options?: {
     imageContexts?: ImageInputContextData[];
-    imageDisplayData?: Array<{ id: string; name: string; dataUrl?: string; imagePath?: string; mimeType?: string }>;
+    imageDisplayData?: Array<{
+      id: string;
+      name: string;
+      dataUrl?: string;
+      imagePath?: string;
+      mimeType?: string;
+      metadata?: Record<string, any>;
+    }>;
+    videoDisplayData?: Array<{
+      id: string;
+      name: string;
+      dataUrl?: string;
+      previewUrl?: string;
+      videoPath?: string;
+      thumbnailUrl?: string;
+      mimeType?: string;
+      durationMs?: number;
+      metadata?: Record<string, any>;
+    }>;
   }
 ): Promise<void> {
   const session = context.flowChatStore.getState().sessions.get(sessionId);
@@ -144,6 +162,51 @@ export async function sendMessage(
     const isFirstMessage = readySession.dialogTurns.length === 0 && readySession.titleStatus !== 'generated';
     const dialogTurnId = `dialog_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const hasImages = (options?.imageContexts?.length ?? 0) > 0;
+    const hasVideos = (options?.videoDisplayData?.length ?? 0) > 0;
+    const userImageMetadata = options?.imageDisplayData?.map(image => ({
+      ...(image.metadata || {}),
+      id: image.id,
+      name: image.name,
+      ...(image.dataUrl ? { data_url: image.dataUrl } : {}),
+      ...(image.imagePath ? { image_path: image.imagePath } : {}),
+      ...(image.mimeType ? { mime_type: image.mimeType } : {}),
+    }));
+    const userMessageMetadata = userImageMetadata?.length
+      ? {
+          images: userImageMetadata,
+          ...(options?.videoDisplayData?.length
+            ? {
+                videos: options.videoDisplayData.map(video => ({
+                  ...(video.metadata || {}),
+                  id: video.id,
+                  name: video.name,
+                  ...(video.dataUrl ? { data_url: video.dataUrl } : {}),
+                  ...(video.previewUrl ? { preview_url: video.previewUrl } : {}),
+                  ...(video.videoPath ? { video_path: video.videoPath } : {}),
+                  ...(video.thumbnailUrl ? { thumbnail_url: video.thumbnailUrl } : {}),
+                  ...(video.mimeType ? { mime_type: video.mimeType } : {}),
+                  ...(video.durationMs ? { duration_ms: video.durationMs } : {}),
+                })),
+              }
+            : {}),
+          original_text: displayMessage || message,
+        }
+      : options?.videoDisplayData?.length
+        ? {
+            videos: options.videoDisplayData.map(video => ({
+              ...(video.metadata || {}),
+              id: video.id,
+              name: video.name,
+              ...(video.dataUrl ? { data_url: video.dataUrl } : {}),
+              ...(video.previewUrl ? { preview_url: video.previewUrl } : {}),
+              ...(video.videoPath ? { video_path: video.videoPath } : {}),
+              ...(video.thumbnailUrl ? { thumbnail_url: video.thumbnailUrl } : {}),
+              ...(video.mimeType ? { mime_type: video.mimeType } : {}),
+              ...(video.durationMs ? { duration_ms: video.durationMs } : {}),
+            })),
+            original_text: displayMessage || message,
+          }
+        : undefined;
 
     const dialogTurn: DialogTurn = {
       id: dialogTurnId,
@@ -153,7 +216,10 @@ export async function sendMessage(
         content: displayMessage || message,
         timestamp: Date.now(),
         hasImages,
+        hasVideos,
+        metadata: userMessageMetadata,
         images: options?.imageDisplayData,
+        videos: options?.videoDisplayData,
       },
       modelRounds: [],
       // Images are attached for multimodal primary models or reduced to text placeholders for text-only models.

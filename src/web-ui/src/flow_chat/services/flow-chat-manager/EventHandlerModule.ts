@@ -667,7 +667,9 @@ function handleImageAnalysisStarted(context: FlowChatContext, event: ImageAnalys
 
   // Extract image display data from metadata (same logic as handleDialogTurnStarted)
   const metaImages = imageMetadata?.images;
+  const metaVideos = imageMetadata?.videos;
   const hasMetaImages = Array.isArray(metaImages) && metaImages.length > 0;
+  const hasMetaVideos = Array.isArray(metaVideos) && metaVideos.length > 0;
   const images = hasMetaImages
     ? metaImages.map((img: any) => ({
         id: img.id || img.name || `img-${Date.now()}`,
@@ -675,6 +677,20 @@ function handleImageAnalysisStarted(context: FlowChatContext, event: ImageAnalys
         dataUrl: img.data_url,
         imagePath: img.image_path,
         mimeType: img.mime_type,
+        metadata: img.metadata,
+      }))
+    : undefined;
+  const videos = hasMetaVideos
+    ? metaVideos.map((video: any) => ({
+        id: video.id || video.name || `video-${Date.now()}`,
+        name: video.name || 'video',
+        dataUrl: video.data_url,
+        previewUrl: video.preview_url,
+        videoPath: video.video_path,
+        thumbnailUrl: video.thumbnail_url,
+        mimeType: video.mime_type,
+        durationMs: video.duration_ms,
+        metadata: video.metadata,
       }))
     : undefined;
   const displayInput = imageMetadata?.original_text
@@ -692,7 +708,9 @@ function handleImageAnalysisStarted(context: FlowChatContext, event: ImageAnalys
       content: displayInput,
       timestamp: Date.now(),
       hasImages: true,
+      hasVideos: hasMetaVideos,
       images,
+      videos,
     },
     modelRounds: [],
     status: 'image_analyzing',
@@ -810,7 +828,9 @@ function handleDialogTurnStarted(context: FlowChatContext, event: any): void {
 
   // Extract image display data from metadata (sent by coordinator for all platforms)
   const metaImages = userMessageMetadata?.images;
+  const metaVideos = userMessageMetadata?.videos;
   const hasImages = Array.isArray(metaImages) && metaImages.length > 0;
+  const hasVideos = Array.isArray(metaVideos) && metaVideos.length > 0;
   const images = hasImages
     ? metaImages.map((img: any) => ({
         id: img.id || img.name || `img-${Date.now()}`,
@@ -818,6 +838,20 @@ function handleDialogTurnStarted(context: FlowChatContext, event: any): void {
         dataUrl: img.data_url,
         imagePath: img.image_path,
         mimeType: img.mime_type,
+        metadata: img.metadata,
+      }))
+    : undefined;
+  const videos = hasVideos
+    ? metaVideos.map((video: any) => ({
+        id: video.id || video.name || `video-${Date.now()}`,
+        name: video.name || 'video',
+        dataUrl: video.data_url,
+        previewUrl: video.preview_url,
+        videoPath: video.video_path,
+        thumbnailUrl: video.thumbnail_url,
+        mimeType: video.mime_type,
+        durationMs: video.duration_ms,
+        metadata: video.metadata,
       }))
     : undefined;
   const displayContent = originalUserInput
@@ -838,8 +872,10 @@ function handleDialogTurnStarted(context: FlowChatContext, event: any): void {
         content: displayContent,
         timestamp: Date.now(),
         hasImages,
+        hasVideos,
         metadata: userMessageMetadata,
         images,
+        videos,
       },
       modelRounds: [],
       status: 'pending',

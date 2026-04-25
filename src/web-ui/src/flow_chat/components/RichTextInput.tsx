@@ -43,6 +43,7 @@ function getContextDisplayName(context: ContextItem): string {
     case 'directory': return context.directoryName;
     case 'code-snippet': return `${context.fileName}:${context.startLine}-${context.endLine}`;
     case 'image': return context.imageName;
+    case 'video': return context.videoName;
     case 'terminal-command': return context.command;
     case 'git-ref': return context.refValue;
     case 'url': return context.title || context.url;
@@ -62,6 +63,7 @@ function getContextTagFormat(context: ContextItem): string {
     case 'directory': return `#dir:${context.directoryName}`;
     case 'code-snippet': return `#code:${context.fileName}:${context.startLine}-${context.endLine}`;
     case 'image': return `#img:${context.imageName}`;
+    case 'video': return `#video:${context.videoName}`;
     case 'terminal-command': return `#cmd:${context.command}`;
     case 'git-ref': return `#git:${context.refValue}`;
     case 'url': return `#link:${context.title || context.url}`;
@@ -85,6 +87,8 @@ function getContextFullPath(context: ContextItem): string {
       return `${context.filePath} (lines ${context.startLine}-${context.endLine})`;
     case 'image':
       return context.imagePath;
+    case 'video':
+      return context.videoPath;
     case 'terminal-command':
       return context.workingDirectory ? `${context.command} @ ${context.workingDirectory}` : context.command;
     case 'git-ref':

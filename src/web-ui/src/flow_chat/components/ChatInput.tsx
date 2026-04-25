@@ -5,7 +5,7 @@
 
 import React, { useRef, useCallback, useEffect, useReducer, useState, useMemo } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { ArrowUp, Image, Maximize2, Minimize2, RotateCcw, Plus, X, Sparkles, Loader2, ChevronRight, Files, MessageSquarePlus } from 'lucide-react';
+import { ArrowUp, Image, Maximize2, Minimize2, RotateCcw, Plus, X, Sparkles, Loader2, ChevronRight, ChevronDown, Files, MessageSquarePlus, Monitor, Square, Video } from 'lucide-react';
 import { ContextDropZone, useContextStore } from '../../shared/context-system';
 import { useActiveSessionState } from '../hooks/useActiveSessionState';
 import { RichTextInput, type MentionState } from './RichTextInput';
@@ -20,11 +20,11 @@ import { SessionExecutionEvent } from '../state-machine/types';
 import { ModelSelector } from './ModelSelector';
 import { FlowChatStore } from '../store/FlowChatStore';
 import type { FlowChatState } from '../types/flow-chat';
-import type { FileContext, DirectoryContext, ImageContext } from '../../shared/types/context';
+import type { FileContext, DirectoryContext, ImageContext, VideoContext, ContextItem } from '../../shared/types/context';
 import { SmartRecommendations } from './smart-recommendations';
 import { useCurrentWorkspace } from '@/infrastructure/contexts/WorkspaceContext';
 import { WorkspaceKind } from '@/shared/types';
-import { createImageContextFromFile, createImageContextFromClipboard } from '../utils/imageUtils';
+import { createImageContextFromFile, createImageContextFromClipboard, createVideoContextFromFile } from '../utils/imageUtils';
 import { notificationService } from '@/shared/notification-system';
 import { inputReducer, initialInputState } from '../reducers/inputReducer';
 import { modeReducer, initialModeState } from '../reducers/modeReducer';
@@ -44,9 +44,13 @@ import type { SceneTabId } from '@/app/components/SceneBar/types';
 import type { SkillInfo } from '@/infrastructure/config/types';
 import { aiExperienceConfigService } from '@/infrastructure/config/services/AIExperienceConfigService';
 import MCPAPI, { type MCPPrompt, type MCPPromptMessage, type MCPServerInfo } from '@/infrastructure/api/service-api/MCPAPI';
+import { useShortcut } from '@/infrastructure/hooks/useShortcut';
 import { deriveChatInputPetMood } from '../utils/chatInputPetMood';
 import { ChatInputPixelPet } from './ChatInputPixelPet';
 import { expandWidgetPromptReferenceTokens } from '@/tools/generative-widget/widgetPromptReference';
+import { useContextCapture, type ContextCaptureActionOptions } from '../hooks/useContextCapture';
+import { resolveVideoSource } from '../utils/videoUtils';
+import { deleteManagedCaptureArtifact, isManagedCaptureArtifact, releaseContextObjectUrl } from '@/shared/utils/managedContextArtifacts';
 import './ChatInput.scss';
 
 const log = createLogger('ChatInput');
@@ -88,6 +92,7 @@ type SlashMcpPromptItem = {
 type SlashPickerItem = SlashActionItem | SlashModeItem | SlashMcpPromptItem;
 type ChatInputTarget = 'main' | 'btw';
 type PendingLargePasteMap = Record<string, string>;
+type ContextCaptureMenuKind = 'screenshot' | 'recording' | null;
 
 function getCharacterCount(text: string): number {
   return Array.from(text).length;
@@ -108,6 +113,16 @@ function parseSlashArguments(input: string): string[] {
     }
     return token;
   });
+}
+
+function getCaptureGroupId(context: { metadata?: Record<string, unknown> }): string | null {
+  const groupId = context.metadata?.captureGroupId;
+  return typeof groupId === 'string' && groupId.trim() ? groupId : null;
+}
+
+function isRecordingCaptureContext(context: { metadata?: Record<string, unknown> }): boolean {
+  const captureKind = context.metadata?.captureKind;
+  return captureKind === 'recording_frame' || captureKind === 'recording';
 }
 
 function renderMcpPromptContent(content: unknown): string {
@@ -192,7 +207,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   
   const richTextInputRef = useRef<HTMLDivElement>(null);
   const agentBoostRef = useRef<HTMLDivElement>(null);
+  const screenshotCaptureMenuRef = useRef<HTMLDivElement>(null);
+  const recordingCaptureMenuRef = useRef<HTMLDivElement>(null);
   const isImeComposingRef = useRef(false);
+  const recordingAutoStopRef = useRef(false);
   // Ref so the queuedInput sync effect can read the latest value without it being a dep
   const inputValueRef = useRef('');
   const pendingLargePastesRef = useRef<PendingLargePasteMap>({});
@@ -202,6 +220,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [savedDraft, setSavedDraft] = useState('');
   const [inputTarget, setInputTarget] = useState<ChatInputTarget>('main');
+  const [openContextCaptureMenu, setOpenContextCaptureMenu] = useState<ContextCaptureMenuKind>(null);
   const { addMessage: addToHistory, getSessionHistory } = useInputHistoryStore();
   
   const contexts = useContextStore(state => state.contexts);
@@ -213,7 +232,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     () => contexts.filter((c): c is ImageContext => c.type === 'image'),
     [contexts],
   );
+  const videoContexts = useMemo(
+    () => contexts.filter((c): c is VideoContext => c.type === 'video'),
+    [contexts],
+  );
   const currentImageCount = imageContexts.length;
+  const currentVideoCount = videoContexts.length;
+  const mediaContexts = useMemo(
+    () => contexts.filter((context): context is ImageContext | VideoContext => context.type === 'image' || context.type === 'video'),
+    [contexts],
+  );
   
   const activeSessionState = useActiveSessionState();
   const activeBtwSessionTab = useAgentCanvasStore(state => selectActiveBtwSessionTab(state as any));
@@ -266,6 +294,60 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const { transition, setQueuedInput } = useSessionStateMachineActions(effectiveTargetSessionId);
 
   const { workspace, workspacePath } = useCurrentWorkspace();
+  const contextCaptureWorkspacePath = effectiveTargetSession?.workspacePath || workspacePath || undefined;
+  const {
+    status: contextCaptureStatus,
+    isSupportedEnvironment: isContextCaptureSupportedEnvironment,
+    isTakingScreenshot,
+    isRecording: isContextCaptureRecording,
+    isProcessingRecordingFrames,
+    countdownMs: contextCaptureRecordingCountdownMs,
+    takeScreenshot,
+    startRecording,
+    stopRecording,
+  } = useContextCapture({
+    sessionId: effectiveTargetSessionId || undefined,
+    workspacePath: contextCaptureWorkspacePath,
+    remoteConnectionId: effectiveTargetSession?.remoteConnectionId,
+    remoteSshHost: effectiveTargetSession?.remoteSshHost,
+  });
+  const contextCaptureCountdownSeconds = Math.max(
+    1,
+    Math.ceil(contextCaptureRecordingCountdownMs / 1000)
+  );
+  const isContextCaptureSendBlocked =
+    isContextCaptureRecording || isProcessingRecordingFrames;
+  const hasContextCaptureTarget =
+    !!effectiveTargetSessionId && !!contextCaptureWorkspacePath;
+  const hasContextCaptureImageCapacity =
+    currentImageCount < CHAT_INPUT_CONFIG.media.image.maxCount;
+  const hasContextCaptureVideoCapacity =
+    currentVideoCount < CHAT_INPUT_CONFIG.media.video.maxCount;
+  const canTakeContextCaptureScreenshot =
+    isContextCaptureSupportedEnvironment
+    && !isTakingScreenshot
+    && !isContextCaptureRecording
+    && !isProcessingRecordingFrames
+    && hasContextCaptureTarget
+    && !derivedState?.isProcessing
+    && hasContextCaptureImageCapacity
+    && contextCaptureStatus?.enabled !== false;
+  const canOpenContextCaptureScreenshotMenu = canTakeContextCaptureScreenshot;
+  const canToggleContextCaptureRecording =
+    isContextCaptureSupportedEnvironment
+    && !isTakingScreenshot
+    && !isProcessingRecordingFrames
+    && (
+      isContextCaptureRecording
+      || (
+        hasContextCaptureTarget
+        && !derivedState?.isProcessing
+        && hasContextCaptureVideoCapacity
+        && contextCaptureStatus?.enabled !== false
+      )
+    );
+  const canOpenContextCaptureRecordingMenu =
+    !isContextCaptureRecording && canToggleContextCaptureRecording;
   
   const [tokenUsage, setTokenUsage] = React.useState({ current: 0, max: 128128 });
   const isAssistantWorkspace = workspace?.workspaceKind === WorkspaceKind.Assistant;
@@ -640,7 +722,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         let imgCount = currentImageCount;
         for (const block of params.content) {
           if (block.type === 'image') {
-            if (imgCount >= CHAT_INPUT_CONFIG.image.maxCount) break;
+            if (imgCount >= CHAT_INPUT_CONFIG.media.image.maxCount) break;
             try {
               const mimeType = block.mimeType || 'image/png';
               const binaryString = atob(block.data);
@@ -841,6 +923,28 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   }, [modeState.dropdownOpen]);
 
   useEffect(() => {
+    if (!openContextCaptureMenu) {
+      return;
+    }
+
+    const activeRef =
+      openContextCaptureMenu === 'screenshot'
+        ? screenshotCaptureMenuRef
+        : recordingCaptureMenuRef;
+
+    const handleCaptureMenuOutsideClick = (event: MouseEvent) => {
+      if (activeRef.current && !activeRef.current.contains(event.target as Node)) {
+        setOpenContextCaptureMenu(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleCaptureMenuOutsideClick);
+    return () => {
+      document.removeEventListener('mousedown', handleCaptureMenuOutsideClick);
+    };
+  }, [openContextCaptureMenu]);
+
+  useEffect(() => {
     if (!modeState.dropdownOpen) {
       return;
     }
@@ -882,29 +986,48 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   );
 
   useEffect(() => {
-    const handleImagePaste = async (event: Event) => {
+    const handleMediaPaste = async (event: Event) => {
       const customEvent = event as CustomEvent<{ file: File }>;
       const file = customEvent.detail?.file;
       
       if (!file) return;
 
-      if (currentImageCount >= CHAT_INPUT_CONFIG.image.maxCount) {
-        notificationService.warning(t('input.maxImagesWarning', { count: CHAT_INPUT_CONFIG.image.maxCount }), { duration: 3000 });
-        return;
-      }
-      
       try {
-        const imageContext = await createImageContextFromClipboard(file);
+        if (file.type.startsWith('image/')) {
+          if (currentImageCount >= CHAT_INPUT_CONFIG.media.image.maxCount) {
+            notificationService.warning(
+              t('input.maxImagesWarning', { count: CHAT_INPUT_CONFIG.media.image.maxCount }),
+              { duration: 3000 }
+            );
+            return;
+          }
 
-        addContext(imageContext);
+          const imageContext = await createImageContextFromClipboard(file);
+          addContext(imageContext);
+        } else if (file.type.startsWith('video/')) {
+          if (currentVideoCount >= CHAT_INPUT_CONFIG.media.video.maxCount) {
+            notificationService.warning(
+              t('input.maxVideosWarning', { count: CHAT_INPUT_CONFIG.media.video.maxCount }),
+              { duration: 3000 }
+            );
+            return;
+          }
+
+          const videoContext = await createVideoContextFromFile(file);
+          addContext(videoContext);
+        } else {
+          return;
+        }
 
         if (!inputState.isActive) {
           dispatchInput({ type: 'ACTIVATE' });
         }
       } catch (error) {
-        log.error('Failed to process clipboard image', { fileName: file.name, error });
+        log.error('Failed to process pasted media', { fileName: file.name, error });
         notificationService.error(
-          `${t('input.imagePasteFailed')}: ${error instanceof Error ? error.message : t('error.unknown')}`,
+          `${t('input.mediaPasteFailed', {
+            defaultValue: 'Failed to paste media',
+          })}: ${error instanceof Error ? error.message : t('error.unknown')}`,
           { duration: 3000 }
         );
       }
@@ -912,15 +1035,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     
     const inputElement = richTextInputRef.current;
     if (inputElement) {
-      inputElement.addEventListener('imagePaste', handleImagePaste);
+      inputElement.addEventListener('mediaPaste', handleMediaPaste);
     }
     
     return () => {
       if (inputElement) {
-        inputElement.removeEventListener('imagePaste', handleImagePaste);
+        inputElement.removeEventListener('mediaPaste', handleMediaPaste);
       }
     };
-  }, [addContext, currentImageCount, inputState.isActive, t]);
+  }, [addContext, currentImageCount, currentVideoCount, inputState.isActive, t]);
 
   React.useEffect(() => {
     if (!effectiveTargetSessionId || !workspacePath) {
@@ -1065,7 +1188,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       // Image contexts are not represented by inline tag pills inside the
       // editor; they live in a separate thumbnail strip and are removed via
       // their own × button. Skip them when reconciling against editor tags.
-      if (context.type === 'image') return;
+      if (context.type === 'image' || context.type === 'video') return;
       if (!activeContextIds.has(context.id)) {
         removeContext(context.id);
       }
@@ -1426,6 +1549,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   
   const handleSendOrCancel = useCallback(async () => {
     if (!derivedState) return;
+
+    if (isContextCaptureSendBlocked) {
+      notificationService.warning(
+        t('contextCapture.finishRecordingBeforeSend', {
+          defaultValue: 'Finish the current recording before sending the message.'
+        }),
+        { duration: 3000 }
+      );
+      return;
+    }
     
     const { sendButtonMode } = derivedState;
     const draftTrimmed = inputState.value.trim();
@@ -1542,6 +1675,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     submitMcpPromptFromInput,
     t,
     resolveTypedMcpPromptCommand,
+    isContextCaptureSendBlocked,
   ]);
   
   const getFilteredIncrementalModes = useCallback(() => {
@@ -1917,33 +2051,92 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     isImeComposingRef.current = false;
   }, []);
 
-  const handleImageInput = useCallback(() => {
-    const remaining = CHAT_INPUT_CONFIG.image.maxCount - currentImageCount;
-    if (remaining <= 0) {
-      notificationService.warning(t('input.maxImagesWarning', { count: CHAT_INPUT_CONFIG.image.maxCount }), { duration: 3000 });
+  const removeContextWithCleanup = useCallback(async (context: ContextItem) => {
+    try {
+      if (isManagedCaptureArtifact(context)) {
+        await deleteManagedCaptureArtifact(context);
+      }
+      releaseContextObjectUrl(context);
+      removeContext(context.id);
+    } catch (error) {
+      log.error('Failed to remove media context', { contextId: context.id, error });
+      notificationService.error(
+        t('contextCapture.removeManagedArtifactFailed', {
+          defaultValue: 'Failed to remove the captured media file. Please try again.',
+        }),
+        { duration: 4000 }
+      );
+    }
+  }, [removeContext, t]);
+
+  const removeContextByIdWithCleanup = useCallback((id: string) => {
+    const context = contexts.find(item => item.id === id);
+    if (!context) {
+      removeContext(id);
       return;
     }
 
+    void removeContextWithCleanup(context);
+  }, [contexts, removeContext, removeContextWithCleanup]);
+
+  const handleMediaInput = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = CHAT_INPUT_CONFIG.image.acceptedTypes.join(',');
+    input.accept = [
+      ...CHAT_INPUT_CONFIG.media.image.acceptedTypes,
+      ...CHAT_INPUT_CONFIG.media.video.acceptedTypes,
+    ].join(',');
     input.multiple = true;
-    
+
     input.onchange = async (e) => {
       const files = (e.target as HTMLInputElement).files;
       if (!files || files.length === 0) return;
-      
-      const fileArray = Array.from(files).slice(0, remaining);
-      if (files.length > remaining) {
-        notificationService.warning(t('input.maxImagesWarning', { count: CHAT_INPUT_CONFIG.image.maxCount }), { duration: 3000 });
-      }
-      
-      for (const file of fileArray) {
+
+      let nextImageCount = currentImageCount;
+      let nextVideoCount = currentVideoCount;
+
+      for (const file of Array.from(files)) {
+        const isImage = file.type.startsWith('image/');
+        const isVideo = file.type.startsWith('video/');
+
+        if (isImage) {
+          if (nextImageCount >= CHAT_INPUT_CONFIG.media.image.maxCount) {
+            notificationService.warning(
+              t('input.maxImagesWarning', { count: CHAT_INPUT_CONFIG.media.image.maxCount }),
+              { duration: 3000 }
+            );
+            continue;
+          }
+        } else if (isVideo) {
+          if (nextVideoCount >= CHAT_INPUT_CONFIG.media.video.maxCount) {
+            notificationService.warning(
+              t('input.maxVideosWarning', { count: CHAT_INPUT_CONFIG.media.video.maxCount }),
+              { duration: 3000 }
+            );
+            continue;
+          }
+        } else {
+          notificationService.error(
+            `${file.name}: ${t('input.unsupportedMediaType', {
+              defaultValue: 'Unsupported image or video format.',
+            })}`,
+            { duration: 3000 }
+          );
+          continue;
+        }
+
         try {
-          const imageContext = await createImageContextFromFile(file);
-          addContext(imageContext);
+          const context = isImage
+            ? await createImageContextFromFile(file)
+            : await createVideoContextFromFile(file);
+          addContext(context);
+          if (context.type === 'image') {
+            nextImageCount += 1;
+          } else {
+            nextVideoCount += 1;
+          }
         } catch (error) {
-          log.error('Failed to process image', { fileName: file.name, error });
+          log.error('Failed to process media', { fileName: file.name, error });
           notificationService.error(
             `${file.name}: ${error instanceof Error ? error.message : t('error.processingFailed')}`,
             { duration: 3000 }
@@ -1951,10 +2144,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         }
       }
     };
-    
+
     input.click();
-  }, [addContext, currentImageCount, t]);
-  
+  }, [addContext, currentImageCount, currentVideoCount, t]);
+
   const toggleExpand = useCallback(() => {
     dispatchInput({ type: 'TOGGLE_EXPAND' });
   }, []);
@@ -1964,6 +2157,179 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       richTextInputRef.current?.focus();
     });
   }, []);
+
+  const toggleContextCaptureMenu = useCallback((
+    menuKind: Exclude<ContextCaptureMenuKind, null>,
+    event?: React.SyntheticEvent,
+  ) => {
+    event?.stopPropagation();
+    setOpenContextCaptureMenu(current => current === menuKind ? null : menuKind);
+  }, []);
+
+  const handleScreenshotCapture = useCallback(async (
+    actionOptions: ContextCaptureActionOptions = {},
+    event?: React.SyntheticEvent,
+  ) => {
+    event?.stopPropagation();
+    setOpenContextCaptureMenu(null);
+
+    if (currentImageCount >= CHAT_INPUT_CONFIG.media.image.maxCount) {
+      notificationService.warning(
+        t('input.maxImagesWarning', { count: CHAT_INPUT_CONFIG.media.image.maxCount }),
+        { duration: 3000 }
+      );
+      return;
+    }
+
+    const screenshotContext = await takeScreenshot(actionOptions);
+    if (!screenshotContext) {
+      return;
+    }
+
+    addContext(screenshotContext);
+    dispatchMode({ type: 'CLOSE_DROPDOWN' });
+    focusRichTextInputSoon();
+  }, [addContext, currentImageCount, focusRichTextInputSoon, t, takeScreenshot]);
+
+  const attachRecordingVideo = useCallback((video: VideoContext | null) => {
+    if (!video) {
+      return;
+    }
+
+    if (currentVideoCount >= CHAT_INPUT_CONFIG.media.video.maxCount) {
+      notificationService.warning(
+        t('input.maxVideosWarning', { count: CHAT_INPUT_CONFIG.media.video.maxCount }),
+        { duration: 3000 }
+      );
+      return;
+    }
+
+    addContext(video);
+    setOpenContextCaptureMenu(null);
+    dispatchMode({ type: 'CLOSE_DROPDOWN' });
+    focusRichTextInputSoon();
+  }, [addContext, currentVideoCount, focusRichTextInputSoon, t]);
+
+  const handleRecordingStart = useCallback(async (
+    actionOptions: ContextCaptureActionOptions = {},
+    event?: React.SyntheticEvent,
+  ) => {
+    event?.stopPropagation();
+    setOpenContextCaptureMenu(null);
+
+    if (currentVideoCount >= CHAT_INPUT_CONFIG.media.video.maxCount) {
+      notificationService.warning(
+        t('input.maxVideosWarning', { count: CHAT_INPUT_CONFIG.media.video.maxCount }),
+        { duration: 3000 }
+      );
+      return;
+    }
+
+    const started = await startRecording(actionOptions);
+    if (!started) {
+      return;
+    }
+
+    setOpenContextCaptureMenu(null);
+    dispatchMode({ type: 'CLOSE_DROPDOWN' });
+    focusRichTextInputSoon();
+  }, [
+    currentVideoCount,
+    focusRichTextInputSoon,
+    startRecording,
+    t,
+  ]);
+
+  const handleRecordingToggle = useCallback(async (event?: React.SyntheticEvent) => {
+    event?.stopPropagation();
+
+    if (isContextCaptureRecording) {
+      const video = await stopRecording();
+      attachRecordingVideo(video);
+      return;
+    }
+
+    await handleRecordingStart({}, event);
+  }, [attachRecordingVideo, handleRecordingStart, isContextCaptureRecording, stopRecording]);
+
+  useEffect(() => {
+    if (
+      !isContextCaptureRecording
+      || contextCaptureRecordingCountdownMs > 0
+      || isProcessingRecordingFrames
+      || recordingAutoStopRef.current
+    ) {
+      return;
+    }
+
+    recordingAutoStopRef.current = true;
+    void (async () => {
+      try {
+        const video = await stopRecording();
+        attachRecordingVideo(video);
+      } finally {
+        recordingAutoStopRef.current = false;
+      }
+    })();
+  }, [
+    attachRecordingVideo,
+    contextCaptureRecordingCountdownMs,
+    isContextCaptureRecording,
+    isProcessingRecordingFrames,
+    stopRecording,
+  ]);
+
+  useShortcut(
+    'chat.captureScreenshot',
+    { key: 'S', ctrl: true, shift: true, scope: 'chat', allowInInput: true },
+    () => {
+      void handleScreenshotCapture();
+    },
+    {
+      enabled: canTakeContextCaptureScreenshot,
+      priority: 18,
+      description: 'keyboard.shortcuts.chat.captureScreenshot',
+    },
+  );
+
+  useShortcut(
+    'chat.toggleRecording',
+    { key: 'R', ctrl: true, shift: true, scope: 'chat', allowInInput: true },
+    () => {
+      void handleRecordingToggle();
+    },
+    {
+      enabled: canToggleContextCaptureRecording,
+      priority: 18,
+      description: 'keyboard.shortcuts.chat.toggleRecording',
+    },
+  );
+
+  useShortcut(
+    'chat.captureScreenshotMinimized',
+    { key: 'S', ctrl: true, shift: true, alt: true, scope: 'chat', allowInInput: true },
+    () => {
+      void handleScreenshotCapture({ minimizeBeforeCapture: true });
+    },
+    {
+      enabled: canOpenContextCaptureScreenshotMenu,
+      priority: 18,
+      description: 'keyboard.shortcuts.chat.captureScreenshotMinimized',
+    },
+  );
+
+  useShortcut(
+    'chat.toggleRecordingMinimized',
+    { key: 'R', ctrl: true, shift: true, alt: true, scope: 'chat', allowInInput: true },
+    () => {
+      void handleRecordingStart({ minimizeBeforeCapture: true });
+    },
+    {
+      enabled: canOpenContextCaptureRecordingMenu,
+      priority: 18,
+      description: 'keyboard.shortcuts.chat.toggleRecordingMinimized',
+    },
+  );
 
   const insertSkillIntoInput = useCallback(
     (skillName: string) => {
@@ -1984,9 +2350,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     (e: React.MouseEvent) => {
       e.stopPropagation();
       dispatchMode({ type: 'CLOSE_DROPDOWN' });
-      handleImageInput();
+      handleMediaInput();
     },
-    [handleImageInput]
+    [handleMediaInput]
   );
 
   const handleBoostOpenAtContext = useCallback((e: React.SyntheticEvent) => {
@@ -2119,7 +2485,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           <IconButton
             className="bitfun-chat-input__send-button"
             onClick={handleSendOrCancel}
-            disabled={!inputState.value.trim()}
+            disabled={!inputState.value.trim() || isContextCaptureSendBlocked}
             data-testid="chat-input-send-btn"
             tooltip={t('input.sendShortcut')}
             size="small"
@@ -2177,7 +2543,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           <IconButton
             className="bitfun-chat-input__send-button"
             onClick={handleSendOrCancel}
-            disabled={!inputState.value.trim()}
+            disabled={!inputState.value.trim() || isContextCaptureSendBlocked}
             data-testid="chat-input-send-btn"
             tooltip={t('input.sendShortcut')}
             size="small"
@@ -2192,7 +2558,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       <IconButton
         className="bitfun-chat-input__send-button"
         onClick={handleSendOrCancel}
-        disabled={!inputState.value.trim()}
+        disabled={!inputState.value.trim() || isContextCaptureSendBlocked}
         data-testid="chat-input-send-btn"
         tooltip={t('input.sendShortcut')}
         size="small"
@@ -2205,17 +2571,44 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   return (
     <>
       <ContextDropZone
-        acceptedTypes={['file', 'directory', 'image', 'code-snippet', 'mermaid-diagram']}
+        acceptedTypes={['file', 'directory', 'image', 'video', 'code-snippet', 'mermaid-diagram']}
         className="bitfun-chat-input-drop-zone"
         onContextAdded={(context) => {
-          if (context.type === 'image' && currentImageCount >= CHAT_INPUT_CONFIG.image.maxCount) {
-            notificationService.warning(t('input.maxImagesWarning', { count: CHAT_INPUT_CONFIG.image.maxCount }), { duration: 3000 });
+          if (context.type === 'image' && currentImageCount >= CHAT_INPUT_CONFIG.media.image.maxCount) {
+            notificationService.warning(t('input.maxImagesWarning', { count: CHAT_INPUT_CONFIG.media.image.maxCount }), { duration: 3000 });
+            removeContext(context.id);
             return;
           }
-          // Images are shown as separate thumbnails outside the editor; they
-          // don't get an inline #img: pill. All other context types do.
+          if (context.type === 'image' && context.fileSize >= CHAT_INPUT_CONFIG.media.image.maxFileSizeBytes) {
+            notificationService.warning(
+              t('input.maxImageSizeWarning', {
+                defaultValue: 'Each image must be smaller than 10MB.',
+              }),
+              { duration: 3000 }
+            );
+            removeContext(context.id);
+            return;
+          }
+          if (context.type === 'video' && currentVideoCount >= CHAT_INPUT_CONFIG.media.video.maxCount) {
+            notificationService.warning(t('input.maxVideosWarning', { count: CHAT_INPUT_CONFIG.media.video.maxCount }), { duration: 3000 });
+            removeContext(context.id);
+            return;
+          }
+          if (context.type === 'video' && context.fileSize > CHAT_INPUT_CONFIG.media.video.maxFileSizeBytes) {
+            notificationService.warning(
+              t('input.maxVideoSizeWarning', {
+                defaultValue: 'Each video must be 50MB or smaller.',
+              }),
+              { duration: 3000 }
+            );
+            removeContext(context.id);
+            return;
+          }
+          // Media contexts are shown as separate chips outside the editor; they
+          // don't get inline pills. All other context types do.
           if (
             context.type !== 'image' &&
+            context.type !== 'video' &&
             richTextInputRef.current &&
             (richTextInputRef.current as any).insertTag
           ) {
@@ -2304,37 +2697,72 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               </div>
             )}
             <div className="bitfun-chat-input__input-area">
-              {imageContexts.length > 0 && (
+              {mediaContexts.length > 0 && (
                 <div
                   className="bitfun-chat-input__image-strip"
                   data-testid="chat-input-image-strip"
                 >
-                  {imageContexts.map(image => {
-                    const previewUrl = image.thumbnailUrl || image.dataUrl;
+                  {mediaContexts.map(context => {
+                    const captureGroupId = getCaptureGroupId(context);
+                    const isRecordingCapture = isRecordingCaptureContext(context);
+                    const previewUrl = context.type === 'image'
+                      ? context.thumbnailUrl
+                        || context.dataUrl
+                        || (context.imagePath
+                          ? `https://asset.localhost/${encodeURIComponent(context.imagePath)}`
+                          : undefined)
+                      : resolveVideoSource(context) || undefined;
+                    const title = context.type === 'image' ? context.imageName : context.videoName;
                     return (
                       <div
-                        key={image.id}
+                        key={context.id}
                         className="bitfun-chat-input__image-chip"
-                        title={image.imageName}
+                        title={title}
+                        data-testid={context.type === 'image' ? 'chat-input-image-chip' : 'chat-input-video-chip'}
+                        data-context-id={context.id}
+                        data-capture-kind={typeof context.metadata?.captureKind === 'string' ? context.metadata.captureKind : undefined}
+                        data-capture-group-id={captureGroupId || undefined}
                       >
                         {previewUrl ? (
-                          <img
-                            className="bitfun-chat-input__image-chip-thumb"
-                            src={previewUrl}
-                            alt={image.imageName}
-                          />
+                          context.type === 'image' ? (
+                            <img
+                              className="bitfun-chat-input__image-chip-thumb"
+                              src={previewUrl}
+                              alt={context.imageName}
+                            />
+                          ) : (
+                            <video
+                              className="bitfun-chat-input__image-chip-thumb"
+                              src={previewUrl}
+                              poster={context.thumbnailUrl}
+                              muted
+                              playsInline
+                              preload="metadata"
+                            />
+                          )
                         ) : (
                           <div className="bitfun-chat-input__image-chip-thumb bitfun-chat-input__image-chip-thumb--placeholder">
-                            <Image size={14} />
+                            {context.type === 'image' ? <Image size={14} /> : <Video size={14} />}
                           </div>
+                        )}
+                        {isRecordingCapture && (
+                          <span
+                            className="bitfun-chat-input__image-chip-badge"
+                            data-testid="chat-input-recording-badge"
+                          >
+                            {t('contextCapture.recordingBadge', { defaultValue: 'REC' })}
+                          </span>
                         )}
                         <button
                           type="button"
                           className="bitfun-chat-input__image-chip-remove"
-                          aria-label={t('input.removeImage', { defaultValue: 'Remove image' })}
-                          onClick={(e) => {
+                          data-testid={context.type === 'image' ? 'chat-input-image-chip-remove' : 'chat-input-video-chip-remove'}
+                          aria-label={context.type === 'image'
+                            ? t('input.removeImage', { defaultValue: 'Remove image' })
+                            : t('input.removeVideo', { defaultValue: 'Remove video' })}
+                          onClick={async (e) => {
                             e.stopPropagation();
-                            removeContext(image.id);
+                            await removeContextWithCleanup(context);
                           }}
                         >
                           <X size={12} />
@@ -2355,7 +2783,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 placeholder={inputState.isActive ? t('input.placeholder') : ''}
                 disabled={false}
                 contexts={contexts}
-                onRemoveContext={removeContext}
+                onRemoveContext={removeContextByIdWithCleanup}
                 onMentionStateChange={setMentionState}
                 data-testid="chat-input-textarea"
               />
@@ -2625,7 +3053,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                           onKeyDown={e => e.key === 'Enter' && handleBoostPickImage(e as any)}
                         >
                           <Image size={14} className="bitfun-chat-input__boost-context-icon" aria-hidden />
-                          <span>{t('input.addImage')}</span>
+                          <span>{t('input.addMedia', { defaultValue: 'Add media' })}</span>
                         </div>
 
                         <div
@@ -2719,6 +3147,215 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     </div>
                   )}
                 </div>
+
+                {isContextCaptureSupportedEnvironment && (
+                  <div
+                    className="bitfun-chat-input__capture-action-group"
+                    ref={screenshotCaptureMenuRef}
+                  >
+                    <Tooltip
+                      content={
+                        isTakingScreenshot
+                          ? t('contextCapture.takingScreenshot', { defaultValue: 'Capturing screenshot...' })
+                          : t('contextCapture.takeScreenshot', { defaultValue: 'Take screenshot' })
+                      }
+                    >
+                      <IconButton
+                        className="bitfun-chat-input__capture-button"
+                        variant="ghost"
+                        size="xs"
+                        data-testid="chat-input-screenshot-btn"
+                        aria-label={t('contextCapture.takeScreenshot', { defaultValue: 'Take screenshot' })}
+                        disabled={!canTakeContextCaptureScreenshot}
+                        onClick={() => {
+                          void handleScreenshotCapture();
+                        }}
+                      >
+                        {isTakingScreenshot ? <Loader2 size={14} /> : <Monitor size={14} />}
+                      </IconButton>
+                    </Tooltip>
+
+                    <Tooltip
+                      content={t('contextCapture.captureOptions', {
+                        defaultValue: 'More capture options',
+                      })}
+                    >
+                      <IconButton
+                        className="bitfun-chat-input__capture-button bitfun-chat-input__capture-button--menu-toggle"
+                        variant="ghost"
+                        size="xs"
+                        data-testid="chat-input-screenshot-options-btn"
+                        aria-label={t('contextCapture.captureOptions', { defaultValue: 'More capture options' })}
+                        aria-haspopup="menu"
+                        aria-expanded={openContextCaptureMenu === 'screenshot'}
+                        disabled={!canOpenContextCaptureScreenshotMenu}
+                        onClick={(event) => toggleContextCaptureMenu('screenshot', event)}
+                      >
+                        <ChevronDown size={12} />
+                      </IconButton>
+                    </Tooltip>
+
+                    {openContextCaptureMenu === 'screenshot' && (
+                      <div
+                        className="bitfun-chat-input__capture-menu"
+                        role="menu"
+                        data-testid="chat-input-screenshot-options-menu"
+                      >
+                        <button
+                          type="button"
+                          className="bitfun-chat-input__capture-menu-item"
+                          data-testid="chat-input-screenshot-option-default"
+                          onClick={(event) => {
+                            void handleScreenshotCapture({}, event);
+                          }}
+                        >
+                          <span className="bitfun-chat-input__capture-menu-item-label">
+                            {t('contextCapture.takeScreenshot', { defaultValue: 'Take screenshot' })}
+                          </span>
+                          <span className="bitfun-chat-input__capture-menu-item-description">
+                            {t('contextCapture.captureDefaultOptionDescription', {
+                              defaultValue: 'Capture immediately without minimizing BitFun.',
+                            })}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          className="bitfun-chat-input__capture-menu-item"
+                          data-testid="chat-input-screenshot-option-minimized"
+                          onClick={(event) => {
+                            void handleScreenshotCapture({ minimizeBeforeCapture: true }, event);
+                          }}
+                        >
+                          <span className="bitfun-chat-input__capture-menu-item-label">
+                            {t('contextCapture.takeScreenshotMinimized', {
+                              defaultValue: 'Minimize app, then take screenshot',
+                            })}
+                          </span>
+                          <span className="bitfun-chat-input__capture-menu-item-description">
+                            {t('contextCapture.captureMinimizedOptionDescription', {
+                              defaultValue: 'Hide BitFun first, capture the screen, then restore the app.',
+                            })}
+                          </span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {isContextCaptureSupportedEnvironment && (
+                  <div
+                    className="bitfun-chat-input__capture-action-group"
+                    ref={recordingCaptureMenuRef}
+                  >
+                    <Tooltip
+                      content={
+                        isProcessingRecordingFrames
+                          ? t('contextCapture.processingRecording', {
+                              defaultValue: 'Preparing recording video...'
+                            })
+                          : isContextCaptureRecording
+                            ? t('contextCapture.stopRecording', {
+                                defaultValue: 'Stop recording ({{seconds}}s remaining)',
+                                seconds: contextCaptureCountdownSeconds,
+                              })
+                            : t('contextCapture.startRecording', {
+                                defaultValue: 'Record up to 10 seconds'
+                              })
+                      }
+                    >
+                      <IconButton
+                        className="bitfun-chat-input__capture-button"
+                        variant="ghost"
+                        size="xs"
+                        data-testid="chat-input-recording-btn"
+                        aria-label={
+                          isContextCaptureRecording
+                            ? t('contextCapture.stopRecordingAria', {
+                                defaultValue: 'Stop recording'
+                              })
+                            : t('contextCapture.startRecordingAria', {
+                                defaultValue: 'Start recording'
+                              })
+                        }
+                        disabled={!canToggleContextCaptureRecording}
+                        onClick={handleRecordingToggle}
+                      >
+                        {isProcessingRecordingFrames
+                          ? <Loader2 size={14} />
+                          : isContextCaptureRecording
+                            ? <Square size={14} />
+                            : <Video size={14} />}
+                      </IconButton>
+                    </Tooltip>
+
+                    <Tooltip
+                      content={t('contextCapture.captureOptions', {
+                        defaultValue: 'More capture options',
+                      })}
+                    >
+                      <IconButton
+                        className="bitfun-chat-input__capture-button bitfun-chat-input__capture-button--menu-toggle"
+                        variant="ghost"
+                        size="xs"
+                        data-testid="chat-input-recording-options-btn"
+                        aria-label={t('contextCapture.captureOptions', { defaultValue: 'More capture options' })}
+                        aria-haspopup="menu"
+                        aria-expanded={openContextCaptureMenu === 'recording'}
+                        disabled={!canOpenContextCaptureRecordingMenu}
+                        onClick={(event) => toggleContextCaptureMenu('recording', event)}
+                      >
+                        <ChevronDown size={12} />
+                      </IconButton>
+                    </Tooltip>
+
+                    {openContextCaptureMenu === 'recording' && (
+                      <div
+                        className="bitfun-chat-input__capture-menu"
+                        role="menu"
+                        data-testid="chat-input-recording-options-menu"
+                      >
+                        <button
+                          type="button"
+                          className="bitfun-chat-input__capture-menu-item"
+                          data-testid="chat-input-recording-option-default"
+                          onClick={(event) => {
+                            void handleRecordingStart({}, event);
+                          }}
+                        >
+                          <span className="bitfun-chat-input__capture-menu-item-label">
+                            {t('contextCapture.startRecording', {
+                              defaultValue: 'Record up to 10 seconds',
+                            })}
+                          </span>
+                          <span className="bitfun-chat-input__capture-menu-item-description">
+                            {t('contextCapture.recordingDefaultOptionDescription', {
+                              defaultValue: 'Record up to 10 seconds. BitFun will sample frames for analysis when you send it.',
+                            })}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          className="bitfun-chat-input__capture-menu-item"
+                          data-testid="chat-input-recording-option-minimized"
+                          onClick={(event) => {
+                            void handleRecordingStart({ minimizeBeforeCapture: true }, event);
+                          }}
+                        >
+                          <span className="bitfun-chat-input__capture-menu-item-label">
+                            {t('contextCapture.startRecordingMinimized', {
+                              defaultValue: 'Minimize app, then record',
+                            })}
+                          </span>
+                          <span className="bitfun-chat-input__capture-menu-item-description">
+                            {t('contextCapture.recordingMinimizedOptionDescription', {
+                              defaultValue: 'Hide BitFun first, record a short video, then restore the app.',
+                            })}
+                          </span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <ModelSelector
                   currentMode={modeState.current}

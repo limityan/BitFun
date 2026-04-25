@@ -83,31 +83,67 @@ export async function openWorkspace(
  * Ensure a Code session is open for the active workspace.
  */
 export async function ensureCodeSessionOpen(): Promise<void> {
+  await browser.waitUntil(async () => {
+    const chatInput = await $('[data-testid="chat-input-container"]');
+    if (await chatInput.isExisting()) {
+      return true;
+    }
+
+    const launchers = [
+      '[data-testid="nav-new-code-session-btn"]',
+      '.bitfun-nav-panel__workspace-create-main--split-left',
+      '.bitfun-nav-panel__workspace-create-main',
+      '//button[contains(@aria-label, "New Code session")]',
+      '//button[contains(@aria-label, "New Code Session")]',
+      '//button[contains(@aria-label, "新建 Code 会话")]',
+      '//button[contains(normalize-space(.), "Code Session")]',
+      '//button[contains(normalize-space(.), "编码会话")]',
+      '//button[contains(normalize-space(.), "Code")]',
+    ];
+
+    for (const selector of launchers) {
+      const element = await $(selector);
+      if (await element.isExisting()) {
+        return true;
+      }
+    }
+
+    return false;
+  }, {
+    timeout: 15000,
+    interval: 500,
+    timeoutMsg: 'Code session launcher did not become available',
+  });
+
   const chatInput = await $('[data-testid="chat-input-container"]');
   if (await chatInput.isExisting()) {
     return;
   }
 
   const selectors = [
+    '[data-testid="nav-new-code-session-btn"]',
     '.bitfun-nav-panel__workspace-create-main--split-left',
-    '[data-testid="chat-input-send-btn"]',
+    '.bitfun-nav-panel__workspace-create-main',
+    '//button[contains(@aria-label, "New Code session")]',
+    '//button[contains(@aria-label, "New Code Session")]',
+    '//button[contains(@aria-label, "新建 Code 会话")]',
+    '//button[contains(normalize-space(.), "Code Session")]',
+    '//button[contains(normalize-space(.), "编码会话")]',
+    '//button[contains(normalize-space(.), "Code")]',
   ];
 
-  let opened = false;
+  let launcherFound = false;
   for (const selector of selectors) {
     const element = await $(selector);
     if (await element.isExisting()) {
-      if (selector !== '[data-testid="chat-input-send-btn"]') {
-        await element.click();
-      }
-      opened = true;
+      await element.click();
+      launcherFound = true;
       break;
     }
   }
 
-  if (!opened) {
-    const fallbackButton = await $('//button[contains(normalize-space(.), "Code")]');
-    await fallbackButton.click();
+  if (!launcherFound) {
+    throw new Error('Code session launcher was not found');
   }
 
   await browser.waitUntil(async () => {
