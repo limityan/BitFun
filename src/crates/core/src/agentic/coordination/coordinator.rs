@@ -1295,6 +1295,13 @@ Update the persona files and delete BOOTSTRAP.md as soon as bootstrap is complet
                         .and_then(|m| m.get("name"))
                         .and_then(|v| v.as_str())
                         .unwrap_or("image.png");
+                    let mut image_metadata = img
+                        .metadata
+                        .clone()
+                        .unwrap_or_else(|| serde_json::json!({}));
+                    if !image_metadata.is_object() {
+                        image_metadata = serde_json::json!({ "raw_metadata": image_metadata });
+                    }
                     let mut meta = serde_json::json!({
                         "id": &img.id,
                         "name": name,
@@ -1306,6 +1313,7 @@ Update the persona files and delete BOOTSTRAP.md as soon as bootstrap is complet
                     if let Some(path) = &img.image_path {
                         meta["image_path"] = serde_json::json!(path);
                     }
+                    meta["metadata"] = image_metadata;
                     meta
                 })
                 .collect();

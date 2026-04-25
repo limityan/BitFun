@@ -332,3 +332,21 @@ pub fn load_features(locale: &str) -> Vec<AnnouncementCard> {
         })
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::load_features;
+
+    #[test]
+    fn loads_context_capture_feature_card() {
+        let cards = load_features("en-US");
+        let card = cards
+            .iter()
+            .find(|card| card.id == "feature_context_capture_v0_2_3")
+            .expect("context capture feature card should be embedded");
+
+        assert_eq!(card.toast.title, "New in chat");
+        assert!(card.modal.is_some(), "feature card should provide modal content");
+        assert_eq!(card.modal.as_ref().map(|modal| modal.pages.len()), Some(3));
+    }
+}
