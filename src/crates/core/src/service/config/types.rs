@@ -74,6 +74,8 @@ pub struct AppConfig {
     #[serde(default)]
     pub session_config: AppSessionConfig,
     pub ai_experience: AIExperienceConfig,
+    #[serde(default)]
+    pub context_capture: ContextCaptureConfig,
     /// User-defined keyboard shortcut overrides.
     /// Stored as opaque JSON so the backend remains schema-agnostic;
     /// the frontend owns the versioned format (StoredKeybindingsV1).
@@ -111,6 +113,31 @@ pub struct AIExperienceConfig {
     pub enable_visual_mode: bool,
     /// Whether to show the pixel Agent companion in the collapsed chat input.
     pub enable_agent_companion: bool,
+}
+
+/// Context-capture configuration shared by screenshot / recording flows.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct ContextCaptureConfig {
+    /// Global kill switch for screenshot / recording attachment flows.
+    pub enabled: bool,
+    /// Shared per-turn image cap (manual upload + screenshot + extracted video frames shown as media).
+    pub max_images_per_turn: usize,
+    /// Shared per-turn video cap (manual upload + managed recordings).
+    pub max_videos_per_turn: usize,
+    /// Shared screenshot / recording privacy policy version acknowledged by the user.
+    #[serde(alias = "consent_version")]
+    pub capture_privacy_version: u32,
+    /// Timestamp of the user's latest shared privacy acknowledgement in milliseconds.
+    #[serde(alias = "consent_accepted_at")]
+    pub capture_privacy_acknowledged_at: Option<u64>,
+    /// Recording notice policy version acknowledged by the user.
+    pub recording_notice_version: u32,
+    /// Timestamp of the user's acknowledgement of recording limitations in milliseconds.
+    #[serde(alias = "recording_limitations_acknowledged_at")]
+    pub recording_notice_acknowledged_at: Option<u64>,
+    /// Whether the non-blocking feature intro card has already been shown.
+    pub feature_intro_seen: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1150,6 +1177,7 @@ impl Default for AppConfig {
             },
             session_config: AppSessionConfig::default(),
             ai_experience: AIExperienceConfig::default(),
+            context_capture: ContextCaptureConfig::default(),
             keybindings: None,
         }
     }
@@ -1179,6 +1207,21 @@ impl Default for AIExperienceConfig {
             enable_welcome_panel_ai_analysis: false,
             enable_visual_mode: false,
             enable_agent_companion: true,
+        }
+    }
+}
+
+impl Default for ContextCaptureConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            max_images_per_turn: 5,
+            max_videos_per_turn: 1,
+            capture_privacy_version: 1,
+            capture_privacy_acknowledged_at: None,
+            recording_notice_version: 1,
+            recording_notice_acknowledged_at: None,
+            feature_intro_seen: false,
         }
     }
 }
@@ -1585,7 +1628,7 @@ impl AIModelConfig {
 
 #[cfg(test)]
 mod tests {
-    use super::{AIConfig, AIModelConfig, ReasoningMode};
+    use super::{AIConfig, AIModelConfig, GlobalConfig, ReasoningMode};
 
     #[test]
     fn deserializes_compatibility_thinking_flag_into_reasoning_mode() {
@@ -1692,5 +1735,93 @@ mod tests {
         .expect("config without stream_idle_timeout_secs should deserialize");
 
         assert_eq!(config.stream_idle_timeout_secs, None);
+    }
+
+    #[test]
+    fn default_context_capture_config_matches_capture_plan() {
+        let config = GlobalConfig::default();
+
+        assert!(config.app.context_capture.enabled);
+        assert_eq!(config.app.context_capture.max_images_per_turn, 5);
+        assert_eq!(config.app.context_capture.max_videos_per_turn, 1);
+        assert_eq!(config.app.context_capture.capture_privacy_version, 1);
+        assert_eq!(
+            config.app.context_capture.capture_privacy_acknowledged_at,
+            None
+        );
+        assert_eq!(config.app.context_capture.recording_notice_version, 1);
+        assert_eq!(
+            config
+                .app
+                .context_capture
+                .recording_notice_acknowledged_at,
+            None
+        );
+        assert!(!config.app.context_capture.feature_intro_seen);
+    }
+
+    #[test]
+    fn deserializes_missing_context_capture_config_with_defaults() {
+        let config: GlobalConfig = serde_json::from_value(serde_json::json!({
+            "app": {
+                "language": "en-US"
+            },
+            "theme": {},
+            "editor": {},
+            "terminal": {},
+            "workspace": {},
+            "ai": {}
+        }))
+        .expect("config without context_capture should deserialize");
+
+        assert!(config.app.context_capture.enabled);
+        assert_eq!(config.app.context_capture.max_images_per_turn, 5);
+        assert_eq!(config.app.context_capture.max_videos_per_turn, 1);
+        assert_eq!(config.app.context_capture.capture_privacy_version, 1);
+        assert_eq!(
+            config.app.context_capture.capture_privacy_acknowledged_at,
+            None
+        );
+        assert_eq!(config.app.context_capture.recording_notice_version, 1);
+        assert_eq!(
+            config
+                .app
+                .context_capture
+                .recording_notice_acknowledged_at,
+            None
+        );
+    }
+
+    #[test]
+    fn deserializes_legacy_context_capture_field_names() {
+        let config: GlobalConfig = serde_json::from_value(serde_json::json!({
+            "app": {
+                "context_capture": {
+                    "enabled": true,
+                    "max_images_per_turn": 9,
+                    "consent_version": 3,
+                    "consent_accepted_at": 111,
+                    "recording_limitations_acknowledged_at": 222
+                }
+            },
+            "theme": {},
+            "editor": {},
+            "terminal": {},
+            "workspace": {},
+            "ai": {}
+        }))
+        .expect("legacy context capture fields should deserialize");
+
+        assert_eq!(config.app.context_capture.max_images_per_turn, 9);
+        assert_eq!(config.app.context_capture.max_videos_per_turn, 1);
+        assert_eq!(config.app.context_capture.capture_privacy_version, 3);
+        assert_eq!(
+            config.app.context_capture.capture_privacy_acknowledged_at,
+            Some(111)
+        );
+        assert_eq!(
+            config.app.context_capture.recording_notice_acknowledged_at,
+            Some(222)
+        );
     }
 }
