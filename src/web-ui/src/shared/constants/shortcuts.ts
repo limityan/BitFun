@@ -211,6 +211,26 @@ export const CHAT_SHORTCUTS: ShortcutDef[] = [
     config: mod('N', { scope: 'chat' }),
     descriptionKey: 'keyboard.shortcuts.chat.newSession',
   },
+  {
+    id: 'chat.captureScreenshot',
+    config: mod('S', { shift: true, scope: 'chat', allowInInput: true }),
+    descriptionKey: 'keyboard.shortcuts.chat.captureScreenshot',
+  },
+  {
+    id: 'chat.captureScreenshotMinimized',
+    config: mod('S', { shift: true, alt: true, scope: 'chat', allowInInput: true }),
+    descriptionKey: 'keyboard.shortcuts.chat.captureScreenshotMinimized',
+  },
+  {
+    id: 'chat.toggleRecording',
+    config: mod('R', { shift: true, scope: 'chat', allowInInput: true }),
+    descriptionKey: 'keyboard.shortcuts.chat.toggleRecording',
+  },
+  {
+    id: 'chat.toggleRecordingMinimized',
+    config: mod('R', { shift: true, alt: true, scope: 'chat', allowInInput: true }),
+    descriptionKey: 'keyboard.shortcuts.chat.toggleRecordingMinimized',
+  },
 ];
 
 // ─── File tree shortcuts (scope: 'filetree') ──────────────────────────────

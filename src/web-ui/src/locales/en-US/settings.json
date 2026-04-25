@@ -205,7 +205,11 @@
         "btwFill": "Start side-thread session",
         "stopGeneration": "Stop Generation",
         "activateInput": "Activate Input",
-        "newSession": "New Session"
+        "newSession": "New Session",
+        "captureScreenshot": "Take screenshot",
+        "captureScreenshotMinimized": "Minimize app, then take screenshot",
+        "toggleRecording": "Start or stop recording",
+        "toggleRecordingMinimized": "Minimize app, then start recording"
       },
       "filetree": {
         "rename": "Rename",

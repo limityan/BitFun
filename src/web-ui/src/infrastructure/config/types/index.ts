@@ -25,6 +25,7 @@ export interface AppConfig {
   notifications: NotificationConfig;
   session_config: AppSessionConfig;
   ai_experience: AIExperienceConfig;
+  context_capture: ContextCaptureConfig;
 }
 
 export type BackendLogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'off';
@@ -64,6 +65,17 @@ export interface AIExperienceConfig {
 
   /** Whether to show the pixel Agent companion in the collapsed chat input. */
   enable_agent_companion: boolean;
+}
+
+export interface ContextCaptureConfig {
+  enabled: boolean;
+  max_images_per_turn: number;
+  max_videos_per_turn: number;
+  capture_privacy_version: number;
+  capture_privacy_acknowledged_at?: number | null;
+  recording_notice_version: number;
+  recording_notice_acknowledged_at?: number | null;
+  feature_intro_seen: boolean;
 }
 
 export type ModelCapability =
@@ -493,6 +505,15 @@ export type ConfigPath =
   | 'app.language'
   | 'app.auto_update'
   | 'app.telemetry'
+  | 'app.context_capture'
+  | 'app.context_capture.enabled'
+  | 'app.context_capture.max_images_per_turn'
+  | 'app.context_capture.max_videos_per_turn'
+  | 'app.context_capture.capture_privacy_version'
+  | 'app.context_capture.capture_privacy_acknowledged_at'
+  | 'app.context_capture.recording_notice_version'
+  | 'app.context_capture.recording_notice_acknowledged_at'
+  | 'app.context_capture.feature_intro_seen'
   | 'app.session_config'
   | 'app.sidebar'
   | 'app.sidebar.width'

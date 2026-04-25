@@ -550,7 +550,7 @@ const KeyboardShortcutsTab: React.FC = () => {
         title={t('keyboard.title')}
         subtitle={t('keyboard.description')}
       />
-      <ConfigPageContent>
+      <ConfigPageContent data-testid="keyboard-shortcuts-tab">
         {/* Search + actions bar */}
         <div className="kb-shortcuts__toolbar">
           <Search
@@ -607,7 +607,7 @@ const KeyboardShortcutsTab: React.FC = () => {
               key={scope}
               title={t(SCOPE_LABEL_KEYS[scope])}
             >
-              <div className="kb-shortcuts__list">
+              <div className="kb-shortcuts__list" data-testid="keyboard-shortcuts-list">
                 {showMergedTab && (
                   <div
                     className={[
@@ -619,6 +619,7 @@ const KeyboardShortcutsTab: React.FC = () => {
                       .filter(Boolean)
                       .join(' ')}
                     key="tab-switch-merged"
+                    data-testid="kb-shortcut-item-__merged_tab__"
                   >
                     <div className="kb-shortcuts__item-label">
                       <span className="kb-shortcuts__item-name">{t('keyboard.shortcuts.tab.switchMerged')}</span>
@@ -678,6 +679,7 @@ const KeyboardShortcutsTab: React.FC = () => {
                       .filter(Boolean)
                       .join(' ')}
                     key="scene-focus-merged"
+                    data-testid="kb-shortcut-item-__merged_scene__"
                   >
                     <div className="kb-shortcuts__item-label">
                       <span className="kb-shortcuts__item-name">{t('keyboard.shortcuts.scene.focusMerged')}</span>
@@ -736,6 +738,7 @@ const KeyboardShortcutsTab: React.FC = () => {
                   return (
                     <div
                       key={reg.id}
+                      data-testid={`kb-shortcut-item-${reg.id}`}
                       className={[
                         'kb-shortcuts__item',
                         !fixed && isRecording ? 'kb-shortcuts__item--recording' : '',

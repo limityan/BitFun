@@ -1,9 +1,14 @@
  
 
 import type { FileSystemNode } from '../../../tools/file-system/types';
-import type { FileContext, DirectoryContext, ImageContext, ContextItem } from '../../types/context';
+import type { FileContext, DirectoryContext, ImageContext, VideoContext, ContextItem } from '../../types/context';
 import type { IDragSource, DragPayload, PreviewData } from '../../types/drag';
-import { isImageFile, getMimeTypeFromFilename } from '../../../flow_chat/utils/imageUtils';
+import {
+  isImageFile,
+  isVideoFile,
+  getMimeTypeFromFilename,
+  getVideoMimeTypeFromFilename,
+} from '../../../flow_chat/utils/imageUtils';
 import { i18nService } from '@/infrastructure/i18n';
 export class FileTreeDragSource implements IDragSource<FileSystemNode> {
   readonly sourceId = 'file-tree-primary';
@@ -48,6 +53,22 @@ export class FileTreeDragSource implements IDragSource<FileSystemNode> {
             isImage: true
           }
         } as ImageContext;
+      } else if (isVideoFile(node.name)) {
+        contextData = {
+          id,
+          type: 'video',
+          videoPath: node.path,
+          videoName: node.name,
+          fileSize: node.size || 0,
+          mimeType: getVideoMimeTypeFromFilename(node.name),
+          source: 'file',
+          isLocal: true,
+          timestamp: Date.now(),
+          metadata: {
+            isDirectory: false,
+            isVideo: true
+          }
+        } as VideoContext;
       } else {
         
         contextData = {
@@ -65,11 +86,13 @@ export class FileTreeDragSource implements IDragSource<FileSystemNode> {
     }
     
     
-    let dataType: 'file' | 'directory' | 'image' = 'file';
+    let dataType: 'file' | 'directory' | 'image' | 'video' = 'file';
     if (node.isDirectory) {
       dataType = 'directory';
     } else if (contextData.type === 'image') {
       dataType = 'image';
+    } else if (contextData.type === 'video') {
+      dataType = 'video';
     }
     
     const payload: DragPayload<ContextItem> = {
@@ -90,7 +113,7 @@ export class FileTreeDragSource implements IDragSource<FileSystemNode> {
   
   generatePreview(node: FileSystemNode, contextData?: ContextItem): PreviewData {
     
-    if (contextData?.type === 'image') {
+    if (contextData?.type === 'image' || contextData?.type === 'video') {
       return {
         type: 'text',
         title: node.name,

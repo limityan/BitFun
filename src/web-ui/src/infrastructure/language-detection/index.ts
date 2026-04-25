@@ -44,6 +44,7 @@ export {
   getPrismLanguageFromAlias,
   getEditorType,
   isImageFile,
+  isVideoFile,
   isCodeFile,
   isConfigFile,
   isDocumentationFile,

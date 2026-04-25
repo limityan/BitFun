@@ -244,6 +244,8 @@ export class DragManager {
         return context.nodeText;
       case 'image':
         return context.imagePath;
+      case 'video':
+        return context.videoPath;
       case 'terminal-command':
         return context.command;
       case 'git-ref':

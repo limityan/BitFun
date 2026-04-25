@@ -458,6 +458,7 @@ const MainNav: React.FC<MainNavProps> = ({
           <button
             type="button"
             className="bitfun-nav-panel__top-action-btn"
+            data-testid="nav-new-code-session-btn"
             onClick={handleCreateCodeSession}
             aria-label={createCodeTooltip}
           >

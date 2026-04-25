@@ -42,6 +42,11 @@ export function isImageFile(filePathOrName: string): boolean {
   return result.language.iconType === 'image';
 }
 
+export function isVideoFile(filePathOrName: string): boolean {
+  const result = detectLanguage(filePathOrName);
+  return result.language.iconType === 'video';
+}
+
  
 export function isCodeFile(filePathOrName: string): boolean {
   const result = detectLanguage(filePathOrName);

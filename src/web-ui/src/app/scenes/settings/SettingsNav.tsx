@@ -368,6 +368,7 @@ const SettingsNav: React.FC = () => {
                   <button
                     key={tabDef.id}
                     type="button"
+                    data-testid={`settings-nav-item-${tabDef.id}`}
                     className={[
                       'bitfun-settings-nav__item',
                       activeTab === tabDef.id && 'is-active',

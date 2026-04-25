@@ -5,6 +5,11 @@ import { AlertCircle, X } from 'lucide-react';
 import { useContextStore, selectContexts } from '../../../stores/contextStore';
 import { ContextCard } from '../ContextCard/ContextCard';
 import { useI18n } from '@/infrastructure/i18n';
+import {
+  deleteManagedCaptureArtifact,
+  isManagedCaptureArtifact,
+  releaseContextObjectUrl,
+} from '@/shared/utils/managedContextArtifacts';
 import './ContextList.scss';
 
 export interface ContextListProps {
@@ -30,15 +35,32 @@ export const ContextList: React.FC<ContextListProps> = ({
   const clearContexts = useContextStore(state => state.clearContexts);
   
   const handleRemove = useCallback((id: string) => {
-    removeContext(id);
-  }, [removeContext]);
+    const context = contexts.find(item => item.id === id);
+    if (!context) {
+      removeContext(id);
+      return;
+    }
+
+    void (async () => {
+      if (isManagedCaptureArtifact(context)) {
+        await deleteManagedCaptureArtifact(context);
+      }
+      releaseContextObjectUrl(context);
+      removeContext(id);
+    })();
+  }, [contexts, removeContext]);
   
   const handleClearAll = useCallback(async () => {
-    
     if (await window.confirm(t('contextSystem.contextList.clearAllConfirm', { count: contexts.length }))) {
+      for (const context of contexts) {
+        if (isManagedCaptureArtifact(context)) {
+          await deleteManagedCaptureArtifact(context);
+        }
+        releaseContextObjectUrl(context);
+      }
       clearContexts();
     }
-  }, [contexts.length, clearContexts, t]);
+  }, [contexts, clearContexts, t]);
   
   const handleCardClick = useCallback((contextId: string) => {
     onContextClick?.(contextId);

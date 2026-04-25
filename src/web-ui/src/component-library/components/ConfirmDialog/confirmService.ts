@@ -25,6 +25,8 @@ export interface ConfirmDialogOptions {
   preview?: string;
   /** Max preview height */
   previewMaxHeight?: number;
+  /** Delay confirm/close actions until the countdown reaches zero. */
+  confirmDelayMs?: number;
 }
 
 interface ConfirmDialogState {

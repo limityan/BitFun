@@ -24,6 +24,11 @@ import {
   ImageCardRenderer 
 } from './types/ImageContextImpl';
 import {
+  VideoContextTransformer,
+  VideoContextValidator,
+  VideoCardRenderer,
+} from './types/VideoContextImpl';
+import {
   WebElementContextTransformer,
   WebElementContextValidator,
   WebElementCardRenderer,
@@ -141,7 +146,7 @@ export function registerDefaultContextTypes(): void {
       validator: new ImageContextValidator(),
       renderer: new ImageCardRenderer(),
       config: {
-        maxSize: 20 * 1024 * 1024, // 20MB
+        maxSize: 10 * 1024 * 1024,
         cacheable: true,
         priority: 3
       }
@@ -149,6 +154,30 @@ export function registerDefaultContextTypes(): void {
     registeredCount++;
   } catch (error) {
     log.error('Failed to register image type', error as Error);
+  }
+
+  try {
+    contextRegistry.register({
+      type: 'video',
+      displayName: i18nService.t('components:contextSystem.contextRegistry.video.name', { defaultValue: 'Video' }),
+      description: i18nService.t('components:contextSystem.contextRegistry.video.description', {
+        defaultValue: 'Managed recordings or uploaded short videos.',
+      }),
+      icon: React.createElement(FileIcon, { size: 16 }),
+      color: '#fb7185',
+      category: 'media',
+      transformer: new VideoContextTransformer(),
+      validator: new VideoContextValidator(),
+      renderer: new VideoCardRenderer(),
+      config: {
+        maxSize: 50 * 1024 * 1024,
+        cacheable: true,
+        priority: 4,
+      }
+    });
+    registeredCount++;
+  } catch (error) {
+    log.error('Failed to register video type', error as Error);
   }
   
   try {

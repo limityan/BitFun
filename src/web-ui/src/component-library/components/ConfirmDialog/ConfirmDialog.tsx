@@ -3,7 +3,7 @@
  * Supports both controlled usage and imperative calls
  */
 
-import React, { useEffect, useId, useRef } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { useI18n } from '@/infrastructure/i18n';
 import { Modal } from '../Modal/Modal';
 import { Button } from '../Button/Button';
@@ -39,6 +39,8 @@ export interface ConfirmDialogProps {
   preview?: string;
   /** Max preview height */
   previewMaxHeight?: number;
+  /** Delay confirm/close actions until the countdown reaches zero. */
+  confirmDelayMs?: number;
 }
 
 const iconMap: Record<ConfirmDialogType, React.ReactNode> = {
@@ -62,31 +64,61 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   showCancel = true,
   preview,
   previewMaxHeight = 200,
+  confirmDelayMs = 0,
 }) => {
   const { t } = useI18n('components');
   const titleId = useId();
   const hasMessage = message !== null && message !== undefined && message !== '';
+  const [confirmDelayRemainingMs, setConfirmDelayRemainingMs] = useState(0);
   
   // Resolve i18n default values
   const resolvedConfirmText = confirmText ?? t('dialog.confirm.ok');
   const resolvedCancelText = cancelText ?? t('dialog.confirm.cancel');
   
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
+  const isCountdownActive = confirmDelayRemainingMs > 0;
+  const confirmCountdownSeconds = Math.max(1, Math.ceil(confirmDelayRemainingMs / 1000));
+  const resolvedConfirmButtonText = isCountdownActive
+    ? `${resolvedConfirmText} (${confirmCountdownSeconds})`
+    : resolvedConfirmText;
 
   useEffect(() => {
     if (isOpen) {
+      setConfirmDelayRemainingMs(confirmDelayMs);
       setTimeout(() => {
         confirmButtonRef.current?.focus();
       }, 100);
+    } else {
+      setConfirmDelayRemainingMs(0);
     }
-  }, [isOpen]);
+  }, [confirmDelayMs, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || confirmDelayRemainingMs <= 0) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setConfirmDelayRemainingMs(current => Math.max(0, current - 200));
+    }, 200);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [confirmDelayRemainingMs, isOpen]);
 
   const handleConfirm = () => {
+    if (isCountdownActive) {
+      return;
+    }
     onConfirm();
     onClose();
   };
 
   const handleCancel = () => {
+    if (isCountdownActive) {
+      return;
+    }
     onCancel?.();
     onClose();
   };
@@ -94,11 +126,15 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={handleCancel}
+      onClose={isCountdownActive ? () => {} : handleCancel}
       size="medium"
       showCloseButton={false}
+      closeOnOverlayClick={!isCountdownActive}
     >
-      <div className={`confirm-dialog confirm-dialog--${type}`}>
+      <div
+        className={`confirm-dialog confirm-dialog--${type}`}
+        data-testid="confirm-dialog"
+      >
         <div className="confirm-dialog__icon" aria-hidden>
           {iconMap[type]}
         </div>
@@ -132,6 +168,8 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
               variant="secondary"
               size="medium"
               onClick={handleCancel}
+              data-testid="confirm-dialog-cancel-btn"
+              disabled={isCountdownActive}
             >
               {resolvedCancelText}
             </Button>
@@ -141,8 +179,10 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
             variant={confirmDanger ? 'danger' : 'primary'}
             size="medium"
             onClick={handleConfirm}
+            data-testid="confirm-dialog-confirm-btn"
+            disabled={isCountdownActive}
           >
-            {resolvedConfirmText}
+            {resolvedConfirmButtonText}
           </Button>
         </div>
       </div>

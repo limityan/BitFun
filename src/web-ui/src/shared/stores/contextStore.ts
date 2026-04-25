@@ -157,7 +157,7 @@ export const useContextStore = create<ContextState>()(
         },
         
         partialize: (state: any) => ({ 
-          contexts: state.contexts.filter((ctx: any) => ctx.type !== 'image')
+          contexts: state.contexts.filter((ctx: any) => ctx.type !== 'image' && ctx.type !== 'video')
         })
       } as any
     ),
@@ -184,7 +184,7 @@ export const selectHasInvalidContexts = (state: ContextState) =>
 
 
  
-export const cleanupImageContextsFromStorage = () => {
+export const cleanupMediaContextsFromStorage = () => {
   try {
     const storageKey = 'bitfun-context-storage';
     const stored = localStorage.getItem(storageKey);
@@ -193,11 +193,11 @@ export const cleanupImageContextsFromStorage = () => {
       const parsed = JSON.parse(stored);
       
       if (parsed.state && Array.isArray(parsed.state.contexts)) {
-        const imageCount = parsed.state.contexts.filter((ctx: any) => ctx.type === 'image').length;
+        const mediaCount = parsed.state.contexts.filter((ctx: any) => ctx.type === 'image' || ctx.type === 'video').length;
         
-        if (imageCount > 0) {
+        if (mediaCount > 0) {
           
-          parsed.state.contexts = parsed.state.contexts.filter((ctx: any) => ctx.type !== 'image');
+          parsed.state.contexts = parsed.state.contexts.filter((ctx: any) => ctx.type !== 'image' && ctx.type !== 'video');
           
           
           localStorage.setItem(storageKey, JSON.stringify(parsed));
@@ -205,9 +205,9 @@ export const cleanupImageContextsFromStorage = () => {
       }
     }
   } catch (error) {
-    log.warn('Failed to cleanup image contexts', error);
+    log.warn('Failed to cleanup media contexts', error);
   }
 };
 
 
-cleanupImageContextsFromStorage();
+cleanupMediaContextsFromStorage();

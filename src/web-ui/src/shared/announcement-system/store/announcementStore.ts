@@ -29,6 +29,8 @@ export interface AnnouncementStoreState {
 export interface AnnouncementStoreActions {
   /** Load the queue returned from the backend scheduler. */
   loadQueue(cards: AnnouncementCard[]): void;
+  /** Append cards without replacing the existing queue or visible surfaces. */
+  enqueueCards(cards: AnnouncementCard[]): void;
   /** Show the next card from the queue as a toast. */
   showNextToast(): void;
   /** User clicked the toast's primary action – open the full modal. */
@@ -66,6 +68,25 @@ export const useAnnouncementStore = create<AnnouncementStore>((set, get) => ({
     // Kick off the first toast if there are any cards.
     if (cards.length > 0) {
       get().showNextToast();
+    }
+  },
+
+  enqueueCards(cards) {
+    if (cards.length === 0) return;
+
+    const { queue, activeToast, openModal, toastVisible, modalVisible } = get();
+    const existingIds = new Set<string>([
+      ...queue.map((card) => card.id),
+      ...(activeToast ? [activeToast.id] : []),
+      ...(openModal ? [openModal.id] : []),
+    ]);
+    const nextCards = cards.filter((card) => !existingIds.has(card.id));
+    if (nextCards.length === 0) return;
+
+    set({ queue: [...queue, ...nextCards] });
+
+    if (!toastVisible && !modalVisible && !activeToast && !openModal) {
+      setTimeout(() => get().showNextToast(), 100);
     }
   },
 

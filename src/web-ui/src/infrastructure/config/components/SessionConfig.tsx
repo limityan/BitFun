@@ -17,8 +17,10 @@ import { ConfigPageHeader, ConfigPageLayout, ConfigPageContent, ConfigPageSectio
 import { aiExperienceConfigService, type AIExperienceSettings } from '../services/AIExperienceConfigService';
 import { configManager } from '../services/ConfigManager';
 import { systemAPI } from '@/infrastructure/api/service-api/SystemAPI';
+import { contextCaptureAPI } from '@/infrastructure/api/service-api/ContextCaptureAPI';
 import { useNotification, notificationService } from '@/shared/notification-system';
-import type { AIModelConfig, DebugModeConfig, LanguageDebugTemplate } from '../types';
+import { announcementService, useAnnouncementStore } from '@/shared/announcement-system';
+import type { AIModelConfig, ContextCaptureConfig, DebugModeConfig, LanguageDebugTemplate } from '../types';
 import {
   LANGUAGE_TEMPLATE_LABELS,
   DEFAULT_DEBUG_MODE_CONFIG,
@@ -36,12 +38,24 @@ const log = createLogger('SessionConfig');
 const IS_TAURI_DESKTOP = typeof window !== 'undefined' && '__TAURI__' in window;
 
 const AGENT_SESSION_TITLE = 'session-title-func-agent';
+const CONTEXT_CAPTURE_FEATURE_CARD_ID = 'feature_context_capture_v0_2_3';
 
 type ComputerUseStatusPayload = {
   computerUseEnabled: boolean;
   accessibilityGranted: boolean;
   screenCaptureGranted: boolean;
   platformNote: string | null;
+};
+
+const DEFAULT_CONTEXT_CAPTURE_CONFIG: ContextCaptureConfig = {
+  enabled: true,
+  max_images_per_turn: 5,
+  max_videos_per_turn: 1,
+  capture_privacy_version: 1,
+  capture_privacy_acknowledged_at: null,
+  recording_notice_version: 1,
+  recording_notice_acknowledged_at: null,
+  feature_intro_seen: false,
 };
 
 type BrowserControlLaunchResponse = {
@@ -56,6 +70,7 @@ const SessionConfig: React.FC = () => {
   const { t: tTools } = useTranslation('settings/agentic-tools');
   const { t: tDebug } = useTranslation('settings/debug');
   const notification = useNotification();
+  const enqueueAnnouncementCards = useAnnouncementStore((state) => state.enqueueCards);
 
   // ── Session config state ─────────────────────────────────────────────────
   const [isLoading, setIsLoading] = useState(true);
@@ -71,6 +86,10 @@ const SessionConfig: React.FC = () => {
   const [computerUseAccess, setComputerUseAccess] = useState(false);
   const [computerUseScreen, setComputerUseScreen] = useState(false);
   const [computerUseBusy, setComputerUseBusy] = useState(false);
+  const [contextCaptureConfig, setContextCaptureConfig] = useState<ContextCaptureConfig>(DEFAULT_CONTEXT_CAPTURE_CONFIG);
+  const [contextCaptureScreenGranted, setContextCaptureScreenGranted] = useState(false);
+  const [contextCapturePlatformNote, setContextCapturePlatformNote] = useState<string | null>(null);
+  const [contextCaptureBusy, setContextCaptureBusy] = useState(false);
 
   // ── Browser control state ───────────────────────────────────────────────
   const [browserCdpAvailable, setBrowserCdpAvailable] = useState(false);
@@ -99,6 +118,19 @@ const SessionConfig: React.FC = () => {
       return true;
     } catch (error) {
       log.error('computer_use_get_status failed', error);
+      return false;
+    }
+  }, []);
+
+  const refreshContextCaptureStatus = useCallback(async (): Promise<boolean> => {
+    if (!IS_TAURI_DESKTOP) return false;
+    try {
+      const status = await contextCaptureAPI.getStatus();
+      setContextCaptureScreenGranted(status.screenCaptureGranted);
+      setContextCapturePlatformNote(status.platformNote ?? null);
+      return true;
+    } catch (error) {
+      log.error('context_capture_get_status failed', error);
       return false;
     }
   }, []);
@@ -135,6 +167,7 @@ const SessionConfig: React.FC = () => {
         confirmTimeout,
         debugConfigData,
         computerUseCfg,
+        contextCaptureCfg,
       ] = await Promise.all([
         aiExperienceConfigService.getSettingsAsync(),
         configManager.getConfig<AIModelConfig[]>('ai.models') || [],
@@ -144,6 +177,7 @@ const SessionConfig: React.FC = () => {
         configManager.getConfig<number | null>('ai.tool_confirmation_timeout_secs'),
         configManager.getConfig<DebugModeConfig>('ai.debug_mode_config'),
         configManager.getConfig<boolean>('ai.computer_use_enabled'),
+        configManager.getConfig<ContextCaptureConfig>('app.context_capture'),
       ]);
 
       setSettings(loadedSettings);
@@ -153,10 +187,16 @@ const SessionConfig: React.FC = () => {
       setExecutionTimeout(execTimeout != null ? String(execTimeout) : '');
       setConfirmationTimeout(confirmTimeout != null ? String(confirmTimeout) : '');
       if (debugConfigData) setDebugConfig(debugConfigData);
+      setContextCaptureConfig(contextCaptureCfg ?? DEFAULT_CONTEXT_CAPTURE_CONFIG);
 
       if (IS_TAURI_DESKTOP) {
         const ok = await refreshComputerUseStatus();
         if (!ok) setComputerUseEnabled(computerUseCfg ?? false);
+        const contextCaptureOk = await refreshContextCaptureStatus();
+        if (!contextCaptureOk) {
+          setContextCaptureScreenGranted(false);
+          setContextCapturePlatformNote(null);
+        }
         await refreshBrowserControlStatus();
         try {
           const info = await systemAPI.getSystemInfo();
@@ -173,7 +213,7 @@ const SessionConfig: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [refreshComputerUseStatus, refreshBrowserControlStatus]);
+  }, [refreshComputerUseStatus, refreshBrowserControlStatus, refreshContextCaptureStatus]);
 
   useEffect(() => {
     loadAllData();
@@ -279,6 +319,75 @@ const SessionConfig: React.FC = () => {
     } catch (error) {
       log.error('computer_use_open_system_settings failed', error);
       notificationService.error(t('messages.saveFailed'));
+    }
+  };
+
+  const handleContextCaptureEnabledChange = async (checked: boolean) => {
+    setContextCaptureBusy(true);
+    const previous = contextCaptureConfig;
+    setContextCaptureConfig(prev => ({ ...prev, enabled: checked }));
+    try {
+      await configManager.setConfig('app.context_capture.enabled', checked);
+      notificationService.success(t('messages.saveSuccess'), { duration: 2000 });
+      await refreshContextCaptureStatus();
+    } catch (error) {
+      log.error('Failed to save context_capture.enabled', error);
+      notificationService.error(t('messages.saveFailed'));
+      setContextCaptureConfig(previous);
+    } finally {
+      setContextCaptureBusy(false);
+    }
+  };
+
+  const handleContextCaptureResetConsent = async () => {
+    setContextCaptureBusy(true);
+    const previous = contextCaptureConfig;
+    setContextCaptureConfig(prev => ({
+      ...prev,
+      capture_privacy_acknowledged_at: null,
+      recording_notice_acknowledged_at: null,
+    }));
+    try {
+      await Promise.all([
+        configManager.setConfig('app.context_capture.capture_privacy_acknowledged_at', null),
+        configManager.setConfig('app.context_capture.recording_notice_acknowledged_at', null),
+      ]);
+      notificationService.success(
+        t('contextCapture.resetConsentSuccess', {
+          defaultValue: 'Capture privacy and recording reminders will be requested again.',
+        }),
+        { duration: 2000 }
+      );
+      await refreshContextCaptureStatus();
+    } catch (error) {
+      log.error('Failed to reset context capture consent', error);
+      notificationService.error(t('messages.saveFailed'));
+      setContextCaptureConfig(previous);
+    } finally {
+      setContextCaptureBusy(false);
+    }
+  };
+
+  const handleContextCaptureViewIntro = async () => {
+    setContextCaptureBusy(true);
+    try {
+      const card = await announcementService.triggerCard(CONTEXT_CAPTURE_FEATURE_CARD_ID);
+      if (!card) {
+        log.warn('Context capture feature intro card was not registered', {
+          cardId: CONTEXT_CAPTURE_FEATURE_CARD_ID,
+        });
+        notificationService.error(t('messages.saveFailed'));
+        return;
+      }
+
+      enqueueAnnouncementCards([card]);
+      await configManager.setConfig('app.context_capture.feature_intro_seen', true);
+      setContextCaptureConfig((prev) => ({ ...prev, feature_intro_seen: true }));
+    } catch (error) {
+      log.error('Failed to trigger context capture intro card', error);
+      notificationService.error(t('messages.saveFailed'));
+    } finally {
+      setContextCaptureBusy(false);
     }
   };
 
@@ -722,6 +831,185 @@ const SessionConfig: React.FC = () => {
         </ConfigPageSection>
 
         {/* ── Browser control (CDP) ──────────────────────────────── */}
+        <ConfigPageSection
+          title={t('contextCapture.sectionTitle', { defaultValue: 'Chat screenshots and recording' })}
+          description={
+            IS_TAURI_DESKTOP
+              ? t('contextCapture.sectionDescription', {
+                  defaultValue: 'Attach screenshots or a short recording to the current chat as image context.'
+                })
+              : t('contextCapture.desktopOnly', {
+                  defaultValue: 'Screenshot and recording capture are only available in the desktop app.'
+                })
+          }
+        >
+          {IS_TAURI_DESKTOP ? (
+            <>
+              <ConfigPageRow
+                label={t('contextCapture.enable', { defaultValue: 'Enable capture in chat' })}
+                description={t('contextCapture.enableDesc', {
+                  defaultValue: 'Show screenshot and recording controls in the chat input.'
+                })}
+                align="center"
+              >
+                <div className="bitfun-func-agent-config__row-control">
+                  <Switch
+                    checked={contextCaptureConfig.enabled}
+                    onChange={(e) => handleContextCaptureEnabledChange(e.target.checked)}
+                    disabled={contextCaptureBusy}
+                    size="small"
+                  />
+                </div>
+              </ConfigPageRow>
+              <ConfigPageRow
+                label={t('contextCapture.screenPermission', { defaultValue: 'Screen capture permission' })}
+                description={contextCapturePlatformNote || t('contextCapture.screenPermissionDesc', {
+                  defaultValue: 'Required for screenshots and short recording capture.'
+                })}
+                align="center"
+                balanced
+              >
+                <div
+                  className="bitfun-func-agent-config__row-control"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    flexWrap: 'nowrap',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    gap: 8,
+                  }}
+                >
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                    <span className={contextCaptureScreenGranted ? 'bitfun-func-agent-config__perm-status--granted' : undefined}>
+                      {contextCaptureScreenGranted
+                        ? t('contextCapture.granted', { defaultValue: 'Granted' })
+                        : t('contextCapture.notGranted', { defaultValue: 'Not granted' })}
+                    </span>
+                    <IconButton
+                      type="button"
+                      size="small"
+                      variant="ghost"
+                      aria-label={t('contextCapture.refreshStatus', { defaultValue: 'Refresh capture status' })}
+                      tooltip={t('contextCapture.refreshStatus', { defaultValue: 'Refresh capture status' })}
+                      disabled={contextCaptureBusy}
+                      onClick={() => void refreshContextCaptureStatus()}
+                    >
+                      <RefreshCw size={14} />
+                    </IconButton>
+                  </span>
+                </div>
+              </ConfigPageRow>
+              <ConfigPageRow
+                label={t('contextCapture.privacyConsent', { defaultValue: 'Privacy confirmation' })}
+                description={t('contextCapture.privacyConsentDesc', {
+                  defaultValue: 'Users confirm once before screenshots or recordings can be attached.'
+                })}
+                align="center"
+                balanced
+              >
+                <div
+                  className="bitfun-func-agent-config__row-control"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    flexWrap: 'nowrap',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    gap: 8,
+                  }}
+                >
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                    <span className={contextCaptureConfig.capture_privacy_acknowledged_at ? 'bitfun-func-agent-config__perm-status--granted' : undefined}>
+                      {contextCaptureConfig.capture_privacy_acknowledged_at
+                        ? new Date(contextCaptureConfig.capture_privacy_acknowledged_at).toLocaleString()
+                        : t('contextCapture.notConfirmed', { defaultValue: 'Not confirmed yet' })}
+                    </span>
+                  </span>
+                  <Button
+                    className="bitfun-func-agent-config__row-action-btn"
+                    size="small"
+                    variant="secondary"
+                    disabled={contextCaptureBusy || (!contextCaptureConfig.capture_privacy_acknowledged_at && !contextCaptureConfig.recording_notice_acknowledged_at)}
+                    onClick={() => void handleContextCaptureResetConsent()}
+                  >
+                    {t('contextCapture.resetConsent', { defaultValue: 'Reset' })}
+                  </Button>
+                </div>
+              </ConfigPageRow>
+              <ConfigPageRow
+                label={t('contextCapture.recordingNotice', { defaultValue: 'Recording notice' })}
+                description={t('contextCapture.recordingNoticeDesc', {
+                  defaultValue: 'First-time recording shows a short limitations notice with a 3 second countdown.',
+                })}
+                align="center"
+                balanced
+              >
+                <div
+                  className="bitfun-func-agent-config__row-control"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    flexWrap: 'nowrap',
+                    alignItems: 'center',
+                    justifyContent: 'flex-end',
+                    gap: 8,
+                  }}
+                >
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                    <span className={contextCaptureConfig.recording_notice_acknowledged_at ? 'bitfun-func-agent-config__perm-status--granted' : undefined}>
+                      {contextCaptureConfig.recording_notice_acknowledged_at
+                        ? new Date(contextCaptureConfig.recording_notice_acknowledged_at).toLocaleString()
+                        : t('contextCapture.notConfirmed', { defaultValue: 'Not confirmed yet' })}
+                    </span>
+                  </span>
+                </div>
+              </ConfigPageRow>
+              <ConfigPageRow
+                label={t('contextCapture.maxImagesPerTurn', { defaultValue: 'Per-message image limit' })}
+                description={t('contextCapture.maxImagesPerTurnDesc', {
+                  defaultValue: 'Screenshots and uploaded images share the same limit.'
+                })}
+                align="center"
+                >
+                  <div className="bitfun-func-agent-config__row-control">
+                    <span>{contextCaptureConfig.max_images_per_turn}</span>
+                  </div>
+                </ConfigPageRow>
+              <ConfigPageRow
+                label={t('contextCapture.maxVideosPerTurn', { defaultValue: 'Per-message video limit' })}
+                description={t('contextCapture.maxVideosPerTurnDesc', {
+                  defaultValue: 'Recordings and uploaded videos share the same limit.'
+                })}
+                align="center"
+                >
+                  <div className="bitfun-func-agent-config__row-control">
+                    <span>{contextCaptureConfig.max_videos_per_turn}</span>
+                  </div>
+                </ConfigPageRow>
+              <ConfigPageRow
+                label={t('contextCapture.featureGuide', { defaultValue: 'Feature guide' })}
+                description={t('contextCapture.featureGuideDesc', {
+                  defaultValue: 'Open the intro card again to review shortcuts, privacy reminders, and recording limits.'
+                })}
+                align="center"
+              >
+                <div className="bitfun-func-agent-config__row-control">
+                  <Button
+                    className="bitfun-func-agent-config__row-action-btn"
+                    size="small"
+                    variant="secondary"
+                    disabled={contextCaptureBusy}
+                    onClick={() => void handleContextCaptureViewIntro()}
+                  >
+                    {t('contextCapture.viewGuide', { defaultValue: 'View guide' })}
+                  </Button>
+                </div>
+              </ConfigPageRow>
+            </>
+          ) : null}
+        </ConfigPageSection>
+
         <ConfigPageSection
           title={t('browserControl.sectionTitle')}
           description={

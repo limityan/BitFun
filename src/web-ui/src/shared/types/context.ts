@@ -22,6 +22,7 @@ export type ContextItem =
   | MermaidNodeContext
   | MermaidDiagramContext
   | ImageContext
+  | VideoContext
   | TerminalCommandContext
   | GitRefContext
   | URLContext
@@ -85,6 +86,22 @@ export interface ImageContext extends BaseContext {
   thumbnailUrl?: string;     
   source: 'file' | 'clipboard' | 'url';  
   isLocal: boolean;          
+}
+
+export interface VideoContext extends BaseContext {
+  type: 'video';
+  videoPath: string;
+  videoName: string;
+  width?: number;
+  height?: number;
+  durationMs?: number;
+  fileSize: number;
+  mimeType: string;
+  dataUrl?: string;
+  previewUrl?: string;
+  thumbnailUrl?: string;
+  source: 'file' | 'clipboard' | 'url';
+  isLocal: boolean;
 }
 
 export interface TerminalCommandContext extends BaseContext {
@@ -177,6 +194,10 @@ export function isMermaidDiagramContext(context: ContextItem): context is Mermai
 
 export function isImageContext(context: ContextItem): context is ImageContext {
   return context.type === 'image';
+}
+
+export function isVideoContext(context: ContextItem): context is VideoContext {
+  return context.type === 'video';
 }
 
 export function isTerminalCommandContext(context: ContextItem): context is TerminalCommandContext {
