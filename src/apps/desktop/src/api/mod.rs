@@ -12,6 +12,7 @@ pub mod clipboard_file_api;
 pub mod commands;
 pub mod computer_use_api;
 pub mod config_api;
+pub mod context_capture_api;
 pub mod context_upload_api;
 pub mod cron_api;
 pub mod diff_api;

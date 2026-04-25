@@ -46,6 +46,7 @@ similar = { workspace = true }
 ignore = { workspace = true }
 urlencoding = { workspace = true }
 reqwest = { workspace = true }
+base64 = { workspace = true }
 thiserror = "1.0"
 futures = { workspace = true }
 async-trait = { workspace = true }
@@ -53,6 +54,8 @@ sha1 = { workspace = true }
 screenshots = "0.8"
 enigo = "0.2"
 image = { version = "0.24", default-features = false, features = ["png", "jpeg"] }
+muxide = "0.2.0"
+openh264 = "0.9.3"
 resvg = { version = "0.47.0", default-features = false }
 
 [target.'cfg(target_os = "macos")'.dependencies]

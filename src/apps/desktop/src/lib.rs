@@ -32,6 +32,7 @@ use api::clipboard_file_api::*;
 use api::commands::*;
 use api::computer_use_api::*;
 use api::config_api::*;
+use api::context_capture_api::*;
 use api::cron_api::*;
 use api::diff_api::*;
 use api::git_agent_api::*;
@@ -426,6 +427,12 @@ pub async fn run() {
             computer_use_get_status,
             computer_use_request_permissions,
             computer_use_open_system_settings,
+            context_capture_get_status,
+            context_capture_take_screenshot,
+            context_capture_start_recording,
+            context_capture_stop_recording,
+            context_capture_ack_privacy_consent,
+            context_capture_delete_managed_artifact,
             set_config,
             reset_config,
             export_config,
