@@ -813,6 +813,7 @@ Update the persona files and delete BOOTSTRAP.md as soon as bootstrap is complet
                 tags: Vec::new(),
                 custom_metadata: None,
                 todos: None,
+                deep_review_run_manifest: None,
                 workspace_path: Some(workspace_path.to_string()),
                 workspace_hostname: None,
                 unread_completion: None,
@@ -1077,6 +1078,7 @@ Update the persona files and delete BOOTSTRAP.md as soon as bootstrap is complet
         agent_type: String,
         workspace_path: Option<String>,
         submission_policy: DialogSubmissionPolicy,
+        user_message_metadata: Option<serde_json::Value>,
     ) -> BitFunResult<()> {
         self.start_dialog_turn_internal(
             session_id,
@@ -1087,7 +1089,7 @@ Update the persona files and delete BOOTSTRAP.md as soon as bootstrap is complet
             agent_type,
             workspace_path,
             submission_policy,
-            None,
+            user_message_metadata,
             false,
         )
         .await
@@ -1104,6 +1106,7 @@ Update the persona files and delete BOOTSTRAP.md as soon as bootstrap is complet
         agent_type: String,
         workspace_path: Option<String>,
         submission_policy: DialogSubmissionPolicy,
+        user_message_metadata: Option<serde_json::Value>,
     ) -> BitFunResult<()> {
         self.start_dialog_turn_internal(
             session_id,
@@ -1114,7 +1117,7 @@ Update the persona files and delete BOOTSTRAP.md as soon as bootstrap is complet
             agent_type,
             workspace_path,
             submission_policy,
-            None,
+            user_message_metadata,
             false,
         )
         .await
@@ -1634,6 +1637,16 @@ Update the persona files and delete BOOTSTRAP.md as soon as bootstrap is complet
 
         // Pass turn_index (for operation history/rollback)
         context_vars.insert("turn_index".to_string(), turn_index.to_string());
+        if let Some(run_manifest) = user_message_metadata.as_ref().and_then(|metadata| {
+            metadata
+                .get("deepReviewRunManifest")
+                .or_else(|| metadata.get("deep_review_run_manifest"))
+        }) {
+            context_vars.insert(
+                "deep_review_run_manifest".to_string(),
+                run_manifest.to_string(),
+            );
+        }
         let session_workspace_path = session_workspace
             .as_ref()
             .map(|workspace| workspace.root_path_string());

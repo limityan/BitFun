@@ -103,6 +103,85 @@ impl DeepReviewPolicyViolation {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeepReviewRunManifestGate {
+    active_subagent_ids: HashSet<String>,
+    skipped_subagent_reasons: HashMap<String, String>,
+}
+
+impl DeepReviewRunManifestGate {
+    pub fn from_value(raw: &Value) -> Option<Self> {
+        let manifest = raw.as_object()?;
+        if manifest.get("reviewMode").and_then(Value::as_str) != Some("deep") {
+            return None;
+        }
+
+        let mut active_subagent_ids = HashSet::new();
+        collect_manifest_members(manifest.get("coreReviewers"), &mut active_subagent_ids);
+        collect_manifest_members(
+            manifest.get("enabledExtraReviewers"),
+            &mut active_subagent_ids,
+        );
+        if let Some(id) = manifest
+            .get("qualityGateReviewer")
+            .and_then(manifest_member_subagent_id)
+        {
+            active_subagent_ids.insert(id);
+        }
+
+        if active_subagent_ids.is_empty() {
+            return None;
+        }
+
+        let mut skipped_subagent_reasons = HashMap::new();
+        if let Some(skipped) = manifest.get("skippedReviewers").and_then(Value::as_array) {
+            for member in skipped {
+                let Some(id) = manifest_member_subagent_id(member) else {
+                    continue;
+                };
+                let reason = member
+                    .get("reason")
+                    .and_then(Value::as_str)
+                    .unwrap_or("skipped")
+                    .trim();
+                skipped_subagent_reasons.insert(
+                    id,
+                    if reason.is_empty() {
+                        "skipped".to_string()
+                    } else {
+                        reason.to_string()
+                    },
+                );
+            }
+        }
+
+        Some(Self {
+            active_subagent_ids,
+            skipped_subagent_reasons,
+        })
+    }
+
+    pub fn ensure_active(&self, subagent_type: &str) -> Result<(), DeepReviewPolicyViolation> {
+        if self.active_subagent_ids.contains(subagent_type) {
+            return Ok(());
+        }
+
+        let reason = self
+            .skipped_subagent_reasons
+            .get(subagent_type)
+            .map(String::as_str)
+            .unwrap_or("missing_from_manifest");
+
+        Err(DeepReviewPolicyViolation::new(
+            "deep_review_subagent_not_active_for_target",
+            format!(
+                "DeepReview subagent '{}' is not active for this review target (reason: {})",
+                subagent_type, reason
+            ),
+        ))
+    }
+}
+
 impl Default for DeepReviewExecutionPolicy {
     fn default() -> Self {
         Self {
@@ -391,6 +470,27 @@ pub fn record_deep_review_task_budget(
     GLOBAL_DEEP_REVIEW_BUDGET_TRACKER.record_task(parent_dialog_turn_id, policy, role)
 }
 
+fn collect_manifest_members(raw: Option<&Value>, output: &mut HashSet<String>) {
+    let Some(values) = raw.and_then(Value::as_array) else {
+        return;
+    };
+
+    for member in values {
+        if let Some(id) = manifest_member_subagent_id(member) {
+            output.insert(id);
+        }
+    }
+}
+
+fn manifest_member_subagent_id(value: &Value) -> Option<String> {
+    let id = value
+        .get("subagentId")
+        .or_else(|| value.get("subagent_id"))
+        .and_then(Value::as_str)?
+        .trim();
+    (!id.is_empty()).then(|| id.to_string())
+}
+
 fn normalize_extra_subagent_ids(raw: Option<&Value>) -> Vec<String> {
     let Some(values) = raw.and_then(Value::as_array) else {
         return Vec::new();
@@ -484,8 +584,8 @@ fn number_as_i64(value: &Value) -> Option<i64> {
 mod tests {
     use super::{
         is_missing_default_review_team_config_error, DeepReviewBudgetTracker,
-        DeepReviewExecutionPolicy, DeepReviewStrategyLevel, DeepReviewSubagentRole,
-        REVIEW_FIXER_AGENT_TYPE,
+        DeepReviewExecutionPolicy, DeepReviewRunManifestGate, DeepReviewStrategyLevel,
+        DeepReviewSubagentRole, REVIEW_FIXER_AGENT_TYPE,
     };
     use crate::util::errors::BitFunError;
     use serde_json::json;
@@ -568,6 +668,47 @@ mod tests {
         let result = policy.classify_subagent("UnknownAgent");
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().code, "deep_review_subagent_not_allowed");
+    }
+
+    #[test]
+    fn run_manifest_gate_allows_only_active_reviewers() {
+        let manifest = json!({
+            "reviewMode": "deep",
+            "coreReviewers": [
+                { "subagentId": "ReviewBusinessLogic" }
+            ],
+            "enabledExtraReviewers": [
+                { "subagentId": "ExtraReviewer" }
+            ],
+            "qualityGateReviewer": { "subagentId": "ReviewJudge" },
+            "skippedReviewers": [
+                { "subagentId": "ReviewFrontend", "reason": "not_applicable" }
+            ]
+        });
+
+        let gate = DeepReviewRunManifestGate::from_value(&manifest)
+            .expect("valid run manifest should produce a gate");
+
+        gate.ensure_active("ReviewBusinessLogic").unwrap();
+        gate.ensure_active("ExtraReviewer").unwrap();
+        gate.ensure_active("ReviewJudge").unwrap();
+
+        let violation = gate.ensure_active("ReviewFrontend").unwrap_err();
+        assert_eq!(violation.code, "deep_review_subagent_not_active_for_target");
+        assert!(violation.message.contains("ReviewFrontend"));
+        assert!(violation.message.contains("not_applicable"));
+    }
+
+    #[test]
+    fn run_manifest_gate_is_absent_without_review_team_shape() {
+        let manifest = json!({
+            "reviewMode": "deep",
+            "skippedReviewers": [
+                { "subagentId": "ReviewFrontend", "reason": "not_applicable" }
+            ]
+        });
+
+        assert!(DeepReviewRunManifestGate::from_value(&manifest).is_none());
     }
 
     #[test]

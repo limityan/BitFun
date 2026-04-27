@@ -330,6 +330,36 @@ describe('launchDeepReviewSession', () => {
     );
   });
 
+  it('passes the run manifest as first-turn message metadata', async () => {
+    const runManifest = { reviewMode: 'deep', skippedReviewers: [] };
+    mockCreateBtwChildSession.mockResolvedValue({
+      childSessionId: 'child-123',
+      parentDialogTurnId: 'turn-456',
+    });
+    mockSendMessage.mockResolvedValue(undefined);
+
+    await launchDeepReviewSession({
+      parentSessionId: 'parent-123',
+      workspacePath: 'D:\\workspace\\repo',
+      prompt: 'Review these files',
+      displayMessage: 'Deep review started',
+      runManifest: runManifest as any,
+    });
+
+    expect(mockSendMessage).toHaveBeenCalledWith(
+      'Review these files',
+      'child-123',
+      'Deep review started',
+      undefined,
+      undefined,
+      {
+        userMessageMetadata: {
+          deepReviewRunManifest: runManifest,
+        },
+      },
+    );
+  });
+
   it('throws and does not cleanup when createBtwChildSession fails', async () => {
     mockCreateBtwChildSession.mockRejectedValue(new Error('Session creation failed'));
 

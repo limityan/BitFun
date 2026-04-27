@@ -659,6 +659,8 @@ impl PersistenceManager {
             tags: existing.map(|value| value.tags.clone()).unwrap_or_default(),
             custom_metadata: existing.and_then(|value| value.custom_metadata.clone()),
             todos: existing.and_then(|value| value.todos.clone()),
+            deep_review_run_manifest: existing
+                .and_then(|value| value.deep_review_run_manifest.clone()),
             workspace_path: Some(workspace_root),
             workspace_hostname,
             unread_completion: existing.and_then(|value| value.unread_completion.clone()),

@@ -107,6 +107,7 @@ export async function sendMessage(
   options?: {
     imageContexts?: ImageInputContextData[];
     imageDisplayData?: Array<{ id: string; name: string; dataUrl?: string; imagePath?: string; mimeType?: string }>;
+    userMessageMetadata?: Record<string, unknown>;
   }
 ): Promise<void> {
   const session = context.flowChatStore.getState().sessions.get(sessionId);
@@ -180,6 +181,7 @@ export async function sendMessage(
         timestamp: Date.now(),
         hasImages,
         images: options?.imageDisplayData,
+        metadata: options?.userMessageMetadata,
       },
       modelRounds: [],
       // Images are attached for multimodal primary models or reduced to text placeholders for text-only models.
@@ -248,6 +250,7 @@ export async function sendMessage(
         agentType: currentAgentType,
         workspacePath,
         imageContexts: options?.imageContexts,
+        userMessageMetadata: options?.userMessageMetadata,
       });
     } catch (error: any) {
       if (error?.message?.includes('Session does not exist') || error?.message?.includes('Not found')) {
@@ -266,6 +269,7 @@ export async function sendMessage(
           agentType: currentAgentType,
           workspacePath,
           imageContexts: options?.imageContexts,
+          userMessageMetadata: options?.userMessageMetadata,
         });
       } else {
         throw error;

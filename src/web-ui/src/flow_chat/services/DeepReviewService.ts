@@ -438,11 +438,26 @@ export async function launchDeepReviewSession({
 
     launchStep = 'send_start_message';
     const flowChatManager = FlowChatManager.getInstance();
-    await flowChatManager.sendMessage(
-      prompt,
-      childSessionId,
-      displayMessage,
-    );
+    if (runManifest) {
+      await flowChatManager.sendMessage(
+        prompt,
+        childSessionId,
+        displayMessage,
+        undefined,
+        undefined,
+        {
+          userMessageMetadata: {
+            deepReviewRunManifest: runManifest,
+          },
+        },
+      );
+    } else {
+      await flowChatManager.sendMessage(
+        prompt,
+        childSessionId,
+        displayMessage,
+      );
+    }
 
     insertReviewSessionSummaryMarker({
       parentSessionId,

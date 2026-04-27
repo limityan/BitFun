@@ -1,7 +1,8 @@
 use crate::agentic::agents::{get_agent_registry, AgentInfo};
 use crate::agentic::coordination::get_global_coordinator;
 use crate::agentic::deep_review_policy::{
-    load_default_deep_review_policy, record_deep_review_task_budget, DEEP_REVIEW_AGENT_TYPE,
+    load_default_deep_review_policy, record_deep_review_task_budget, DeepReviewRunManifestGate,
+    DEEP_REVIEW_AGENT_TYPE,
 };
 use crate::agentic::tools::framework::{
     Tool, ToolRenderOptions, ToolResult, ToolUseContext, ValidationResult,
@@ -10,6 +11,7 @@ use crate::agentic::tools::pipeline::SubagentParentInfo;
 use crate::agentic::tools::InputValidator;
 use crate::util::errors::{BitFunError, BitFunResult};
 use async_trait::async_trait;
+use log::warn;
 use serde_json::{json, Value};
 use std::path::Path;
 
@@ -416,6 +418,10 @@ impl Tool for TaskTool {
             ));
         };
 
+        // Get global coordinator
+        let coordinator = get_global_coordinator()
+            .ok_or_else(|| BitFunError::tool("coordinator not initialized".to_string()))?;
+
         if context
             .agent_type
             .as_deref()
@@ -436,6 +442,47 @@ impl Tool for TaskTool {
                         violation.to_tool_error_message()
                     ))
                 })?;
+            if let Some(gate) = context
+                .custom_data
+                .get("deep_review_run_manifest")
+                .and_then(DeepReviewRunManifestGate::from_value)
+            {
+                gate.ensure_active(&subagent_type).map_err(|violation| {
+                    BitFunError::tool(format!(
+                        "DeepReview Task policy violation: {}",
+                        violation.to_tool_error_message()
+                    ))
+                })?;
+            } else if let Some(workspace) = context.workspace.as_ref() {
+                let session_storage_path = workspace.session_storage_path();
+                match coordinator
+                    .get_session_manager()
+                    .load_session_metadata(&session_storage_path, &session_id)
+                    .await
+                {
+                    Ok(Some(metadata)) => {
+                        if let Some(gate) = metadata
+                            .deep_review_run_manifest
+                            .as_ref()
+                            .and_then(DeepReviewRunManifestGate::from_value)
+                        {
+                            gate.ensure_active(&subagent_type).map_err(|violation| {
+                                BitFunError::tool(format!(
+                                    "DeepReview Task policy violation: {}",
+                                    violation.to_tool_error_message()
+                                ))
+                            })?;
+                        }
+                    }
+                    Ok(None) => {}
+                    Err(error) => {
+                        warn!(
+                            "Failed to load DeepReview session metadata for run-manifest gate: session_id={}, error={}",
+                            session_id, error
+                        );
+                    }
+                }
+            }
             let is_readonly = get_agent_registry()
                 .get_subagent_is_readonly(&subagent_type)
                 .unwrap_or(false);
@@ -476,10 +523,6 @@ impl Tool for TaskTool {
             )?;
             timeout_seconds = policy.effective_timeout_seconds(role, timeout_seconds);
         }
-
-        // Get global coordinator
-        let coordinator = get_global_coordinator()
-            .ok_or_else(|| BitFunError::tool("coordinator not initialized".to_string()))?;
 
         let parent_info = SubagentParentInfo {
             tool_call_id,

@@ -84,6 +84,8 @@ pub struct StartDialogTurnRequest {
     pub turn_id: Option<String>,
     #[serde(default)]
     pub image_contexts: Option<Vec<ImageContextData>>,
+    #[serde(default)]
+    pub user_message_metadata: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Serialize)]
@@ -396,6 +398,7 @@ pub async fn start_dialog_turn(
         workspace_path,
         turn_id,
         image_contexts,
+        user_message_metadata,
     } = request;
 
     let policy = DialogSubmissionPolicy::for_source(DialogTriggerSource::DesktopUi);
@@ -419,6 +422,7 @@ pub async fn start_dialog_turn(
             workspace_path,
             policy,
             None,
+            user_message_metadata,
             resolved_images,
         )
         .await

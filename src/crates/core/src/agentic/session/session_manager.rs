@@ -15,7 +15,8 @@ use crate::service::config::{
     subscribe_config_updates, ConfigUpdateEvent,
 };
 use crate::service::session::{
-    DialogTurnData, DialogTurnKind, ModelRoundData, TextItemData, TurnStatus, UserMessageData,
+    DialogTurnData, DialogTurnKind, ModelRoundData, SessionMetadata, TextItemData, TurnStatus,
+    UserMessageData,
 };
 use crate::service::snapshot::ensure_snapshot_manager_for_workspace;
 use crate::util::errors::{BitFunError, BitFunResult};
@@ -1433,6 +1434,16 @@ impl SessionManager {
                 .collect();
             Ok(summaries)
         }
+    }
+
+    pub async fn load_session_metadata(
+        &self,
+        workspace_path: &Path,
+        session_id: &str,
+    ) -> BitFunResult<Option<SessionMetadata>> {
+        self.persistence_manager
+            .load_session_metadata(workspace_path, session_id)
+            .await
     }
 
     // ============ Dialog Turn Management ============
