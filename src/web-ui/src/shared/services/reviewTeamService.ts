@@ -10,6 +10,7 @@ import {
   type ReviewDomainTag,
   type ReviewTargetClassification,
 } from './reviewTargetClassifier';
+import { evaluateReviewSubagentToolReadiness } from './reviewSubagentCapabilities';
 
 export const DEFAULT_REVIEW_TEAM_ID = 'default-review-team';
 export const DEFAULT_REVIEW_TEAM_CONFIG_PATH = 'ai.review_teams.default';
@@ -194,6 +195,13 @@ export interface ReviewTeamExecutionPolicy {
   maxSameRoleInstances: number;
 }
 
+export type ReviewTeamManifestMemberReason =
+  | 'disabled'
+  | 'unavailable'
+  | 'not_applicable'
+  | 'budget_limited'
+  | 'invalid_tooling';
+
 export type ReviewTokenBudgetMode = 'economy' | 'balanced' | 'thorough';
 
 export interface ReviewTeamTokenBudgetPlan {
@@ -228,6 +236,7 @@ export interface ReviewTeamMember {
   source: 'core' | 'extra';
   subagentSource: SubagentSource;
   accentColor: string;
+  skipReason?: ReviewTeamManifestMemberReason;
 }
 
 export interface ReviewTeam {
@@ -257,7 +266,7 @@ export interface ReviewTeamManifestMember {
   locked: boolean;
   source: ReviewTeamMember['source'];
   subagentSource: ReviewTeamMember['subagentSource'];
-  reason?: 'disabled' | 'unavailable' | 'not_applicable' | 'budget_limited';
+  reason?: ReviewTeamManifestMemberReason;
 }
 
 export interface ReviewTeamRunManifest {
@@ -740,6 +749,10 @@ function buildExtraMember(
   info: SubagentInfo,
   storedConfig: ReviewTeamStoredConfig,
   availableModelIds?: Set<string>,
+  options: {
+    available?: boolean;
+    skipReason?: ReviewTeamManifestMemberReason;
+  } = {},
 ): ReviewTeamMember {
   const strategy = resolveMemberStrategy(storedConfig, info.id);
   const model = resolveMemberModel(
@@ -762,11 +775,12 @@ function buildExtraMember(
       : {}),
     ...strategy,
     enabled: info.enabled,
-    available: true,
+    available: options.available ?? true,
     locked: false,
     source: 'extra',
     subagentSource: info.subagentSource ?? 'builtin',
     accentColor: EXTRA_MEMBER_DEFAULTS.accentColor,
+    ...(options.skipReason ? { skipReason: options.skipReason } : {}),
   };
 }
 
@@ -811,10 +825,23 @@ export function canAddSubagentToReviewTeam(subagentId: string): boolean {
   return !DISALLOWED_REVIEW_TEAM_MEMBER_IDS.has(subagentId);
 }
 
-export function canUseSubagentAsReviewTeamMember(
+function hasReviewTeamExtraMemberShape(
   subagent: Pick<SubagentInfo, 'id' | 'isReadonly' | 'isReview'>,
 ): boolean {
-  return subagent.isReview && subagent.isReadonly && canAddSubagentToReviewTeam(subagent.id);
+  return (
+    subagent.isReview &&
+    subagent.isReadonly &&
+    canAddSubagentToReviewTeam(subagent.id)
+  );
+}
+
+export function canUseSubagentAsReviewTeamMember(
+  subagent: Pick<SubagentInfo, 'id' | 'isReadonly' | 'isReview' | 'defaultTools'>,
+): boolean {
+  return (
+    hasReviewTeamExtraMemberShape(subagent) &&
+    evaluateReviewSubagentToolReadiness(subagent.defaultTools ?? []).readiness !== 'invalid'
+  );
 }
 
 export function resolveDefaultReviewTeam(
@@ -837,8 +864,20 @@ export function resolveDefaultReviewTeam(
   const extraMembers = storedConfig.extra_subagent_ids
     .map((subagentId) => byId.get(subagentId))
     .filter((subagent): subagent is SubagentInfo => Boolean(subagent))
-    .filter(canUseSubagentAsReviewTeamMember)
-    .map((subagent) => buildExtraMember(subagent, storedConfig, availableModelIds));
+    .filter(hasReviewTeamExtraMemberShape)
+    .map((subagent) => {
+      const toolingReadiness = evaluateReviewSubagentToolReadiness(
+        subagent.defaultTools ?? [],
+      );
+      return buildExtraMember(
+        subagent,
+        storedConfig,
+        availableModelIds,
+        toolingReadiness.readiness === 'invalid'
+          ? { available: false, skipReason: 'invalid_tooling' }
+          : undefined,
+      );
+    });
 
   return {
     id: DEFAULT_REVIEW_TEAM_ID,
@@ -1055,7 +1094,10 @@ export function buildEffectiveReviewTeamManifest(
     ...team.extraMembers
       .filter((member) => !member.available || !member.enabled)
       .map((member) =>
-        toManifestMember(member, member.available ? 'disabled' : 'unavailable'),
+        toManifestMember(
+          member,
+          member.skipReason ?? (member.available ? 'disabled' : 'unavailable'),
+        ),
       ),
     ...budgetLimitedExtraMembers.map((member) =>
       toManifestMember(member, 'budget_limited'),
@@ -1215,6 +1257,7 @@ export function buildReviewTeamPromptBlock(
     '- Do not launch skipped_reviewers.',
     '- If a skipped reviewer has reason not_applicable, mention it in coverage notes without treating it as reduced confidence.',
     '- If a skipped reviewer has reason budget_limited, mention the budget mode and the coverage tradeoff.',
+    '- If a skipped reviewer has reason invalid_tooling, report it as a configuration issue and do not reduce confidence in the reviewers that did run.',
     '- If target_resolution is unknown, conditional reviewers may be activated conservatively; report that as coverage context.',
     '- Always run the four locked core reviewer roles first: ReviewBusinessLogic, ReviewPerformance, ReviewSecurity, and ReviewArchitecture.',
     '- Run ReviewJudge only after the reviewer batch finishes, as the quality-gate pass.',

@@ -40,6 +40,8 @@ describe('reviewTeamService', () => {
     vi.clearAllMocks();
   });
 
+  const WORKSPACE_PATH = 'D:/workspace/project-a';
+
   const storedConfigWithExtra = (
     extraSubagentIds: string[] = [],
     overrides: Partial<ReviewTeamStoredConfig> = {},
@@ -61,14 +63,15 @@ describe('reviewTeamService', () => {
     model = 'fast',
     isReadonly = true,
     isReview = id.startsWith('Review'),
+    defaultTools = ['GetFileDiff', 'Read', 'Grep', 'Glob', 'LS'],
   ): SubagentInfo => ({
     id,
     name: id,
     description: `${id} description`,
     isReadonly,
     isReview,
-    toolCount: 1,
-    defaultTools: ['Read'],
+    toolCount: defaultTools.length,
+    defaultTools,
     enabled,
     subagentSource,
     model,
@@ -148,38 +151,38 @@ describe('reviewTeamService', () => {
       subagent('ExtraDisabled', false, 'project', 'fast', true, true),
     ]);
 
-    await prepareDefaultReviewTeamForLaunch('D:/workspace/project-a');
+    await prepareDefaultReviewTeamForLaunch(WORKSPACE_PATH);
 
     expect(SubagentAPI.updateSubagentConfig).toHaveBeenCalledTimes(6);
     expect(SubagentAPI.updateSubagentConfig).toHaveBeenCalledWith({
       subagentId: 'ReviewBusinessLogic',
       enabled: true,
-      workspacePath: 'D:/workspace/project-a',
+      workspacePath: WORKSPACE_PATH,
     });
     expect(SubagentAPI.updateSubagentConfig).toHaveBeenCalledWith({
       subagentId: 'ReviewPerformance',
       enabled: true,
-      workspacePath: 'D:/workspace/project-a',
+      workspacePath: WORKSPACE_PATH,
     });
     expect(SubagentAPI.updateSubagentConfig).toHaveBeenCalledWith({
       subagentId: 'ReviewSecurity',
       enabled: true,
-      workspacePath: 'D:/workspace/project-a',
+      workspacePath: WORKSPACE_PATH,
     });
     expect(SubagentAPI.updateSubagentConfig).toHaveBeenCalledWith({
       subagentId: 'ReviewArchitecture',
       enabled: true,
-      workspacePath: 'D:/workspace/project-a',
+      workspacePath: WORKSPACE_PATH,
     });
     expect(SubagentAPI.updateSubagentConfig).toHaveBeenCalledWith({
       subagentId: 'ReviewFrontend',
       enabled: true,
-      workspacePath: 'D:/workspace/project-a',
+      workspacePath: WORKSPACE_PATH,
     });
     expect(SubagentAPI.updateSubagentConfig).toHaveBeenCalledWith({
       subagentId: 'ReviewJudge',
       enabled: true,
-      workspacePath: 'D:/workspace/project-a',
+      workspacePath: WORKSPACE_PATH,
     });
     expect(SubagentAPI.updateSubagentConfig).not.toHaveBeenCalledWith(
       expect.objectContaining({ subagentId: 'ExtraEnabled' }),
@@ -234,6 +237,72 @@ describe('reviewTeamService', () => {
     expect(promptBlock).not.toContain('ExtraWritableReview');
   });
 
+  it('requires extra review members to have the minimum review tools', () => {
+    const readyReviewExtra = subagent('ExtraReadyReview', true, 'user', 'fast', true, true);
+    const missingDiffExtra = subagent(
+      'ExtraMissingDiff',
+      true,
+      'user',
+      'fast',
+      true,
+      true,
+      ['Read', 'Grep'],
+    );
+    const missingReadExtra = subagent(
+      'ExtraMissingRead',
+      true,
+      'project',
+      'fast',
+      true,
+      true,
+      ['GetFileDiff', 'Grep'],
+    );
+
+    expect(canUseSubagentAsReviewTeamMember(readyReviewExtra)).toBe(true);
+    expect(canUseSubagentAsReviewTeamMember(missingDiffExtra)).toBe(false);
+    expect(canUseSubagentAsReviewTeamMember(missingReadExtra)).toBe(false);
+
+    const team = resolveDefaultReviewTeam(
+      [
+        ...coreSubagents(),
+        readyReviewExtra,
+        missingDiffExtra,
+        missingReadExtra,
+      ],
+      storedConfigWithExtra(['ExtraReadyReview', 'ExtraMissingDiff', 'ExtraMissingRead']),
+    );
+
+    expect(
+      team.extraMembers
+        .filter((member) => member.available)
+        .map((member) => member.subagentId),
+    ).toEqual(['ExtraReadyReview']);
+
+    const manifest = buildEffectiveReviewTeamManifest(team);
+
+    expect(manifest.enabledExtraReviewers.map((member) => member.subagentId)).toEqual([
+      'ExtraReadyReview',
+    ]);
+    expect(manifest.skippedReviewers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          subagentId: 'ExtraMissingDiff',
+          reason: 'invalid_tooling',
+        }),
+        expect.objectContaining({
+          subagentId: 'ExtraMissingRead',
+          reason: 'invalid_tooling',
+        }),
+      ]),
+    );
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
+    expect(promptBlock).toContain('- ExtraMissingDiff: invalid_tooling');
+    expect(promptBlock).toContain('- ExtraMissingRead: invalid_tooling');
+    expect(promptBlock).not.toContain('subagent_type: ExtraMissingDiff');
+    expect(promptBlock).not.toContain('subagent_type: ExtraMissingRead');
+  });
+
   it('builds an explicit run manifest for enabled, skipped, and quality-gate reviewers', () => {
     const team = resolveDefaultReviewTeam(
       [
@@ -245,13 +314,13 @@ describe('reviewTeamService', () => {
     );
 
     const manifest = buildEffectiveReviewTeamManifest(team, {
-      workspacePath: 'D:/workspace/project-a',
+      workspacePath: WORKSPACE_PATH,
       policySource: 'default-review-team-config',
     });
 
     expect(manifest.reviewMode).toBe('deep');
     expect(manifest.strategyLevel).toBe('normal');
-    expect(manifest.workspacePath).toBe('D:/workspace/project-a');
+    expect(manifest.workspacePath).toBe(WORKSPACE_PATH);
     expect(manifest.policySource).toBe('default-review-team-config');
     expect(manifest.coreReviewers.map((member) => member.subagentId)).toEqual([
       'ReviewBusinessLogic',
@@ -410,7 +479,7 @@ describe('reviewTeamService', () => {
     );
 
     const manifest = buildEffectiveReviewTeamManifest(team, {
-      workspacePath: 'D:/workspace/project-a',
+      workspacePath: WORKSPACE_PATH,
     });
 
     expect(manifest.strategyLevel).toBe('quick');
@@ -517,14 +586,14 @@ describe('reviewTeamService', () => {
     const promptBlock = buildReviewTeamPromptBlock(
       team,
       buildEffectiveReviewTeamManifest(team, {
-        workspacePath: 'D:/workspace/project-a',
+        workspacePath: WORKSPACE_PATH,
       }),
     );
 
     expect(promptBlock).toContain('Run manifest:');
     expect(promptBlock).toContain('target_resolution: unknown');
     expect(promptBlock).toContain('- team_strategy: normal');
-    expect(promptBlock).toContain('- workspace_path: D:/workspace/project-a');
+    expect(promptBlock).toContain(`- workspace_path: ${WORKSPACE_PATH}`);
     expect(promptBlock).toContain('quality_gate_reviewer: ReviewJudge');
     expect(promptBlock).toContain('enabled_extra_reviewers: ExtraEnabled');
     expect(promptBlock).toContain('skipped_reviewers:');
