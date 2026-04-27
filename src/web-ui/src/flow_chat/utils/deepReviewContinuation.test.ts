@@ -167,4 +167,41 @@ describe('deepReviewContinuation', () => {
     expect(prompt).toContain('ReviewPerformance: completed');
     expect(prompt).toContain('ReviewSecurity: timed_out');
   });
+
+  it('includes persisted manifest skips when continuing an interrupted review', () => {
+    const session = createDeepReviewSession({
+      error: 'Timeout',
+      deepReviewRunManifest: {
+        skippedReviewers: [
+          {
+            subagentId: 'ReviewFrontend',
+            displayName: 'Frontend Reviewer',
+            reason: 'not_applicable',
+          },
+        ],
+      },
+      dialogTurns: [
+        {
+          id: 'turn-1',
+          sessionId: 'deep-review-session',
+          timestamp: 1,
+          status: 'error',
+          userMessage: {
+            id: 'user-1',
+            content: 'Original command:\n/DeepReview review latest commit',
+            timestamp: 1,
+          },
+          startTime: 1,
+          modelRounds: [],
+          error: 'Timeout',
+        },
+      ],
+    } as Partial<Session>);
+
+    const interruption = deriveDeepReviewInterruption(session, { category: 'timeout' });
+    const prompt = buildDeepReviewContinuationPrompt(interruption!);
+
+    expect(prompt).toContain('Do not run reviewers skipped as not_applicable.');
+    expect(prompt).toContain('ReviewFrontend: skipped (not_applicable)');
+  });
 });

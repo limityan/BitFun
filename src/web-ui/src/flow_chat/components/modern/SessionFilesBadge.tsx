@@ -26,7 +26,7 @@ import { createLogger } from '@/shared/utils/logger';
 import { createBtwChildSession } from '../../services/BtwThreadService';
 import { openBtwSessionInAuxPane } from '../../services/openBtwSession';
 import {
-  buildDeepReviewPromptFromSessionFiles,
+  buildDeepReviewLaunchFromSessionFiles,
   launchDeepReviewSession,
 } from '../../services/DeepReviewService';
 import { insertReviewSessionSummaryMarker } from '../../services/ReviewSessionMarkerService';
@@ -644,7 +644,7 @@ export const SessionFilesBadge: React.FC<SessionFilesBadgeProps> = ({
         });
 
     try {
-      const prompt = await buildDeepReviewPromptFromSessionFiles(
+      const { prompt, runManifest } = await buildDeepReviewLaunchFromSessionFiles(
         reviewableFilePaths,
         undefined,
         currentWorkspace?.rootPath,
@@ -655,6 +655,7 @@ export const SessionFilesBadge: React.FC<SessionFilesBadgeProps> = ({
         workspacePath: currentWorkspace?.rootPath,
         prompt,
         displayMessage,
+        runManifest,
         childSessionName: t('sessionFilesBadge.deepReview.threadTitle', {
           defaultValue: 'Deep review',
         }),

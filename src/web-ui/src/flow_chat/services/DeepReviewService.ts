@@ -14,6 +14,7 @@ import {
   buildEffectiveReviewTeamManifest,
   buildReviewTeamPromptBlock,
   prepareDefaultReviewTeamForLaunch,
+  type ReviewTeamRunManifest,
 } from '@/shared/services/reviewTeamService';
 import {
   classifyReviewTargetFromFiles,
@@ -34,6 +35,12 @@ interface LaunchDeepReviewSessionParams {
   displayMessage: string;
   childSessionName?: string;
   requestedFiles?: string[];
+  runManifest?: ReviewTeamRunManifest;
+}
+
+export interface DeepReviewLaunchPrompt {
+  prompt: string;
+  runManifest: ReviewTeamRunManifest;
 }
 
 type DeepReviewLaunchStep =
@@ -323,11 +330,11 @@ async function resolveSlashCommandReviewTarget(
   );
 }
 
-export async function buildDeepReviewPromptFromSessionFiles(
+export async function buildDeepReviewLaunchFromSessionFiles(
   filePaths: string[],
   extraContext?: string,
   workspacePath?: string,
-): Promise<string> {
+): Promise<DeepReviewLaunchPrompt> {
   const team = await prepareDefaultReviewTeamForLaunch(workspacePath);
   const target = classifyReviewTargetFromFiles(filePaths, 'session_files');
   const manifest = buildEffectiveReviewTeamManifest(team, { workspacePath, target });
@@ -336,7 +343,7 @@ export async function buildDeepReviewPromptFromSessionFiles(
     ? `User-provided focus:\n${extraContext.trim()}`
     : 'User-provided focus:\nNone.';
 
-  return [
+  const prompt = [
     'Run a deep code review using the parallel Code Review Team.',
     'Review scope: ONLY inspect the following files modified in this session.',
     fileList,
@@ -344,12 +351,26 @@ export async function buildDeepReviewPromptFromSessionFiles(
     buildReviewTeamPromptBlock(team, manifest),
     'Keep the scope tight to the listed files unless a directly-related dependency must be read to confirm a finding.',
   ].join('\n\n');
+
+  return { prompt, runManifest: manifest };
 }
 
-export async function buildDeepReviewPromptFromSlashCommand(
-  commandText: string,
+export async function buildDeepReviewPromptFromSessionFiles(
+  filePaths: string[],
+  extraContext?: string,
   workspacePath?: string,
 ): Promise<string> {
+  return (await buildDeepReviewLaunchFromSessionFiles(
+    filePaths,
+    extraContext,
+    workspacePath,
+  )).prompt;
+}
+
+export async function buildDeepReviewLaunchFromSlashCommand(
+  commandText: string,
+  workspacePath?: string,
+): Promise<DeepReviewLaunchPrompt> {
   const team = await prepareDefaultReviewTeamForLaunch(workspacePath);
   const trimmed = commandText.trim();
   const extraContext = getDeepReviewCommandFocus(trimmed);
@@ -359,7 +380,7 @@ export async function buildDeepReviewPromptFromSlashCommand(
     ? `User-provided focus or target:\n${extraContext}`
     : 'User-provided focus or target:\nNone. If no explicit target is given, review the current workspace changes relative to HEAD.';
 
-  return [
+  const prompt = [
     'Run a deep code review using the parallel Code Review Team.',
     'Interpret the user command below to determine the review target.',
     'If the user mentions a commit, ref, branch, or explicit file set, review that target.',
@@ -368,6 +389,15 @@ export async function buildDeepReviewPromptFromSlashCommand(
     contextBlock,
     buildReviewTeamPromptBlock(team, manifest),
   ].join('\n\n');
+
+  return { prompt, runManifest: manifest };
+}
+
+export async function buildDeepReviewPromptFromSlashCommand(
+  commandText: string,
+  workspacePath?: string,
+): Promise<string> {
+  return (await buildDeepReviewLaunchFromSlashCommand(commandText, workspacePath)).prompt;
 }
 
 export async function launchDeepReviewSession({
@@ -377,6 +407,7 @@ export async function launchDeepReviewSession({
   displayMessage,
   childSessionName = 'Deep review',
   requestedFiles = [],
+  runManifest,
 }: LaunchDeepReviewSessionParams): Promise<{ childSessionId: string }> {
   let childSessionId: string | null = null;
   let launchStep: DeepReviewLaunchStep = 'create_child_session';
@@ -393,6 +424,7 @@ export async function launchDeepReviewSession({
       autoCompact: true,
       enableContextCompression: true,
       addMarker: false,
+      deepReviewRunManifest: runManifest,
     });
     childSessionId = created.childSessionId;
 

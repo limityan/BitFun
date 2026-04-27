@@ -24,6 +24,7 @@ export interface DeepReviewInterruption {
   canResume: boolean;
   recommendedActions: AiErrorAction[];
   reviewers: DeepReviewReviewerProgress[];
+  runManifest?: Session['deepReviewRunManifest'];
 }
 
 const RESUME_BLOCKING_CATEGORIES = new Set([
@@ -60,6 +61,7 @@ export function deriveDeepReviewInterruption(
     canResume,
     recommendedActions: presentation.actions,
     reviewers: collectReviewerProgress(session),
+    runManifest: session.deepReviewRunManifest,
   };
 }
 
@@ -72,12 +74,27 @@ export function buildDeepReviewContinuationPrompt(interruption: DeepReviewInterr
         })
         .join('\n')
     : '- No reliable reviewer progress was detected. Reconstruct progress from this session before deciding what to rerun.';
+  const skippedReviewers = interruption.runManifest?.skippedReviewers ?? [];
+  const manifestSkippedReviewers = formatManifestSkippedReviewers(skippedReviewers);
+  const manifestRules = skippedReviewers.some((reviewer) => reviewer.reason === 'not_applicable')
+    ? [
+        '- Do not run reviewers skipped as not_applicable.',
+      ]
+    : [];
+  const manifestBlock = manifestSkippedReviewers.length
+    ? [
+        '',
+        'Run manifest reviewer skips:',
+        manifestSkippedReviewers.join('\n'),
+      ]
+    : [];
 
   return [
     'Continue the interrupted Deep Review in this same session.',
     '',
     'Recovery rules:',
     '- Do not restart completed reviewer work unless the existing result is clearly incomplete or unusable.',
+    ...manifestRules,
     '- Re-run only missing, failed, timed-out, or cancelled reviewers when enough context exists.',
     '- If reviewer coverage remains incomplete, say that explicitly and mark the final report as lower confidence.',
     '- Run ReviewJudge before the final submit_code_review result when reviewer findings exist.',
@@ -87,12 +104,23 @@ export function buildDeepReviewContinuationPrompt(interruption: DeepReviewInterr
     '',
     'Known reviewer progress:',
     reviewerLines,
+    ...manifestBlock,
     '',
     'Last error:',
     `- category: ${interruption.errorDetail.category ?? 'unknown'}`,
     interruption.errorDetail.providerCode ? `- provider code: ${interruption.errorDetail.providerCode}` : '- provider code: unknown',
     interruption.errorDetail.requestId ? `- request id: ${interruption.errorDetail.requestId}` : '- request id: unknown',
   ].join('\n');
+}
+
+function formatManifestSkippedReviewers(
+  skippedReviewers: NonNullable<Session['deepReviewRunManifest']>['skippedReviewers'],
+): string[] {
+  return skippedReviewers.map((reviewer) => {
+    const reviewerName = reviewer.subagentId || reviewer.displayName;
+    const reason = reviewer.reason ?? 'unknown';
+    return `- ${reviewerName}: skipped (${reason})`;
+  });
 }
 
 function findOriginalTarget(session: Session): string {

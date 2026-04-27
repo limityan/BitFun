@@ -36,7 +36,7 @@ import { startBtwThread } from '../services/BtwThreadService';
 import { FlowChatManager } from '../services/FlowChatManager';
 import {
   DEEP_REVIEW_SLASH_COMMAND,
-  buildDeepReviewPromptFromSlashCommand,
+  buildDeepReviewLaunchFromSlashCommand,
   isDeepReviewSlashCommand,
   launchDeepReviewSession,
 } from '../services/DeepReviewService';
@@ -1429,7 +1429,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     setSlashCommandState({ isActive: false, kind: 'modes', query: '', selectedIndex: 0 });
 
     try {
-      const prompt = await buildDeepReviewPromptFromSlashCommand(
+      const { prompt, runManifest } = await buildDeepReviewLaunchFromSlashCommand(
         message,
         effectiveTargetSession.workspacePath,
       );
@@ -1439,6 +1439,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         workspacePath: effectiveTargetSession.workspacePath,
         prompt,
         displayMessage: message,
+        runManifest,
         childSessionName: t('chatInput.deepreviewThreadTitle', {
           defaultValue: 'Deep review',
         }),

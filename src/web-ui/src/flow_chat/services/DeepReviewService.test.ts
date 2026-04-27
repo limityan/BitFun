@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import {
   DEEP_REVIEW_SLASH_COMMAND,
+  buildDeepReviewLaunchFromSlashCommand,
   buildDeepReviewPromptFromSessionFiles,
   buildDeepReviewPromptFromSlashCommand,
   isDeepReviewSlashCommand,
@@ -227,6 +228,19 @@ describe('DeepReviewService slash command', () => {
     );
   });
 
+  it('returns the run manifest with the slash-command launch prompt', async () => {
+    const runManifest = { reviewMode: 'deep', skippedReviewers: [] };
+    vi.mocked(buildEffectiveReviewTeamManifest).mockReturnValueOnce(runManifest as any);
+
+    const result = await buildDeepReviewLaunchFromSlashCommand(
+      '/DeepReview review commit abc123',
+      'D:\\workspace\\repo',
+    );
+
+    expect(result.prompt).toContain('Original command:\n/DeepReview review commit abc123');
+    expect(result.runManifest).toBe(runManifest);
+  });
+
   it('classifies session files before building the review team manifest', async () => {
     await buildDeepReviewPromptFromSessionFiles(
       ['src/web-ui/src/App.tsx'],
@@ -289,6 +303,29 @@ describe('launchDeepReviewSession', () => {
         parentSessionId: 'parent-123',
         childSessionId: 'child-123',
         kind: 'deep_review',
+      }),
+    );
+  });
+
+  it('passes the run manifest into child session creation', async () => {
+    const runManifest = { reviewMode: 'deep', skippedReviewers: [] };
+    mockCreateBtwChildSession.mockResolvedValue({
+      childSessionId: 'child-123',
+      parentDialogTurnId: 'turn-456',
+    });
+    mockSendMessage.mockResolvedValue(undefined);
+
+    await launchDeepReviewSession({
+      parentSessionId: 'parent-123',
+      workspacePath: 'D:\\workspace\\repo',
+      prompt: 'Review these files',
+      displayMessage: 'Deep review started',
+      runManifest: runManifest as any,
+    });
+
+    expect(mockCreateBtwChildSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        deepReviewRunManifest: runManifest,
       }),
     );
   });
