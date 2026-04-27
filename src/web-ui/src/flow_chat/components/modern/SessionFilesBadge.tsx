@@ -27,6 +27,7 @@ import { createBtwChildSession } from '../../services/BtwThreadService';
 import { openBtwSessionInAuxPane } from '../../services/openBtwSession';
 import {
   buildDeepReviewLaunchFromSessionFiles,
+  buildDeepReviewPreviewFromSessionFiles,
   launchDeepReviewSession,
 } from '../../services/DeepReviewService';
 import { insertReviewSessionSummaryMarker } from '../../services/ReviewSessionMarkerService';
@@ -612,24 +613,6 @@ export const SessionFilesBadge: React.FC<SessionFilesBadgeProps> = ({
       return;
     }
 
-    const confirmed = await confirmDeepReviewLaunch();
-    if (!confirmed) {
-      return;
-    }
-    setLaunchingReviewMode('deep_review');
-
-    if (skippedCount > 0) {
-      notificationService.info(
-        t('sessionFilesBadge.review.filteredNotice', {
-          included: reviewableFilePaths.length,
-          skipped: skippedCount,
-          defaultValue:
-            'Review will analyze {{included}} files and skip {{skipped}} excluded files such as lock, generated, or binary assets.',
-        }),
-        { duration: 3500 }
-      );
-    }
-
     const fileList = reviewableFilePaths.map(p => `- ${p}`).join('\n');
     const displayMessage = skippedCount > 0
       ? t('sessionFilesBadge.deepReview.displayMessageFiltered', {
@@ -644,6 +627,28 @@ export const SessionFilesBadge: React.FC<SessionFilesBadgeProps> = ({
         });
 
     try {
+      const preview = await buildDeepReviewPreviewFromSessionFiles(
+        reviewableFilePaths,
+        currentWorkspace?.rootPath,
+      );
+      const confirmed = await confirmDeepReviewLaunch(preview);
+      if (!confirmed) {
+        return;
+      }
+      setLaunchingReviewMode('deep_review');
+
+      if (skippedCount > 0) {
+        notificationService.info(
+          t('sessionFilesBadge.review.filteredNotice', {
+            included: reviewableFilePaths.length,
+            skipped: skippedCount,
+            defaultValue:
+              'Review will analyze {{included}} files and skip {{skipped}} excluded files such as lock, generated, or binary assets.',
+          }),
+          { duration: 3500 }
+        );
+      }
+
       const { prompt, runManifest } = await buildDeepReviewLaunchFromSessionFiles(
         reviewableFilePaths,
         undefined,

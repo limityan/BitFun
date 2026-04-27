@@ -13,6 +13,7 @@ import { insertReviewSessionSummaryMarker } from './ReviewSessionMarkerService';
 import {
   buildEffectiveReviewTeamManifest,
   buildReviewTeamPromptBlock,
+  loadDefaultReviewTeam,
   prepareDefaultReviewTeamForLaunch,
   type ReviewTeamRunManifest,
 } from '@/shared/services/reviewTeamService';
@@ -355,6 +356,15 @@ export async function buildDeepReviewLaunchFromSessionFiles(
   return { prompt, runManifest: manifest };
 }
 
+export async function buildDeepReviewPreviewFromSessionFiles(
+  filePaths: string[],
+  workspacePath?: string,
+): Promise<ReviewTeamRunManifest> {
+  const team = await loadDefaultReviewTeam(workspacePath);
+  const target = classifyReviewTargetFromFiles(filePaths, 'session_files');
+  return buildEffectiveReviewTeamManifest(team, { workspacePath, target });
+}
+
 export async function buildDeepReviewPromptFromSessionFiles(
   filePaths: string[],
   extraContext?: string,
@@ -391,6 +401,17 @@ export async function buildDeepReviewLaunchFromSlashCommand(
   ].join('\n\n');
 
   return { prompt, runManifest: manifest };
+}
+
+export async function buildDeepReviewPreviewFromSlashCommand(
+  commandText: string,
+  workspacePath?: string,
+): Promise<ReviewTeamRunManifest> {
+  const team = await loadDefaultReviewTeam(workspacePath);
+  const trimmed = commandText.trim();
+  const extraContext = getDeepReviewCommandFocus(trimmed);
+  const target = await resolveSlashCommandReviewTarget(extraContext, workspacePath);
+  return buildEffectiveReviewTeamManifest(team, { workspacePath, target });
 }
 
 export async function buildDeepReviewPromptFromSlashCommand(

@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import {
   DEEP_REVIEW_SLASH_COMMAND,
   buildDeepReviewLaunchFromSlashCommand,
+  buildDeepReviewPreviewFromSessionFiles,
   buildDeepReviewPromptFromSessionFiles,
   buildDeepReviewPromptFromSlashCommand,
   isDeepReviewSlashCommand,
@@ -18,6 +19,8 @@ const mockDiscardLocalSession = vi.fn();
 const mockInsertReviewSessionSummaryMarker = vi.fn();
 const mockGitGetStatus = vi.fn();
 const mockGitGetChangedFiles = vi.fn();
+const mockLoadDefaultReviewTeam = vi.fn();
+const mockPrepareDefaultReviewTeamForLaunch = vi.fn();
 
 vi.mock('@/infrastructure/api', () => ({
   agentAPI: {
@@ -59,7 +62,8 @@ vi.mock('./ReviewSessionMarkerService', () => ({
 }));
 
 vi.mock('@/shared/services/reviewTeamService', () => ({
-  prepareDefaultReviewTeamForLaunch: vi.fn(async () => ({ members: [] })),
+  loadDefaultReviewTeam: (...args: any[]) => mockLoadDefaultReviewTeam(...args),
+  prepareDefaultReviewTeamForLaunch: (...args: any[]) => mockPrepareDefaultReviewTeamForLaunch(...args),
   buildEffectiveReviewTeamManifest: vi.fn(() => ({ reviewers: [] })),
   buildReviewTeamPromptBlock: vi.fn(() => 'Review team manifest.'),
 }));
@@ -67,6 +71,8 @@ vi.mock('@/shared/services/reviewTeamService', () => ({
 describe('DeepReviewService slash command', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockLoadDefaultReviewTeam.mockResolvedValue({ members: [] });
+    mockPrepareDefaultReviewTeamForLaunch.mockResolvedValue({ members: [] });
     mockGitGetStatus.mockResolvedValue({
       staged: [],
       unstaged: [],
@@ -255,6 +261,34 @@ describe('DeepReviewService slash command', () => {
         target: expect.objectContaining({
           resolution: 'resolved',
           tags: expect.arrayContaining(['frontend_ui']),
+        }),
+      }),
+    );
+  });
+
+  it('builds a read-only session-file preview without preparing launch state', async () => {
+    const runManifest = {
+      reviewMode: 'deep',
+      skippedReviewers: [{ subagentId: 'ReviewFrontend', reason: 'not_applicable' }],
+    };
+    vi.mocked(buildEffectiveReviewTeamManifest).mockReturnValueOnce(runManifest as any);
+
+    const result = await buildDeepReviewPreviewFromSessionFiles(
+      ['src/crates/core/src/service/config/types.rs'],
+      'D:\\workspace\\repo',
+    );
+
+    expect(result).toBe(runManifest);
+    expect(mockLoadDefaultReviewTeam).toHaveBeenCalledWith('D:\\workspace\\repo');
+    expect(mockPrepareDefaultReviewTeamForLaunch).not.toHaveBeenCalled();
+    expect(buildEffectiveReviewTeamManifest).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        workspacePath: 'D:\\workspace\\repo',
+        target: expect.objectContaining({
+          source: 'session_files',
+          resolution: 'resolved',
+          tags: expect.arrayContaining(['backend_core']),
         }),
       }),
     );

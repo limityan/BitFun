@@ -37,6 +37,7 @@ import { FlowChatManager } from '../services/FlowChatManager';
 import {
   DEEP_REVIEW_SLASH_COMMAND,
   buildDeepReviewLaunchFromSlashCommand,
+  buildDeepReviewPreviewFromSlashCommand,
   isDeepReviewSlashCommand,
   launchDeepReviewSession,
 } from '../services/DeepReviewService';
@@ -1412,23 +1413,28 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       return;
     }
 
-    const confirmed = await confirmDeepReviewLaunch();
-    if (!confirmed) {
-      return;
-    }
-
     const originalPendingLargePastes = { ...pendingLargePastesRef.current };
-    if (effectiveTargetSessionId) {
-      addToHistory(effectiveTargetSessionId, message);
-    }
-    setHistoryIndex(-1);
-    setSavedDraft('');
-    dispatchInput({ type: 'CLEAR_VALUE' });
-    clearPendingLargePastes();
-    setQueuedInput(null);
-    setSlashCommandState({ isActive: false, kind: 'modes', query: '', selectedIndex: 0 });
 
     try {
+      const preview = await buildDeepReviewPreviewFromSlashCommand(
+        message,
+        effectiveTargetSession.workspacePath,
+      );
+      const confirmed = await confirmDeepReviewLaunch(preview);
+      if (!confirmed) {
+        return;
+      }
+
+      if (effectiveTargetSessionId) {
+        addToHistory(effectiveTargetSessionId, message);
+      }
+      setHistoryIndex(-1);
+      setSavedDraft('');
+      dispatchInput({ type: 'CLEAR_VALUE' });
+      clearPendingLargePastes();
+      setQueuedInput(null);
+      setSlashCommandState({ isActive: false, kind: 'modes', query: '', selectedIndex: 0 });
+
       const { prompt, runManifest } = await buildDeepReviewLaunchFromSlashCommand(
         message,
         effectiveTargetSession.workspacePath,
