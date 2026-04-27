@@ -404,7 +404,7 @@ describe('launchDeepReviewSession', () => {
         prompt: 'Review these files',
         displayMessage: 'Deep review started',
       }),
-    ).rejects.toThrow('Session creation failed');
+    ).rejects.toThrow('deepReviewActionBar.launchError.unknown');
 
     expect(mockCloseBtwSessionInAuxPane).not.toHaveBeenCalled();
     expect(mockDeleteSession).not.toHaveBeenCalled();

@@ -24,6 +24,7 @@ import {
   type ReviewTargetClassification,
 } from '@/shared/services/reviewTargetClassifier';
 import { DEEP_REVIEW_COMMAND_RE } from '../utils/deepReviewConstants';
+import { classifyLaunchError } from '../utils/deepReviewExperience';
 
 const log = createLogger('DeepReviewService');
 
@@ -492,7 +493,11 @@ export async function launchDeepReviewSession({
     return { childSessionId };
   } catch (error) {
     if (!childSessionId) {
-      throw error;
+      const classified = classifyLaunchError(launchStep, error);
+      const friendlyError = new Error(classified.messageKey);
+      (friendlyError as Error & { launchErrorCategory?: string; launchErrorActions?: string[] }).launchErrorCategory = classified.category;
+      (friendlyError as Error & { launchErrorCategory?: string; launchErrorActions?: string[] }).launchErrorActions = classified.actions;
+      throw friendlyError;
     }
 
     const cleanupResult = await cleanupFailedDeepReviewLaunch(childSessionId, launchStep);
