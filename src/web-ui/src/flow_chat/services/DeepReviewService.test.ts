@@ -1,10 +1,12 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import {
   DEEP_REVIEW_SLASH_COMMAND,
+  buildDeepReviewPromptFromSessionFiles,
   buildDeepReviewPromptFromSlashCommand,
   isDeepReviewSlashCommand,
   launchDeepReviewSession,
 } from './DeepReviewService';
+import { buildEffectiveReviewTeamManifest } from '@/shared/services/reviewTeamService';
 
 const mockDeleteSession = vi.fn();
 const mockCreateBtwChildSession = vi.fn();
@@ -13,10 +15,16 @@ const mockCloseBtwSessionInAuxPane = vi.fn();
 const mockSendMessage = vi.fn();
 const mockDiscardLocalSession = vi.fn();
 const mockInsertReviewSessionSummaryMarker = vi.fn();
+const mockGitGetStatus = vi.fn();
+const mockGitGetChangedFiles = vi.fn();
 
 vi.mock('@/infrastructure/api', () => ({
   agentAPI: {
     deleteSession: (...args: any[]) => mockDeleteSession(...args),
+  },
+  gitAPI: {
+    getStatus: (...args: any[]) => mockGitGetStatus(...args),
+    getChangedFiles: (...args: any[]) => mockGitGetChangedFiles(...args),
   },
 }));
 
@@ -56,6 +64,20 @@ vi.mock('@/shared/services/reviewTeamService', () => ({
 }));
 
 describe('DeepReviewService slash command', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGitGetStatus.mockResolvedValue({
+      staged: [],
+      unstaged: [],
+      untracked: [],
+      conflicts: [],
+      current_branch: 'main',
+      ahead: 0,
+      behind: 0,
+    });
+    mockGitGetChangedFiles.mockResolvedValue([]);
+  });
+
   it('uses /DeepReview as the canonical command', () => {
     expect(DEEP_REVIEW_SLASH_COMMAND).toBe('/DeepReview');
   });
@@ -76,6 +98,152 @@ describe('DeepReviewService slash command', () => {
     expect(prompt).toContain('Original command:\n/DeepReview review commit abc123 for security');
     expect(prompt).toContain('User-provided focus or target:\nreview commit abc123 for security');
     expect(prompt).not.toContain('User-provided focus or target:\n/DeepReview');
+  });
+
+  it('classifies explicit slash-command file paths before building the review team manifest', async () => {
+    await buildDeepReviewPromptFromSlashCommand(
+      '/DeepReview src/web-ui/src/App.tsx src/crates/core/src/service/config/types.rs for regressions',
+      'D:\\workspace\\repo',
+    );
+
+    expect(buildEffectiveReviewTeamManifest).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        workspacePath: 'D:\\workspace\\repo',
+        target: expect.objectContaining({
+          source: 'slash_command_explicit_files',
+          resolution: 'resolved',
+          tags: expect.arrayContaining(['frontend_ui', 'backend_core']),
+        }),
+      }),
+    );
+  });
+
+  it('classifies workspace diff files for a slash command without an explicit target', async () => {
+    mockGitGetStatus.mockResolvedValueOnce({
+      staged: [{ path: 'src/web-ui/src/App.tsx', status: 'modified' }],
+      unstaged: [{ path: 'src/crates/core/src/service/config/types.rs', status: 'modified' }],
+      untracked: ['src/web-ui/src/newFeature.tsx'],
+      conflicts: [],
+      current_branch: 'main',
+      ahead: 0,
+      behind: 0,
+    });
+
+    await buildDeepReviewPromptFromSlashCommand(
+      '/DeepReview',
+      'D:\\workspace\\repo',
+    );
+
+    expect(mockGitGetStatus).toHaveBeenCalledWith('D:\\workspace\\repo');
+    expect(buildEffectiveReviewTeamManifest).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        workspacePath: 'D:\\workspace\\repo',
+        target: expect.objectContaining({
+          source: 'workspace_diff',
+          resolution: 'resolved',
+          tags: expect.arrayContaining(['frontend_ui', 'backend_core']),
+        }),
+      }),
+    );
+  });
+
+  it('classifies commit target files through the git changed-files API', async () => {
+    mockGitGetChangedFiles.mockResolvedValueOnce([
+      {
+        path: 'src/web-ui/src/App.tsx',
+        old_path: undefined,
+        status: 'modified',
+      },
+    ]);
+
+    await buildDeepReviewPromptFromSlashCommand(
+      '/DeepReview review commit abc123',
+      'D:\\workspace\\repo',
+    );
+
+    expect(mockGitGetChangedFiles).toHaveBeenCalledWith('D:\\workspace\\repo', {
+      source: 'abc123^',
+      target: 'abc123',
+    });
+    expect(buildEffectiveReviewTeamManifest).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        target: expect.objectContaining({
+          source: 'slash_command_git_ref',
+          resolution: 'resolved',
+          tags: expect.arrayContaining(['frontend_ui']),
+        }),
+      }),
+    );
+  });
+
+  it('classifies explicit ref ranges through the git changed-files API', async () => {
+    mockGitGetChangedFiles.mockResolvedValueOnce([
+      {
+        path: 'src/crates/core/src/service/config/types.rs',
+        old_path: undefined,
+        status: 'modified',
+      },
+    ]);
+
+    await buildDeepReviewPromptFromSlashCommand(
+      '/DeepReview review main..feature/deep-review',
+      'D:\\workspace\\repo',
+    );
+
+    expect(mockGitGetChangedFiles).toHaveBeenCalledWith('D:\\workspace\\repo', {
+      source: 'main',
+      target: 'feature/deep-review',
+    });
+    expect(buildEffectiveReviewTeamManifest).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        target: expect.objectContaining({
+          source: 'slash_command_git_ref',
+          resolution: 'resolved',
+          tags: expect.arrayContaining(['backend_core']),
+        }),
+      }),
+    );
+  });
+
+  it('keeps git targets conservative when no workspace is available', async () => {
+    await buildDeepReviewPromptFromSlashCommand(
+      '/DeepReview review commit abc123',
+    );
+
+    expect(mockGitGetChangedFiles).not.toHaveBeenCalled();
+    expect(buildEffectiveReviewTeamManifest).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        target: expect.objectContaining({
+          source: 'slash_command_git_ref',
+          resolution: 'unknown',
+          tags: ['unknown'],
+        }),
+      }),
+    );
+  });
+
+  it('classifies session files before building the review team manifest', async () => {
+    await buildDeepReviewPromptFromSessionFiles(
+      ['src/web-ui/src/App.tsx'],
+      undefined,
+      'D:\\workspace\\repo',
+    );
+
+    expect(buildEffectiveReviewTeamManifest).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        workspacePath: 'D:\\workspace\\repo',
+        target: expect.objectContaining({
+          resolution: 'resolved',
+          tags: expect.arrayContaining(['frontend_ui']),
+        }),
+      }),
+    );
   });
 });
 

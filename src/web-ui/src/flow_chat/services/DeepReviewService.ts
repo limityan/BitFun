@@ -1,4 +1,9 @@
-import { agentAPI } from '@/infrastructure/api';
+import { agentAPI, gitAPI } from '@/infrastructure/api';
+import type {
+  GitChangedFile,
+  GitChangedFilesParams,
+  GitStatus,
+} from '@/infrastructure/api/service-api/GitAPI';
 import { createLogger } from '@/shared/utils/logger';
 import { createBtwChildSession } from './BtwThreadService';
 import { closeBtwSessionInAuxPane, openBtwSessionInAuxPane } from './openBtwSession';
@@ -10,6 +15,12 @@ import {
   buildReviewTeamPromptBlock,
   prepareDefaultReviewTeamForLaunch,
 } from '@/shared/services/reviewTeamService';
+import {
+  classifyReviewTargetFromFiles,
+  createUnknownReviewTargetClassification,
+  normalizeReviewPath,
+  type ReviewTargetClassification,
+} from '@/shared/services/reviewTargetClassifier';
 import { DEEP_REVIEW_COMMAND_RE } from '../utils/deepReviewConstants';
 
 const log = createLogger('DeepReviewService');
@@ -155,13 +166,171 @@ function getDeepReviewCommandFocus(commandText: string): string {
   return commandText.trim().replace(/^\/DeepReview\b/, '').trim();
 }
 
+const EXPLICIT_REVIEW_FILE_EXTENSIONS = new Set([
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '.rs',
+  '.json',
+  '.scss',
+  '.css',
+  '.md',
+  '.toml',
+  '.yaml',
+  '.yml',
+]);
+
+function cleanPotentialFileToken(token: string): string {
+  return token
+    .trim()
+    .replace(/^[`"']+/, '')
+    .replace(/[`"',;:]+$/, '');
+}
+
+function getPathExtension(path: string): string {
+  const lastSlash = path.lastIndexOf('/');
+  const lastDot = path.lastIndexOf('.');
+  if (lastDot <= lastSlash) {
+    return '';
+  }
+  return path.slice(lastDot);
+}
+
+function looksLikeExplicitReviewPath(token: string): boolean {
+  const normalizedPath = normalizeReviewPath(token);
+  return (
+    normalizedPath.includes('/') &&
+    !normalizedPath.startsWith('-') &&
+    EXPLICIT_REVIEW_FILE_EXTENSIONS.has(getPathExtension(normalizedPath))
+  );
+}
+
+function extractExplicitReviewFilePaths(commandFocus: string): string[] {
+  const paths = commandFocus
+    .split(/\s+/)
+    .map(cleanPotentialFileToken)
+    .filter(Boolean)
+    .filter(looksLikeExplicitReviewPath);
+
+  return Array.from(new Set(paths));
+}
+
+function parseSlashCommandGitTarget(commandFocus: string): GitChangedFilesParams | null {
+  const tokens = commandFocus
+    .split(/\s+/)
+    .map(cleanPotentialFileToken)
+    .filter(Boolean);
+
+  const commitKeywordIndex = tokens.findIndex((token) => token.toLowerCase() === 'commit');
+  const commitRef = commitKeywordIndex >= 0 ? tokens[commitKeywordIndex + 1] : undefined;
+  if (commitRef && !commitRef.startsWith('-')) {
+    return {
+      source: `${commitRef}^`,
+      target: commitRef,
+    };
+  }
+
+  const rangeToken = tokens.find((token) => {
+    if (token.startsWith('-') || !token.includes('..')) {
+      return false;
+    }
+
+    const parts = token.split('..');
+    return parts.length === 2 && Boolean(parts[0]) && Boolean(parts[1]);
+  });
+
+  if (!rangeToken) {
+    return null;
+  }
+
+  const [source, target] = rangeToken.split('..');
+  return { source, target };
+}
+
+function collectChangedFilePaths(changedFiles: GitChangedFile[]): string[] {
+  return Array.from(
+    new Set(
+      changedFiles
+        .flatMap((file) => [file.path, file.old_path])
+        .filter((path): path is string => Boolean(path)),
+    ),
+  );
+}
+
+function collectWorkspaceDiffFilePaths(status: GitStatus): string[] {
+  return Array.from(
+    new Set([
+      ...status.staged.map((file) => file.path),
+      ...status.unstaged.map((file) => file.path),
+      ...status.untracked,
+      ...status.conflicts,
+    ].filter(Boolean)),
+  );
+}
+
+async function resolveSlashCommandReviewTarget(
+  commandFocus: string,
+  workspacePath?: string,
+): Promise<ReviewTargetClassification> {
+  const explicitFilePaths = extractExplicitReviewFilePaths(commandFocus);
+  if (explicitFilePaths.length > 0) {
+    return classifyReviewTargetFromFiles(
+      explicitFilePaths,
+      'slash_command_explicit_files',
+    );
+  }
+
+  const gitTarget = parseSlashCommandGitTarget(commandFocus);
+  if (gitTarget) {
+    if (!workspacePath) {
+      return createUnknownReviewTargetClassification('slash_command_git_ref');
+    }
+
+    try {
+      const changedFiles = await gitAPI.getChangedFiles(workspacePath, gitTarget);
+      return classifyReviewTargetFromFiles(
+        collectChangedFilePaths(changedFiles),
+        'slash_command_git_ref',
+      );
+    } catch (error) {
+      log.warn('Failed to resolve Git target for Deep Review target', {
+        workspacePath,
+        gitTarget,
+        error,
+      });
+      return createUnknownReviewTargetClassification('slash_command_git_ref');
+    }
+  }
+
+  if (!commandFocus && workspacePath) {
+    try {
+      const status = await gitAPI.getStatus(workspacePath);
+      return classifyReviewTargetFromFiles(
+        collectWorkspaceDiffFilePaths(status),
+        'workspace_diff',
+      );
+    } catch (error) {
+      log.warn('Failed to resolve workspace diff for Deep Review target', {
+        workspacePath,
+        error,
+      });
+    }
+  }
+
+  return createUnknownReviewTargetClassification(
+    commandFocus ? 'manual_prompt' : 'unknown',
+  );
+}
+
 export async function buildDeepReviewPromptFromSessionFiles(
   filePaths: string[],
   extraContext?: string,
   workspacePath?: string,
 ): Promise<string> {
   const team = await prepareDefaultReviewTeamForLaunch(workspacePath);
-  const manifest = buildEffectiveReviewTeamManifest(team, { workspacePath });
+  const target = classifyReviewTargetFromFiles(filePaths, 'session_files');
+  const manifest = buildEffectiveReviewTeamManifest(team, { workspacePath, target });
   const fileList = formatFileList(filePaths);
   const contextBlock = extraContext?.trim()
     ? `User-provided focus:\n${extraContext.trim()}`
@@ -182,9 +351,10 @@ export async function buildDeepReviewPromptFromSlashCommand(
   workspacePath?: string,
 ): Promise<string> {
   const team = await prepareDefaultReviewTeamForLaunch(workspacePath);
-  const manifest = buildEffectiveReviewTeamManifest(team, { workspacePath });
   const trimmed = commandText.trim();
   const extraContext = getDeepReviewCommandFocus(trimmed);
+  const target = await resolveSlashCommandReviewTarget(extraContext, workspacePath);
+  const manifest = buildEffectiveReviewTeamManifest(team, { workspacePath, target });
   const contextBlock = extraContext
     ? `User-provided focus or target:\n${extraContext}`
     : 'User-provided focus or target:\nNone. If no explicit target is given, review the current workspace changes relative to HEAD.';

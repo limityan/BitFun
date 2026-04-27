@@ -4,6 +4,12 @@ import {
   type SubagentInfo,
   type SubagentSource,
 } from '@/infrastructure/api/service-api/SubagentAPI';
+import {
+  FRONTEND_REVIEW_DOMAIN_TAGS,
+  createUnknownReviewTargetClassification,
+  type ReviewDomainTag,
+  type ReviewTargetClassification,
+} from './reviewTargetClassifier';
 
 export const DEFAULT_REVIEW_TEAM_ID = 'default-review-team';
 export const DEFAULT_REVIEW_TEAM_CONFIG_PATH = 'ai.review_teams.default';
@@ -188,6 +194,20 @@ export interface ReviewTeamExecutionPolicy {
   maxSameRoleInstances: number;
 }
 
+export type ReviewTokenBudgetMode = 'economy' | 'balanced' | 'thorough';
+
+export interface ReviewTeamTokenBudgetPlan {
+  mode: ReviewTokenBudgetMode;
+  estimatedReviewerCalls: number;
+  maxReviewerCalls: number;
+  maxExtraReviewers: number;
+  maxFilesPerReviewer?: number;
+  maxPromptBytesPerReviewer?: number;
+  largeDiffSummaryFirst: boolean;
+  skippedReviewerIds: string[];
+  warnings: string[];
+}
+
 export interface ReviewTeamMember {
   id: string;
   subagentId: string;
@@ -237,15 +257,17 @@ export interface ReviewTeamManifestMember {
   locked: boolean;
   source: ReviewTeamMember['source'];
   subagentSource: ReviewTeamMember['subagentSource'];
-  reason?: 'disabled' | 'unavailable';
+  reason?: 'disabled' | 'unavailable' | 'not_applicable' | 'budget_limited';
 }
 
 export interface ReviewTeamRunManifest {
   reviewMode: 'deep';
   workspacePath?: string;
   policySource: 'default-review-team-config';
+  target: ReviewTargetClassification;
   strategyLevel: ReviewStrategyLevel;
   executionPolicy: ReviewTeamExecutionPolicy;
+  tokenBudget: ReviewTeamTokenBudgetPlan;
   coreReviewers: ReviewTeamManifestMember[];
   qualityGateReviewer?: ReviewTeamManifestMember;
   enabledExtraReviewers: ReviewTeamManifestMember[];
@@ -918,32 +940,131 @@ function toManifestMember(
   };
 }
 
+function targetHasAnyTag(
+  target: ReviewTargetClassification,
+  tags: ReviewDomainTag[],
+): boolean {
+  return tags.some((tag) => target.tags.includes(tag));
+}
+
+function shouldRunCoreReviewerForTarget(
+  member: ReviewTeamMember,
+  target: ReviewTargetClassification,
+): boolean {
+  if (member.definitionKey !== 'frontend') {
+    return true;
+  }
+
+  if (target.resolution === 'unknown') {
+    return true;
+  }
+
+  return targetHasAnyTag(target, FRONTEND_REVIEW_DOMAIN_TAGS);
+}
+
+function resolveMaxExtraReviewers(
+  mode: ReviewTokenBudgetMode,
+  eligibleExtraReviewerCount: number,
+): number {
+  if (mode === 'economy') {
+    return 0;
+  }
+  return eligibleExtraReviewerCount;
+}
+
+function buildTokenBudgetPlan(params: {
+  mode: ReviewTokenBudgetMode;
+  activeReviewerCalls: number;
+  eligibleExtraReviewerCount: number;
+  maxExtraReviewers: number;
+  skippedReviewerIds: string[];
+  target: ReviewTargetClassification;
+  executionPolicy: ReviewTeamExecutionPolicy;
+}): ReviewTeamTokenBudgetPlan {
+  const largeDiffSummaryFirst =
+    params.executionPolicy.reviewerFileSplitThreshold > 0 &&
+    params.target.files.length > params.executionPolicy.reviewerFileSplitThreshold;
+  const warnings =
+    params.skippedReviewerIds.length > 0
+      ? ['Some extra reviewers were skipped by the selected token budget mode.']
+      : [];
+
+  return {
+    mode: params.mode,
+    estimatedReviewerCalls: params.activeReviewerCalls,
+    maxReviewerCalls:
+      params.activeReviewerCalls + Math.max(0, params.eligibleExtraReviewerCount - params.maxExtraReviewers),
+    maxExtraReviewers: params.maxExtraReviewers,
+    ...(largeDiffSummaryFirst
+      ? { maxFilesPerReviewer: params.executionPolicy.reviewerFileSplitThreshold }
+      : {}),
+    largeDiffSummaryFirst,
+    skippedReviewerIds: params.skippedReviewerIds,
+    warnings,
+  };
+}
+
 export function buildEffectiveReviewTeamManifest(
   team: ReviewTeam,
   options: {
     workspacePath?: string;
     policySource?: ReviewTeamRunManifest['policySource'];
+    target?: ReviewTargetClassification;
+    tokenBudgetMode?: ReviewTokenBudgetMode;
   } = {},
 ): ReviewTeamRunManifest {
+  const target = options.target ?? createUnknownReviewTargetClassification('unknown');
+  const tokenBudgetMode = options.tokenBudgetMode ?? 'balanced';
   const availableCoreMembers = team.coreMembers.filter((member) => member.available);
   const unavailableCoreMembers = team.coreMembers.filter((member) => !member.available);
+  const notApplicableCoreMembers = availableCoreMembers.filter(
+    (member) =>
+      member.definitionKey !== 'judge' &&
+      !shouldRunCoreReviewerForTarget(member, target),
+  );
   const coreReviewers = availableCoreMembers
     .filter((member) => member.definitionKey !== 'judge')
+    .filter((member) => shouldRunCoreReviewerForTarget(member, target))
     .map((member) => toManifestMember(member));
   const qualityGateReviewer = availableCoreMembers.find(
     (member) => member.definitionKey === 'judge',
   );
-  const enabledExtraReviewers = team.extraMembers
-    .filter((member) => member.available && member.enabled)
+  const eligibleExtraMembers = team.extraMembers
+    .filter((member) => member.available && member.enabled);
+  const maxExtraReviewers = resolveMaxExtraReviewers(
+    tokenBudgetMode,
+    eligibleExtraMembers.length,
+  );
+  const enabledExtraMembers = eligibleExtraMembers.slice(0, maxExtraReviewers);
+  const budgetLimitedExtraMembers = eligibleExtraMembers.slice(maxExtraReviewers);
+  const enabledExtraReviewers = enabledExtraMembers
     .map((member) => toManifestMember(member));
+  const tokenBudget = buildTokenBudgetPlan({
+    mode: tokenBudgetMode,
+    activeReviewerCalls:
+      coreReviewers.length +
+      enabledExtraReviewers.length +
+      (qualityGateReviewer ? 1 : 0),
+    eligibleExtraReviewerCount: eligibleExtraMembers.length,
+    maxExtraReviewers,
+    skippedReviewerIds: budgetLimitedExtraMembers.map((member) => member.subagentId),
+    target,
+    executionPolicy: team.executionPolicy,
+  });
   const skippedReviewers = [
     ...team.extraMembers
       .filter((member) => !member.available || !member.enabled)
       .map((member) =>
         toManifestMember(member, member.available ? 'disabled' : 'unavailable'),
       ),
+    ...budgetLimitedExtraMembers.map((member) =>
+      toManifestMember(member, 'budget_limited'),
+    ),
     ...unavailableCoreMembers.map((member) =>
       toManifestMember(member, 'unavailable'),
+    ),
+    ...notApplicableCoreMembers.map((member) =>
+      toManifestMember(member, 'not_applicable'),
     ),
   ];
 
@@ -951,8 +1072,10 @@ export function buildEffectiveReviewTeamManifest(
     reviewMode: 'deep',
     ...(options.workspacePath ? { workspacePath: options.workspacePath } : {}),
     policySource: options.policySource ?? 'default-review-team-config',
+    target,
     strategyLevel: team.strategyLevel,
     executionPolicy: team.executionPolicy,
+    tokenBudget,
     coreReviewers,
     ...(qualityGateReviewer
       ? { qualityGateReviewer: toManifestMember(qualityGateReviewer) }
@@ -1045,6 +1168,13 @@ export function buildReviewTeamPromptBlock(
     `- team_strategy: ${manifest.strategyLevel}`,
     `- workspace_path: ${manifest.workspacePath || 'inherited from current session'}`,
     `- policy_source: ${manifest.policySource}`,
+    `- target_source: ${manifest.target.source}`,
+    `- target_resolution: ${manifest.target.resolution}`,
+    `- target_tags: ${manifest.target.tags.join(', ') || 'none'}`,
+    `- target_warnings: ${manifest.target.warnings.map((warning) => warning.code).join(', ') || 'none'}`,
+    `- token_budget_mode: ${manifest.tokenBudget.mode}`,
+    `- estimated_reviewer_calls: ${manifest.tokenBudget.estimatedReviewerCalls}`,
+    `- budget_limited_reviewers: ${manifest.tokenBudget.skippedReviewerIds.join(', ') || 'none'}`,
     `- core_reviewers: ${formatManifestList(manifest.coreReviewers, 'none')}`,
     `- quality_gate_reviewer: ${manifest.qualityGateReviewer?.subagentId || 'none'}`,
     `- enabled_extra_reviewers: ${formatManifestList(manifest.enabledExtraReviewers, 'none')}`,
@@ -1081,9 +1211,13 @@ export function buildReviewTeamPromptBlock(
     'Execution policy:',
     executionPolicy,
     'Team execution rules:',
+    '- Run only reviewers listed in core_reviewers and enabled_extra_reviewers.',
+    '- Do not launch skipped_reviewers.',
+    '- If a skipped reviewer has reason not_applicable, mention it in coverage notes without treating it as reduced confidence.',
+    '- If a skipped reviewer has reason budget_limited, mention the budget mode and the coverage tradeoff.',
+    '- If target_resolution is unknown, conditional reviewers may be activated conservatively; report that as coverage context.',
     '- Always run the four locked core reviewer roles first: ReviewBusinessLogic, ReviewPerformance, ReviewSecurity, and ReviewArchitecture.',
     '- Run ReviewJudge only after the reviewer batch finishes, as the quality-gate pass.',
-    '- If the Frontend Reviewer is enabled, run it in parallel with the locked reviewers whenever the change contains frontend files (src/web-ui/, .tsx, .scss, .css, locales/).',
     '- If other extra reviewers are configured and enabled, run them in parallel with the locked reviewers whenever possible.',
     '- When a configured member entry provides model_id, pass model_id with that value to the matching Task call.',
     '- If reviewer_timeout_seconds is greater than 0, pass timeout_seconds with that value to every reviewer Task call.',

@@ -16,6 +16,10 @@ import {
   SubagentAPI,
   type SubagentInfo,
 } from '@/infrastructure/api/service-api/SubagentAPI';
+import {
+  classifyReviewTargetFromFiles,
+  createUnknownReviewTargetClassification,
+} from './reviewTargetClassifier';
 
 vi.mock('@/infrastructure/api/service-api/ConfigAPI', () => ({
   configAPI: {
@@ -268,6 +272,128 @@ describe('reviewTeamService', () => {
     ]);
   });
 
+  it('skips the frontend reviewer when the resolved target has no frontend tags', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra(),
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      target: classifyReviewTargetFromFiles(
+        ['src/crates/core/src/service/config/types.rs'],
+        'session_files',
+      ),
+    });
+
+    expect(manifest.target.resolution).toBe('resolved');
+    expect(manifest.target.tags).toEqual(['backend_core']);
+    expect(manifest.coreReviewers.map((member) => member.subagentId)).toEqual([
+      'ReviewBusinessLogic',
+      'ReviewPerformance',
+      'ReviewSecurity',
+      'ReviewArchitecture',
+    ]);
+    expect(manifest.skippedReviewers).toEqual([
+      expect.objectContaining({
+        subagentId: 'ReviewFrontend',
+        reason: 'not_applicable',
+      }),
+    ]);
+  });
+
+  it('runs the frontend reviewer for frontend and contract targets', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra(),
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      target: classifyReviewTargetFromFiles(
+        ['src/apps/desktop/src/api/agentic_api.rs'],
+        'session_files',
+      ),
+    });
+
+    expect(manifest.target.tags).toEqual(
+      expect.arrayContaining(['desktop_contract', 'frontend_contract']),
+    );
+    expect(manifest.coreReviewers.map((member) => member.subagentId)).toContain(
+      'ReviewFrontend',
+    );
+    expect(manifest.skippedReviewers).not.toEqual([
+      expect.objectContaining({ subagentId: 'ReviewFrontend' }),
+    ]);
+  });
+
+  it('runs conditional reviewers conservatively for unknown targets', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra(),
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      target: createUnknownReviewTargetClassification('manual_prompt'),
+    });
+
+    expect(manifest.target.resolution).toBe('unknown');
+    expect(manifest.coreReviewers.map((member) => member.subagentId)).toContain(
+      'ReviewFrontend',
+    );
+  });
+
+  it('adds a balanced token budget to the run manifest by default', () => {
+    const team = resolveDefaultReviewTeam(
+      [
+        ...coreSubagents(),
+        subagent('ExtraEnabled', true, 'user', 'fast', true, true),
+      ],
+      storedConfigWithExtra(['ExtraEnabled']),
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team);
+
+    expect(manifest.tokenBudget).toMatchObject({
+      mode: 'balanced',
+      estimatedReviewerCalls: 7,
+      maxExtraReviewers: 1,
+      skippedReviewerIds: [],
+    });
+  });
+
+  it('marks excess extra reviewers as budget-limited in economy mode', () => {
+    const team = resolveDefaultReviewTeam(
+      [
+        ...coreSubagents(),
+        subagent('ExtraOne', true, 'user', 'fast', true, true),
+        subagent('ExtraTwo', true, 'user', 'fast', true, true),
+      ],
+      storedConfigWithExtra(['ExtraOne', 'ExtraTwo']),
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      tokenBudgetMode: 'economy',
+    });
+
+    expect(manifest.enabledExtraReviewers).toEqual([]);
+    expect(manifest.skippedReviewers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          subagentId: 'ExtraOne',
+          reason: 'budget_limited',
+        }),
+        expect.objectContaining({
+          subagentId: 'ExtraTwo',
+          reason: 'budget_limited',
+        }),
+      ]),
+    );
+    expect(manifest.tokenBudget).toMatchObject({
+      mode: 'economy',
+      maxExtraReviewers: 0,
+      skippedReviewerIds: ['ExtraOne', 'ExtraTwo'],
+    });
+  });
+
   it('applies per-member strategy overrides in the launch manifest and prompt', () => {
     const team = resolveDefaultReviewTeam(
       [
@@ -396,6 +522,7 @@ describe('reviewTeamService', () => {
     );
 
     expect(promptBlock).toContain('Run manifest:');
+    expect(promptBlock).toContain('target_resolution: unknown');
     expect(promptBlock).toContain('- team_strategy: normal');
     expect(promptBlock).toContain('- workspace_path: D:/workspace/project-a');
     expect(promptBlock).toContain('quality_gate_reviewer: ReviewJudge');
@@ -403,6 +530,8 @@ describe('reviewTeamService', () => {
     expect(promptBlock).toContain('skipped_reviewers:');
     expect(promptBlock).toContain('- ExtraDisabled: disabled');
     expect(promptBlock).not.toContain('subagent_type: ExtraDisabled');
+    expect(promptBlock).toContain('Run only reviewers listed in core_reviewers and enabled_extra_reviewers.');
+    expect(promptBlock).not.toContain('run it in parallel with the locked reviewers whenever the change contains frontend files');
   });
 
   it('tells DeepReview to wait for user approval before running ReviewFixer', () => {
