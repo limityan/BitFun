@@ -3040,6 +3040,92 @@ Update the persona files and delete BOOTSTRAP.md as soon as bootstrap is complet
             .await;
     }
 
+    /// Emit SubtaskStarted event for task splitting progress tracking
+    pub async fn emit_subtask_started(
+        &self,
+        parent_session_id: &str,
+        subtask_id: &str,
+        description: &str,
+        file_count: usize,
+        index: usize,
+        total: usize,
+    ) {
+        let event = AgenticEvent::SubtaskStarted {
+            parent_session_id: parent_session_id.to_string(),
+            subtask_id: subtask_id.to_string(),
+            description: description.to_string(),
+            file_count,
+            index,
+            total,
+        };
+        let _ = self
+            .event_queue
+            .enqueue(event, Some(EventPriority::Normal))
+            .await;
+    }
+
+    /// Emit SubtaskCompleted event
+    pub async fn emit_subtask_completed(
+        &self,
+        parent_session_id: &str,
+        subtask_id: &str,
+        findings_count: usize,
+        duration_ms: u64,
+    ) {
+        let event = AgenticEvent::SubtaskCompleted {
+            parent_session_id: parent_session_id.to_string(),
+            subtask_id: subtask_id.to_string(),
+            findings_count,
+            duration_ms,
+        };
+        let _ = self
+            .event_queue
+            .enqueue(event, Some(EventPriority::Normal))
+            .await;
+    }
+
+    /// Emit SubtaskFailed event
+    pub async fn emit_subtask_failed(
+        &self,
+        parent_session_id: &str,
+        subtask_id: &str,
+        error: &str,
+        retryable: bool,
+    ) {
+        let event = AgenticEvent::SubtaskFailed {
+            parent_session_id: parent_session_id.to_string(),
+            subtask_id: subtask_id.to_string(),
+            error: error.to_string(),
+            retryable,
+        };
+        let _ = self
+            .event_queue
+            .enqueue(event, Some(EventPriority::Normal))
+            .await;
+    }
+
+    /// Emit SubtaskProgressUpdated event
+    pub async fn emit_subtask_progress_updated(
+        &self,
+        parent_session_id: &str,
+        completed: usize,
+        total: usize,
+        failed: usize,
+        running: usize,
+    ) {
+        let event = AgenticEvent::SubtaskProgressUpdated {
+            parent_session_id: parent_session_id.to_string(),
+            completed,
+            total,
+            failed,
+            running,
+        };
+        let _ = self
+            .event_queue
+            .enqueue(event, Some(EventPriority::Normal))
+            .await;
+    }
+
     /// Get SessionManager reference (for advanced features like mode management)
     pub fn get_session_manager(&self) -> &Arc<SessionManager> {
         &self.session_manager

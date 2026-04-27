@@ -267,6 +267,41 @@ pub enum AgenticEvent {
         /// `"model_deleted"`.
         reason: String,
     },
+
+    /// Subtask execution started (for task splitting progress tracking)
+    SubtaskStarted {
+        parent_session_id: String,
+        subtask_id: String,
+        description: String,
+        file_count: usize,
+        index: usize,
+        total: usize,
+    },
+
+    /// Subtask execution completed
+    SubtaskCompleted {
+        parent_session_id: String,
+        subtask_id: String,
+        findings_count: usize,
+        duration_ms: u64,
+    },
+
+    /// Subtask execution failed
+    SubtaskFailed {
+        parent_session_id: String,
+        subtask_id: String,
+        error: String,
+        retryable: bool,
+    },
+
+    /// Overall subtask progress update
+    SubtaskProgressUpdated {
+        parent_session_id: String,
+        completed: usize,
+        total: usize,
+        failed: usize,
+        running: usize,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -412,7 +447,11 @@ impl AgenticEvent {
             | Self::ThinkingChunk { session_id, .. }
             | Self::ModelRoundCompleted { session_id, .. }
             | Self::ToolEvent { session_id, .. }
-            | Self::SessionModelAutoMigrated { session_id, .. } => Some(session_id),
+            | Self::SessionModelAutoMigrated { session_id, .. }
+            | Self::SubtaskStarted { parent_session_id: session_id, .. }
+            | Self::SubtaskCompleted { parent_session_id: session_id, .. }
+            | Self::SubtaskFailed { parent_session_id: session_id, .. }
+            | Self::SubtaskProgressUpdated { parent_session_id: session_id, .. } => Some(session_id),
             Self::SystemError { session_id, .. } => session_id.as_deref(),
         }
     }
@@ -439,6 +478,11 @@ impl AgenticEvent {
             | Self::DialogTurnCompleted { .. }
             | Self::ContextCompressionStarted { .. }
             | Self::ContextCompressionCompleted { .. } => AgenticEventPriority::Normal,
+
+            Self::SubtaskStarted { .. }
+            | Self::SubtaskCompleted { .. }
+            | Self::SubtaskFailed { .. }
+            | Self::SubtaskProgressUpdated { .. } => AgenticEventPriority::Normal,
 
             Self::ToolEvent { tool_event, .. } => tool_event.default_priority(),
 

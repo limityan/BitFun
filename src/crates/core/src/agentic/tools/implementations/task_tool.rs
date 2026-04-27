@@ -482,10 +482,31 @@ impl Tool for TaskTool {
             .ok_or_else(|| BitFunError::tool("coordinator not initialized".to_string()))?;
 
         let parent_info = SubagentParentInfo {
-            tool_call_id,
-            session_id,
-            dialog_turn_id,
+            tool_call_id: tool_call_id.clone(),
+            session_id: session_id.clone(),
+            dialog_turn_id: dialog_turn_id.clone(),
         };
+
+        // Emit SubtaskStarted event for Deep Review subagents
+        let is_deep_review = context
+            .agent_type
+            .as_deref()
+            .map(str::trim)
+            .is_some_and(|agent_type| agent_type == DEEP_REVIEW_AGENT_TYPE);
+
+        if is_deep_review {
+            coordinator
+                .emit_subtask_started(
+                    &session_id,
+                    &tool_call_id,
+                    &format!("Review with {}", subagent_type),
+                    0, // file_count not available here
+                    0, // index not tracked in single execution
+                    0, // total not tracked in single execution
+                )
+                .await;
+        }
+
         let result = coordinator
             .execute_subagent(
                 subagent_type.clone(),
@@ -497,9 +518,37 @@ impl Tool for TaskTool {
                 model_id,
                 timeout_seconds,
             )
-            .await?;
+            .await;
 
         let duration = start_time.elapsed().as_millis();
+
+        // Emit completion/failure events for Deep Review subagents
+        if is_deep_review {
+            match &result {
+                Ok(subagent_result) => {
+                    coordinator
+                        .emit_subtask_completed(
+                            &session_id,
+                            &tool_call_id,
+                            0, // findings_count would require parsing result
+                            duration as u64,
+                        )
+                        .await;
+                }
+                Err(error) => {
+                    coordinator
+                        .emit_subtask_failed(
+                            &session_id,
+                            &tool_call_id,
+                            &error.to_string(),
+                            true, // retryable
+                        )
+                        .await;
+                }
+            }
+        }
+
+        let result = result?;
 
         Ok(vec![ToolResult::Result {
             data: json!({"duration": duration}),
