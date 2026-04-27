@@ -40,7 +40,7 @@ describe('reviewTeamService', () => {
     vi.clearAllMocks();
   });
 
-  const WORKSPACE_PATH = 'D:/workspace/project-a';
+  const WORKSPACE_PATH = '/test-fixtures/project-a';
 
   const storedConfigWithExtra = (
     extraSubagentIds: string[] = [],

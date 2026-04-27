@@ -4,6 +4,71 @@ import {
   formatCodeReviewReportMarkdown,
   getDefaultExpandedCodeReviewSectionIds,
 } from './codeReviewReport';
+import type { ReviewTeamManifestMember, ReviewTeamRunManifest } from '@/shared/services/reviewTeamService';
+
+function manifestMember(
+  subagentId: string,
+  displayName: string,
+  reason?: ReviewTeamManifestMember['reason'],
+): ReviewTeamManifestMember {
+  return {
+    subagentId,
+    displayName,
+    roleName: displayName,
+    model: 'fast',
+    configuredModel: 'fast',
+    defaultModelSlot: 'fast',
+    strategyLevel: 'normal',
+    strategySource: 'team',
+    strategyDirective: 'Review the target.',
+    locked: !subagentId.startsWith('Custom'),
+    source: subagentId.startsWith('Custom') ? 'extra' : 'core',
+    subagentSource: subagentId.startsWith('Custom') ? 'user' : 'builtin',
+    ...(reason ? { reason } : {}),
+  };
+}
+
+function buildRunManifest(): ReviewTeamRunManifest {
+  return {
+    reviewMode: 'deep',
+    workspacePath: '/test-fixtures/project-a',
+    policySource: 'default-review-team-config',
+    target: {
+      source: 'session_files',
+      resolution: 'resolved',
+      tags: ['frontend'],
+      files: ['src/App.tsx'],
+      warnings: [],
+    },
+    strategyLevel: 'normal',
+    executionPolicy: {
+      reviewerTimeoutSeconds: 300,
+      judgeTimeoutSeconds: 240,
+      reviewerFileSplitThreshold: 20,
+      maxSameRoleInstances: 3,
+    },
+    tokenBudget: {
+      mode: 'balanced',
+      estimatedReviewerCalls: 3,
+      maxReviewerCalls: 4,
+      maxExtraReviewers: 1,
+      largeDiffSummaryFirst: false,
+      skippedReviewerIds: ['CustomInvalid'],
+      warnings: [],
+    },
+    coreReviewers: [
+      manifestMember('ReviewBusinessLogic', 'Logic reviewer'),
+    ],
+    qualityGateReviewer: manifestMember('ReviewJudge', 'Quality inspector'),
+    enabledExtraReviewers: [
+      manifestMember('CustomSecurity', 'Custom security reviewer'),
+    ],
+    skippedReviewers: [
+      manifestMember('ReviewFrontend', 'Frontend reviewer', 'not_applicable'),
+      manifestMember('CustomInvalid', 'Custom invalid reviewer', 'invalid_tooling'),
+    ],
+  };
+}
 
 describe('codeReviewReport', () => {
   it('uses structured report sections when present', () => {
@@ -148,5 +213,32 @@ describe('codeReviewReport', () => {
     expect(markdown).toContain('src/auth.ts:12');
     expect(markdown).toContain('## Remediation Plan');
     expect(markdown).toContain('## Code Review Team');
+  });
+
+  it('includes the run manifest when exporting a deep review report', () => {
+    const markdown = formatCodeReviewReportMarkdown(
+      {
+        summary: {
+          overall_assessment: 'No validated issues.',
+          risk_level: 'low' as const,
+          recommended_action: 'approve' as const,
+        },
+        review_mode: 'deep' as const,
+        issues: [],
+        reviewers: [],
+      },
+      undefined,
+      { runManifest: buildRunManifest() },
+    );
+
+    expect(markdown).toContain('## Run manifest');
+    expect(markdown).toContain('- Target: frontend');
+    expect(markdown).toContain('- Budget: balanced');
+    expect(markdown).toContain('- Estimated calls: 3');
+    expect(markdown).toContain('- Logic reviewer (ReviewBusinessLogic)');
+    expect(markdown).toContain('- Custom security reviewer (CustomSecurity)');
+    expect(markdown).toContain('- Quality inspector (ReviewJudge)');
+    expect(markdown).toContain('- Frontend reviewer (ReviewFrontend): not_applicable');
+    expect(markdown).toContain('- Custom invalid reviewer (CustomInvalid): invalid_tooling');
   });
 });

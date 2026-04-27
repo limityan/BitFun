@@ -9,9 +9,11 @@ import {
   type CodeReviewReportData,
   type CodeReviewReportMarkdownLabels,
 } from '../utils/codeReviewReport';
+import type { ReviewTeamRunManifest } from '@/shared/services/reviewTeamService';
 
 interface CodeReviewReportExportActionsProps {
   reviewData: CodeReviewReportData;
+  runManifest?: ReviewTeamRunManifest;
 }
 
 function timestampForFileName(): string {
@@ -38,6 +40,7 @@ function downloadMarkdownInBrowser(fileName: string, markdown: string): void {
 
 export const CodeReviewReportExportActions: React.FC<CodeReviewReportExportActionsProps> = ({
   reviewData,
+  runManifest,
 }) => {
   const { t } = useTranslation('flow-chat');
   const [copied, setCopied] = useState(false);
@@ -48,9 +51,15 @@ export const CodeReviewReportExportActions: React.FC<CodeReviewReportExportActio
     titleDeep: t('toolCards.codeReview.report.titleDeep', { defaultValue: 'Deep Review Report' }),
     executiveSummary: t('toolCards.codeReview.sections.summary', { defaultValue: 'Executive Summary' }),
     reviewDecision: t('toolCards.codeReview.report.reviewDecision', { defaultValue: 'Review Decision' }),
+    runManifest: t('toolCards.codeReview.sections.runManifest', { defaultValue: 'Run manifest' }),
     riskLevel: t('toolCards.codeReview.riskLevel', { defaultValue: 'Risk Level' }),
     recommendedAction: t('toolCards.codeReview.recommendedAction', { defaultValue: 'Recommended Action' }),
     scope: t('toolCards.codeReview.reviewScope', { defaultValue: 'Scope' }),
+    target: t('toolCards.codeReview.runManifest.target', { defaultValue: 'Target' }),
+    budget: t('toolCards.codeReview.runManifest.budget', { defaultValue: 'Budget' }),
+    estimatedCalls: t('toolCards.codeReview.runManifest.estimatedCalls', { defaultValue: 'Estimated calls' }),
+    activeReviewers: t('toolCards.codeReview.runManifest.activeGroupTitle', { defaultValue: 'Will run' }),
+    skippedReviewers: t('toolCards.codeReview.runManifest.skippedGroupTitle', { defaultValue: 'Skipped reviewers' }),
     issues: t('toolCards.codeReview.sections.issues', { defaultValue: 'Issues' }),
     noIssues: t('toolCards.codeReview.report.noIssues', { defaultValue: 'No validated issues.' }),
     remediationPlan: t('toolCards.codeReview.sections.remediation', { defaultValue: 'Remediation Plan' }),
@@ -79,8 +88,12 @@ export const CodeReviewReportExportActions: React.FC<CodeReviewReportExportActio
   }), [t]);
 
   const markdown = useMemo(
-    () => formatCodeReviewReportMarkdown(reviewData, markdownLabels),
-    [markdownLabels, reviewData],
+    () => formatCodeReviewReportMarkdown(
+      reviewData,
+      markdownLabels,
+      { runManifest },
+    ),
+    [markdownLabels, reviewData, runManifest],
   );
 
   const fileName = useMemo(() => {

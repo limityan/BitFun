@@ -17,6 +17,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Tooltip } from '@/component-library';
 import type { ToolCardProps } from '../types/flow-chat';
+import { flowChatStore } from '../store/FlowChatStore';
 import { BaseToolCard, ToolCardHeader } from './BaseToolCard';
 import { createLogger } from '@/shared/utils/logger';
 import { useToolCardHeightContract } from './useToolCardHeightContract';
@@ -34,6 +35,12 @@ import {
   type StrengthGroupId,
 } from '../utils/codeReviewReport';
 import { CodeReviewReportExportActions } from './CodeReviewReportExportActions';
+import {
+  getActiveReviewTeamManifestMembers,
+  type ReviewTeamManifestMember,
+  type ReviewTeamManifestMemberReason,
+  type ReviewTeamRunManifest,
+} from '@/shared/services/reviewTeamService';
 import './CodeReviewToolCard.scss';
 
 const log = createLogger('CodeReviewToolCard');
@@ -113,6 +120,69 @@ function formatReviewerStats(stats: { total: number; completed: number; degraded
   });
 }
 
+function getDeepReviewRunManifestForSession(sessionId?: string): ReviewTeamRunManifest | undefined {
+  if (!sessionId) {
+    return undefined;
+  }
+
+  return flowChatStore.getState().sessions.get(sessionId)?.deepReviewRunManifest;
+}
+
+function getReviewerLabel(member: ReviewTeamManifestMember): string {
+  return member.displayName || member.subagentId;
+}
+
+function getSkippedReasonLabel(
+  reason: ReviewTeamManifestMemberReason | undefined,
+  t: Translate,
+): string {
+  switch (reason) {
+    case 'not_applicable':
+      return t('toolCards.codeReview.runManifest.skippedReasons.notApplicable', {
+        defaultValue: 'Not applicable to this target',
+      });
+    case 'budget_limited':
+      return t('toolCards.codeReview.runManifest.skippedReasons.budgetLimited', {
+        defaultValue: 'Limited by token budget',
+      });
+    case 'invalid_tooling':
+      return t('toolCards.codeReview.runManifest.skippedReasons.invalidTooling', {
+        defaultValue: 'Configuration issue',
+      });
+    case 'disabled':
+      return t('toolCards.codeReview.runManifest.skippedReasons.disabled', {
+        defaultValue: 'Disabled',
+      });
+    case 'unavailable':
+      return t('toolCards.codeReview.runManifest.skippedReasons.unavailable', {
+        defaultValue: 'Unavailable',
+      });
+    default:
+      return t('toolCards.codeReview.runManifest.skippedReasons.skipped', {
+        defaultValue: 'Skipped',
+      });
+  }
+}
+
+function formatRunManifestSummary(
+  manifest: ReviewTeamRunManifest,
+  activeReviewers: ReviewTeamManifestMember[],
+  t: Translate,
+): string {
+  return t('toolCards.codeReview.runManifest.summary', {
+    active: activeReviewers.length,
+    skipped: manifest.skippedReviewers.length,
+    calls: manifest.tokenBudget.estimatedReviewerCalls,
+    defaultValue: '{{active}} active / {{skipped}} skipped / {{calls}} calls',
+  });
+}
+
+function formatRunManifestTarget(manifest: ReviewTeamRunManifest): string {
+  return manifest.target.tags.length > 0
+    ? manifest.target.tags.join(', ')
+    : manifest.target.source;
+}
+
 function renderReportGroupList<TId extends RemediationGroupId | StrengthGroupId>(
   groups: Array<ReviewReportGroup<TId>>,
   titleForGroup: (id: TId) => string,
@@ -131,7 +201,7 @@ function renderReportGroupList<TId extends RemediationGroupId | StrengthGroupId>
 
 export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
   toolItem,
-  sessionId: _sessionId,
+  sessionId,
 }) => {
   const { t } = useTranslation('flow-chat');
   const { toolResult, status } = toolItem;
@@ -144,6 +214,21 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
     toolId,
     toolName: toolItem.toolName,
   });
+  const [sessionRunManifest, setSessionRunManifest] = useState<ReviewTeamRunManifest | undefined>(
+    () => getDeepReviewRunManifestForSession(sessionId),
+  );
+
+  useEffect(() => {
+    setSessionRunManifest(getDeepReviewRunManifestForSession(sessionId));
+
+    if (!sessionId) {
+      return undefined;
+    }
+
+    return flowChatStore.subscribe((state) => {
+      setSessionRunManifest(state.sessions.get(sessionId)?.deepReviewRunManifest);
+    });
+  }, [sessionId]);
 
   const getStatusIcon = () => {
     switch (status) {
@@ -389,7 +474,10 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
         extra={(
           <>
             {hasData && reviewData && (
-              <CodeReviewReportExportActions reviewData={reviewData} />
+              <CodeReviewReportExportActions
+                reviewData={reviewData}
+                runManifest={reviewData.review_mode === 'deep' ? sessionRunManifest : undefined}
+              />
             )}
             {hasData && (
               <Tooltip
@@ -419,6 +507,12 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
     const review_mode = reviewData.review_mode;
     const review_scope = reviewData.review_scope;
     const reviewers = reviewData.reviewers ?? [];
+    const runManifest = review_mode === 'deep'
+      ? sessionRunManifest
+      : undefined;
+    const activeRunManifestReviewers = runManifest
+      ? getActiveReviewTeamManifestMembers(runManifest)
+      : [];
     const reportSections = buildCodeReviewReportSections(reviewData);
     const riskLevel = summary.risk_level ?? 'low';
     const recommendedAction = summary.recommended_action ?? 'approve';
@@ -429,6 +523,7 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
     const remediationExpanded = expandedReportSectionIds.has('remediation');
     const issuesExpanded = expandedReportSectionIds.has('issues');
     const strengthsExpanded = expandedReportSectionIds.has('strengths');
+    const runManifestExpanded = expandedReportSectionIds.has('runManifest');
     const teamExpanded = expandedReportSectionIds.has('team');
     const coverageExpanded = expandedReportSectionIds.has('coverage');
 
@@ -481,6 +576,64 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
             )}
           </div>
         </div>
+
+        {runManifest && (
+          <ReviewReportSection
+            title={t('toolCards.codeReview.sections.runManifest', { defaultValue: 'Run manifest' })}
+            summary={formatRunManifestSummary(runManifest, activeRunManifestReviewers, t)}
+            expanded={runManifestExpanded}
+            onToggle={handleToggleReportSection('runManifest')}
+          >
+            <div className="run-manifest">
+              <div className="run-manifest__facts">
+                <div className="run-manifest__fact">
+                  <span>{t('toolCards.codeReview.runManifest.target', { defaultValue: 'Target' })}</span>
+                  <strong>{formatRunManifestTarget(runManifest)}</strong>
+                </div>
+                <div className="run-manifest__fact">
+                  <span>{t('toolCards.codeReview.runManifest.budget', { defaultValue: 'Budget' })}</span>
+                  <strong>{runManifest.tokenBudget.mode}</strong>
+                </div>
+                <div className="run-manifest__fact">
+                  <span>{t('toolCards.codeReview.runManifest.estimatedCalls', { defaultValue: 'Estimated calls' })}</span>
+                  <strong>{runManifest.tokenBudget.estimatedReviewerCalls}</strong>
+                </div>
+              </div>
+
+              {activeRunManifestReviewers.length > 0 && (
+                <div className="run-manifest__group">
+                  <div className="run-manifest__group-title">
+                    {t('toolCards.codeReview.runManifest.activeGroupTitle', { defaultValue: 'Will run' })}
+                  </div>
+                  <div className="run-manifest__chips">
+                    {activeRunManifestReviewers.map((member) => (
+                      <span key={`active-${member.subagentId}`} className="run-manifest__chip">
+                        <span className="run-manifest__chip-name">{getReviewerLabel(member)}</span>
+                        <span className="run-manifest__chip-meta">{member.roleName}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {runManifest.skippedReviewers.length > 0 && (
+                <div className="run-manifest__group">
+                  <div className="run-manifest__group-title run-manifest__group-title--warning">
+                    {t('toolCards.codeReview.runManifest.skippedGroupTitle', { defaultValue: 'Skipped reviewers' })}
+                  </div>
+                  <ul className="run-manifest__skipped-list">
+                    {runManifest.skippedReviewers.map((member) => (
+                      <li key={`skipped-${member.subagentId}`}>
+                        <span>{getReviewerLabel(member)}</span>
+                        <strong>{getSkippedReasonLabel(member.reason, t)}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </ReviewReportSection>
+        )}
 
         {issues.length > 0 && (
           <ReviewReportSection
@@ -740,6 +893,7 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
     handleToggleReportSection,
     remediationItems,
     reviewData,
+    sessionRunManifest,
     t,
   ]);
 

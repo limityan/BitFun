@@ -8,6 +8,7 @@ import type {
   ReviewTeamManifestMemberReason,
   ReviewTeamRunManifest,
 } from '@/shared/services/reviewTeamService';
+import { getActiveReviewTeamManifestMembers } from '@/shared/services/reviewTeamService';
 import './DeepReviewConsentDialog.scss';
 
 const log = createLogger('DeepReviewConsentDialog');
@@ -25,14 +26,6 @@ export interface DeepReviewConsentControls {
 
 function hasSkippedReviewers(preview?: ReviewTeamRunManifest): boolean {
   return Boolean(preview?.skippedReviewers?.length);
-}
-
-function getActiveReviewers(preview: ReviewTeamRunManifest): ReviewTeamManifestMember[] {
-  return [
-    ...preview.coreReviewers,
-    ...preview.enabledExtraReviewers,
-    ...(preview.qualityGateReviewer ? [preview.qualityGateReviewer] : []),
-  ];
 }
 
 function getReviewerLabel(member: ReviewTeamManifestMember): string {
@@ -110,7 +103,7 @@ export function useDeepReviewConsent(): DeepReviewConsentControls {
   }, [t]);
 
   const renderLineupPreview = useCallback((preview: ReviewTeamRunManifest) => {
-    const activeReviewers = getActiveReviewers(preview);
+    const activeReviewers = getActiveReviewTeamManifestMembers(preview);
     const skippedReviewers = preview.skippedReviewers;
     const activeCount = activeReviewers.length;
     const skippedCount = skippedReviewers.length;

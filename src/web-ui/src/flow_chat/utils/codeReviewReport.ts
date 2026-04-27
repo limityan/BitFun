@@ -1,9 +1,22 @@
+import {
+  getActiveReviewTeamManifestMembers,
+  type ReviewTeamManifestMember,
+  type ReviewTeamRunManifest,
+} from '@/shared/services/reviewTeamService';
+
 export type ReviewRiskLevel = 'low' | 'medium' | 'high' | 'critical';
 export type ReviewAction = 'approve' | 'approve_with_suggestions' | 'request_changes' | 'block';
 export type ReviewMode = 'standard' | 'deep';
 export type ReviewIssueSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 export type ReviewIssueCertainty = 'confirmed' | 'likely' | 'possible';
-export type ReviewSectionId = 'summary' | 'issues' | 'remediation' | 'strengths' | 'team' | 'coverage';
+export type ReviewSectionId =
+  | 'summary'
+  | 'issues'
+  | 'remediation'
+  | 'strengths'
+  | 'runManifest'
+  | 'team'
+  | 'coverage';
 export type RemediationGroupId = 'must_fix' | 'should_improve' | 'needs_decision' | 'verification';
 export type StrengthGroupId =
   | 'architecture'
@@ -96,9 +109,15 @@ export interface CodeReviewReportMarkdownLabels {
   titleDeep: string;
   executiveSummary: string;
   reviewDecision: string;
+  runManifest: string;
   riskLevel: string;
   recommendedAction: string;
   scope: string;
+  target: string;
+  budget: string;
+  estimatedCalls: string;
+  activeReviewers: string;
+  skippedReviewers: string;
   issues: string;
   noIssues: string;
   remediationPlan: string;
@@ -112,6 +131,10 @@ export interface CodeReviewReportMarkdownLabels {
   source: string;
   noItems: string;
   groupTitles: Record<RemediationGroupId | StrengthGroupId, string>;
+}
+
+export interface CodeReviewReportMarkdownOptions {
+  runManifest?: ReviewTeamRunManifest;
 }
 
 const REMEDIATION_GROUP_ORDER: RemediationGroupId[] = [
@@ -138,9 +161,15 @@ export const DEFAULT_CODE_REVIEW_MARKDOWN_LABELS: CodeReviewReportMarkdownLabels
   titleDeep: 'Deep Review Report',
   executiveSummary: 'Executive Summary',
   reviewDecision: 'Review Decision',
+  runManifest: 'Run manifest',
   riskLevel: 'Risk Level',
   recommendedAction: 'Recommended Action',
   scope: 'Scope',
+  target: 'Target',
+  budget: 'Budget',
+  estimatedCalls: 'Estimated calls',
+  activeReviewers: 'Active reviewers',
+  skippedReviewers: 'Skipped reviewers',
   issues: 'Issues',
   noIssues: 'No validated issues.',
   remediationPlan: 'Remediation Plan',
@@ -318,9 +347,54 @@ function issueLocation(issue: CodeReviewIssue): string {
   return issue.line ? `${issue.file}:${issue.line}` : issue.file;
 }
 
+function manifestTarget(manifest: ReviewTeamRunManifest): string {
+  return manifest.target.tags.length > 0
+    ? manifest.target.tags.join(', ')
+    : manifest.target.source;
+}
+
+function manifestMemberLabel(member: ReviewTeamManifestMember): string {
+  return member.displayName || member.subagentId;
+}
+
+function manifestMemberLine(member: ReviewTeamManifestMember): string {
+  return `${manifestMemberLabel(member)} (${member.subagentId})`;
+}
+
+function pushRunManifestSection(
+  lines: string[],
+  manifest: ReviewTeamRunManifest,
+  labels: CodeReviewReportMarkdownLabels,
+): void {
+  const activeReviewers = getActiveReviewTeamManifestMembers(manifest);
+
+  lines.push(`## ${labels.runManifest}`);
+  lines.push(`- ${labels.target}: ${manifestTarget(manifest)}`);
+  lines.push(`- ${labels.budget}: ${manifest.tokenBudget.mode}`);
+  lines.push(`- ${labels.estimatedCalls}: ${manifest.tokenBudget.estimatedReviewerCalls}`);
+  lines.push('');
+  lines.push(`### ${labels.activeReviewers}`);
+  pushList(
+    lines,
+    activeReviewers.map((member) => manifestMemberLine(member)),
+    labels.noItems,
+  );
+  lines.push('');
+  lines.push(`### ${labels.skippedReviewers}`);
+  pushList(
+    lines,
+    manifest.skippedReviewers.map((member) =>
+      `${manifestMemberLine(member)}: ${member.reason ?? 'skipped'}`,
+    ),
+    labels.noItems,
+  );
+  lines.push('');
+}
+
 export function formatCodeReviewReportMarkdown(
   report: CodeReviewReportData,
   labels?: Partial<CodeReviewReportMarkdownLabels>,
+  options?: CodeReviewReportMarkdownOptions,
 ): string {
   const mergedLabels = mergeLabels(labels);
   const sections = buildCodeReviewReportSections(report);
@@ -340,6 +414,9 @@ export function formatCodeReviewReportMarkdown(
     lines.push(`- ${mergedLabels.scope}: ${report.review_scope.trim()}`);
   }
   lines.push('');
+  if (report.review_mode === 'deep' && options?.runManifest) {
+    pushRunManifestSection(lines, options.runManifest, mergedLabels);
+  }
   lines.push(`## ${mergedLabels.issues}`);
   if (issues.length === 0) {
     lines.push(`- ${mergedLabels.noIssues}`);

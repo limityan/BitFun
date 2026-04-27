@@ -283,6 +283,16 @@ export interface ReviewTeamRunManifest {
   skippedReviewers: ReviewTeamManifestMember[];
 }
 
+export function getActiveReviewTeamManifestMembers(
+  manifest: ReviewTeamRunManifest,
+): ReviewTeamManifestMember[] {
+  return [
+    ...manifest.coreReviewers,
+    ...manifest.enabledExtraReviewers,
+    ...(manifest.qualityGateReviewer ? [manifest.qualityGateReviewer] : []),
+  ];
+}
+
 const EXTRA_MEMBER_DEFAULTS = {
   roleName: 'Additional Specialist Reviewer',
   description:
