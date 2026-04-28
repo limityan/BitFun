@@ -1,7 +1,8 @@
 use crate::agentic::agents::{get_agent_registry, AgentInfo};
 use crate::agentic::coordination::get_global_coordinator;
 use crate::agentic::deep_review_policy::{
-    load_default_deep_review_policy, record_deep_review_task_budget, DEEP_REVIEW_AGENT_TYPE,
+    load_default_deep_review_policy, record_deep_review_task_budget, DeepReviewRunManifestGate,
+    DEEP_REVIEW_AGENT_TYPE,
 };
 use crate::agentic::tools::framework::{
     Tool, ToolRenderOptions, ToolResult, ToolUseContext, ValidationResult,
@@ -10,6 +11,7 @@ use crate::agentic::tools::pipeline::SubagentParentInfo;
 use crate::agentic::tools::InputValidator;
 use crate::util::errors::{BitFunError, BitFunResult};
 use async_trait::async_trait;
+use log::warn;
 use serde_json::{json, Value};
 use std::path::Path;
 
@@ -416,18 +418,49 @@ impl Tool for TaskTool {
             ));
         };
 
+        // Get global coordinator
+        let coordinator = get_global_coordinator()
+            .ok_or_else(|| BitFunError::tool("coordinator not initialized".to_string()))?;
+
         if context
             .agent_type
             .as_deref()
             .map(str::trim)
             .is_some_and(|agent_type| agent_type == DEEP_REVIEW_AGENT_TYPE)
         {
-            let policy = load_default_deep_review_policy().await.map_err(|error| {
+            let base_policy = load_default_deep_review_policy().await.map_err(|error| {
                 BitFunError::tool(format!(
                     "Failed to load DeepReview execution policy: {}",
                     error
                 ))
             })?;
+            let mut run_manifest = context.custom_data.get("deep_review_run_manifest").cloned();
+            if run_manifest.is_none() {
+                if let Some(workspace) = context.workspace.as_ref() {
+                    let session_storage_path = workspace.session_storage_path();
+                    match coordinator
+                        .get_session_manager()
+                        .load_session_metadata(&session_storage_path, &session_id)
+                        .await
+                    {
+                        Ok(Some(metadata)) => {
+                            run_manifest = metadata.deep_review_run_manifest;
+                        }
+                        Ok(None) => {}
+                        Err(error) => {
+                            warn!(
+                                "Failed to load DeepReview session metadata for run-manifest policy: session_id={}, error={}",
+                                session_id, error
+                            );
+                        }
+                    }
+                }
+            }
+            let policy = if let Some(manifest) = run_manifest.as_ref() {
+                base_policy.with_run_manifest_execution_policy(manifest)
+            } else {
+                base_policy
+            };
             let role = policy
                 .classify_subagent(&subagent_type)
                 .map_err(|violation| {
@@ -436,6 +469,17 @@ impl Tool for TaskTool {
                         violation.to_tool_error_message()
                     ))
                 })?;
+            if let Some(gate) = run_manifest
+                .as_ref()
+                .and_then(DeepReviewRunManifestGate::from_value)
+            {
+                gate.ensure_active(&subagent_type).map_err(|violation| {
+                    BitFunError::tool(format!(
+                        "DeepReview Task policy violation: {}",
+                        violation.to_tool_error_message()
+                    ))
+                })?;
+            }
             let is_readonly = get_agent_registry()
                 .get_subagent_is_readonly(&subagent_type)
                 .unwrap_or(false);
@@ -477,10 +521,6 @@ impl Tool for TaskTool {
             timeout_seconds = policy.effective_timeout_seconds(role, timeout_seconds);
         }
 
-        // Get global coordinator
-        let coordinator = get_global_coordinator()
-            .ok_or_else(|| BitFunError::tool("coordinator not initialized".to_string()))?;
-
         let parent_info = SubagentParentInfo {
             tool_call_id,
             session_id,
@@ -500,13 +540,39 @@ impl Tool for TaskTool {
             .await?;
 
         let duration = start_time.elapsed().as_millis();
-
-        Ok(vec![ToolResult::Result {
-            data: json!({"duration": duration}),
-            result_for_assistant: Some(format!(
+        let status = if result.is_partial_timeout() {
+            "partial_timeout"
+        } else {
+            "completed"
+        };
+        let result_for_assistant = if result.is_partial_timeout() {
+            format!(
+                "Subagent '{}' timed out with partial result:\n<partial_result status=\"partial_timeout\">\n{}\n</partial_result>",
+                subagent_type, result.text
+            )
+        } else {
+            format!(
                 "Subagent '{}' completed successfully with result:\n<result>\n{}\n</result>",
                 subagent_type, result.text
-            )),
+            )
+        };
+        let mut data = json!({
+            "duration": duration,
+            "status": status
+        });
+        if result.is_partial_timeout() {
+            data["partial_output"] = json!(result.text);
+            if let Some(reason) = result.reason.as_deref() {
+                data["reason"] = json!(reason);
+            }
+            if let Some(event_id) = result.ledger_event_id() {
+                data["ledger_event_id"] = json!(event_id);
+            }
+        }
+
+        Ok(vec![ToolResult::Result {
+            data,
+            result_for_assistant: Some(result_for_assistant),
             image_attachments: None,
         }])
     }

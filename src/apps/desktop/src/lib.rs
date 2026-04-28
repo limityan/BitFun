@@ -470,6 +470,7 @@ pub async fn run() {
             git_create_branch,
             git_delete_branch,
             git_get_diff,
+            git_get_changed_files,
             git_reset_files,
             git_reset_to_commit,
             git_get_file_content,

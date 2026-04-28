@@ -15,18 +15,23 @@ pub const REVIEWER_PERFORMANCE_AGENT_TYPE: &str = "ReviewPerformance";
 pub const REVIEWER_SECURITY_AGENT_TYPE: &str = "ReviewSecurity";
 pub const REVIEWER_ARCHITECTURE_AGENT_TYPE: &str = "ReviewArchitecture";
 pub const REVIEWER_FRONTEND_AGENT_TYPE: &str = "ReviewFrontend";
-pub const CORE_REVIEWER_AGENT_TYPES: [&str; 5] = [
+pub const CORE_REVIEWER_AGENT_TYPES: [&str; 4] = [
     REVIEWER_BUSINESS_LOGIC_AGENT_TYPE,
     REVIEWER_PERFORMANCE_AGENT_TYPE,
     REVIEWER_SECURITY_AGENT_TYPE,
     REVIEWER_ARCHITECTURE_AGENT_TYPE,
-    REVIEWER_FRONTEND_AGENT_TYPE,
 ];
+pub const CONDITIONAL_REVIEWER_AGENT_TYPES: [&str; 1] = [REVIEWER_FRONTEND_AGENT_TYPE];
 const DEFAULT_REVIEW_TEAM_CONFIG_PATH: &str = "ai.review_teams.default";
 
 const DEFAULT_REVIEWER_TIMEOUT_SECONDS: u64 = 600;
 const DEFAULT_JUDGE_TIMEOUT_SECONDS: u64 = 600;
 const MAX_TIMEOUT_SECONDS: u64 = 3600;
+const BASE_TIMEOUT_QUICK_SECONDS: u64 = 180;
+const BASE_TIMEOUT_NORMAL_SECONDS: u64 = 300;
+const BASE_TIMEOUT_DEEP_SECONDS: u64 = 600;
+const TIMEOUT_PER_FILE_SECONDS: u64 = 15;
+const TIMEOUT_PER_100_LINES_SECONDS: u64 = 30;
 const DEFAULT_REVIEWER_FILE_SPLIT_THRESHOLD: usize = 20;
 const DEFAULT_MAX_SAME_ROLE_INSTANCES: usize = 3;
 const MAX_SAME_ROLE_INSTANCES: usize = 8;
@@ -103,6 +108,86 @@ impl DeepReviewPolicyViolation {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeepReviewRunManifestGate {
+    active_subagent_ids: HashSet<String>,
+    skipped_subagent_reasons: HashMap<String, String>,
+}
+
+impl DeepReviewRunManifestGate {
+    pub fn from_value(raw: &Value) -> Option<Self> {
+        let manifest = raw.as_object()?;
+        if manifest.get("reviewMode").and_then(Value::as_str) != Some("deep") {
+            return None;
+        }
+
+        let mut active_subagent_ids = HashSet::new();
+        collect_manifest_members(manifest.get("workPackets"), &mut active_subagent_ids);
+        collect_manifest_members(manifest.get("coreReviewers"), &mut active_subagent_ids);
+        collect_manifest_members(
+            manifest.get("enabledExtraReviewers"),
+            &mut active_subagent_ids,
+        );
+        if let Some(id) = manifest
+            .get("qualityGateReviewer")
+            .and_then(manifest_member_subagent_id)
+        {
+            active_subagent_ids.insert(id);
+        }
+
+        if active_subagent_ids.is_empty() {
+            return None;
+        }
+
+        let mut skipped_subagent_reasons = HashMap::new();
+        if let Some(skipped) = manifest.get("skippedReviewers").and_then(Value::as_array) {
+            for member in skipped {
+                let Some(id) = manifest_member_subagent_id(member) else {
+                    continue;
+                };
+                let reason = member
+                    .get("reason")
+                    .and_then(Value::as_str)
+                    .unwrap_or("skipped")
+                    .trim();
+                skipped_subagent_reasons.insert(
+                    id,
+                    if reason.is_empty() {
+                        "skipped".to_string()
+                    } else {
+                        reason.to_string()
+                    },
+                );
+            }
+        }
+
+        Some(Self {
+            active_subagent_ids,
+            skipped_subagent_reasons,
+        })
+    }
+
+    pub fn ensure_active(&self, subagent_type: &str) -> Result<(), DeepReviewPolicyViolation> {
+        if self.active_subagent_ids.contains(subagent_type) {
+            return Ok(());
+        }
+
+        let reason = self
+            .skipped_subagent_reasons
+            .get(subagent_type)
+            .map(String::as_str)
+            .unwrap_or("missing_from_manifest");
+
+        Err(DeepReviewPolicyViolation::new(
+            "deep_review_subagent_not_active_for_target",
+            format!(
+                "DeepReview subagent '{}' is not active for this review target (reason: {})",
+                subagent_type, reason
+            ),
+        ))
+    }
+}
+
 impl Default for DeepReviewExecutionPolicy {
     fn default() -> Self {
         Self {
@@ -162,6 +247,7 @@ impl DeepReviewExecutionPolicy {
         subagent_type: &str,
     ) -> Result<DeepReviewSubagentRole, DeepReviewPolicyViolation> {
         if CORE_REVIEWER_AGENT_TYPES.contains(&subagent_type)
+            || CONDITIONAL_REVIEWER_AGENT_TYPES.contains(&subagent_type)
             || self
                 .extra_subagent_ids
                 .iter()
@@ -211,6 +297,87 @@ impl DeepReviewExecutionPolicy {
         )
     }
 
+    pub fn predictive_timeout(
+        &self,
+        role: DeepReviewSubagentRole,
+        strategy: DeepReviewStrategyLevel,
+        file_count: usize,
+        line_count: usize,
+        reviewer_count: usize,
+    ) -> u64 {
+        let base = match strategy {
+            DeepReviewStrategyLevel::Quick => BASE_TIMEOUT_QUICK_SECONDS,
+            DeepReviewStrategyLevel::Normal => BASE_TIMEOUT_NORMAL_SECONDS,
+            DeepReviewStrategyLevel::Deep => BASE_TIMEOUT_DEEP_SECONDS,
+        };
+        let file_overhead = u64::try_from(file_count)
+            .unwrap_or(u64::MAX)
+            .saturating_mul(TIMEOUT_PER_FILE_SECONDS);
+        let line_overhead = u64::try_from(line_count / 100)
+            .unwrap_or(u64::MAX)
+            .saturating_mul(TIMEOUT_PER_100_LINES_SECONDS);
+        let raw = base
+            .saturating_add(file_overhead)
+            .saturating_add(line_overhead);
+        let multiplier = match role {
+            DeepReviewSubagentRole::Reviewer => 1,
+            DeepReviewSubagentRole::Judge => {
+                let reviewer_count = u64::try_from(reviewer_count.max(1)).unwrap_or(u64::MAX);
+                1 + reviewer_count.saturating_sub(1) / 3
+            }
+        };
+
+        raw.saturating_mul(multiplier).min(MAX_TIMEOUT_SECONDS)
+    }
+
+    pub fn with_run_manifest_execution_policy(&self, raw_manifest: &Value) -> Self {
+        let Some(manifest) = raw_manifest.as_object() else {
+            return self.clone();
+        };
+        if manifest.get("reviewMode").and_then(Value::as_str) != Some("deep") {
+            return self.clone();
+        }
+
+        let mut policy = self.clone();
+        if let Some(strategy_level) =
+            DeepReviewStrategyLevel::from_value(manifest.get("strategyLevel"))
+        {
+            policy.strategy_level = strategy_level;
+        }
+
+        let Some(execution_policy) = manifest.get("executionPolicy").and_then(Value::as_object)
+        else {
+            return policy;
+        };
+
+        policy.reviewer_timeout_seconds = clamp_u64(
+            execution_policy.get("reviewerTimeoutSeconds"),
+            0,
+            MAX_TIMEOUT_SECONDS,
+            policy.reviewer_timeout_seconds,
+        );
+        policy.judge_timeout_seconds = clamp_u64(
+            execution_policy.get("judgeTimeoutSeconds"),
+            0,
+            MAX_TIMEOUT_SECONDS,
+            policy.judge_timeout_seconds,
+        );
+        policy.reviewer_file_split_threshold = clamp_usize(
+            execution_policy.get("reviewerFileSplitThreshold"),
+            0,
+            usize::MAX,
+            policy.reviewer_file_split_threshold,
+        );
+        policy.max_same_role_instances = clamp_usize(
+            execution_policy.get("maxSameRoleInstances"),
+            1,
+            MAX_SAME_ROLE_INSTANCES,
+            policy.max_same_role_instances,
+        );
+
+        policy
+    }
+
     /// Returns true when the file count exceeds the split threshold and
     /// `max_same_role_instances > 1`, meaning the orchestrator should
     /// partition the file list across multiple same-role reviewer instances.
@@ -238,9 +405,9 @@ impl DeepReviewExecutionPolicy {
 struct DeepReviewTurnBudget {
     judge_calls: usize,
     /// Tracks total reviewer calls (across all roles) per turn.
-    /// Capped by `max_same_role_instances * CORE_REVIEWER_AGENT_TYPES.len() +
-    /// extra_subagent_ids.len()` so the orchestrator cannot spawn an
-    /// unbounded number of same-role instances.
+    /// Capped by `max_same_role_instances * reviewer_agent_type_count() +
+    /// extra_subagent_ids.len()` so the orchestrator cannot spawn an unbounded
+    /// number of same-role instances.
     reviewer_calls: usize,
     updated_at: Instant,
 }
@@ -292,7 +459,7 @@ impl DeepReviewBudgetTracker {
         match role {
             DeepReviewSubagentRole::Reviewer => {
                 let max_reviewer_calls = policy.max_same_role_instances
-                    * (CORE_REVIEWER_AGENT_TYPES.len() + policy.extra_subagent_ids.len());
+                    * (reviewer_agent_type_count() + policy.extra_subagent_ids.len());
                 if budget.reviewer_calls >= max_reviewer_calls {
                     return Err(DeepReviewPolicyViolation::new(
                         "deep_review_reviewer_budget_exhausted",
@@ -391,6 +558,27 @@ pub fn record_deep_review_task_budget(
     GLOBAL_DEEP_REVIEW_BUDGET_TRACKER.record_task(parent_dialog_turn_id, policy, role)
 }
 
+fn collect_manifest_members(raw: Option<&Value>, output: &mut HashSet<String>) {
+    let Some(values) = raw.and_then(Value::as_array) else {
+        return;
+    };
+
+    for member in values {
+        if let Some(id) = manifest_member_subagent_id(member) {
+            output.insert(id);
+        }
+    }
+}
+
+fn manifest_member_subagent_id(value: &Value) -> Option<String> {
+    let id = value
+        .get("subagentId")
+        .or_else(|| value.get("subagent_id"))
+        .and_then(Value::as_str)?
+        .trim();
+    (!id.is_empty()).then(|| id.to_string())
+}
+
 fn normalize_extra_subagent_ids(raw: Option<&Value>) -> Vec<String> {
     let Some(values) = raw.and_then(Value::as_array) else {
         return Vec::new();
@@ -437,12 +625,17 @@ fn normalize_member_strategy_overrides(
 fn disallowed_extra_subagent_ids() -> HashSet<&'static str> {
     CORE_REVIEWER_AGENT_TYPES
         .into_iter()
+        .chain(CONDITIONAL_REVIEWER_AGENT_TYPES)
         .chain([
             REVIEW_JUDGE_AGENT_TYPE,
             DEEP_REVIEW_AGENT_TYPE,
             REVIEW_FIXER_AGENT_TYPE,
         ])
         .collect()
+}
+
+fn reviewer_agent_type_count() -> usize {
+    CORE_REVIEWER_AGENT_TYPES.len() + CONDITIONAL_REVIEWER_AGENT_TYPES.len()
 }
 
 fn value_to_id(value: &Value) -> Option<String> {
@@ -484,8 +677,8 @@ fn number_as_i64(value: &Value) -> Option<i64> {
 mod tests {
     use super::{
         is_missing_default_review_team_config_error, DeepReviewBudgetTracker,
-        DeepReviewExecutionPolicy, DeepReviewStrategyLevel, DeepReviewSubagentRole,
-        REVIEW_FIXER_AGENT_TYPE,
+        DeepReviewExecutionPolicy, DeepReviewRunManifestGate, DeepReviewStrategyLevel,
+        DeepReviewSubagentRole, REVIEW_FIXER_AGENT_TYPE,
     };
     use crate::util::errors::BitFunError;
     use serde_json::json;
@@ -515,6 +708,22 @@ mod tests {
                 .unwrap_err()
                 .code,
             "deep_review_fixer_not_allowed"
+        );
+    }
+
+    #[test]
+    fn frontend_reviewer_is_conditional_not_core() {
+        let policy = DeepReviewExecutionPolicy::default();
+
+        assert!(!super::CORE_REVIEWER_AGENT_TYPES.contains(&super::REVIEWER_FRONTEND_AGENT_TYPE));
+        assert!(
+            super::CONDITIONAL_REVIEWER_AGENT_TYPES.contains(&super::REVIEWER_FRONTEND_AGENT_TYPE)
+        );
+        assert_eq!(
+            policy
+                .classify_subagent(super::REVIEWER_FRONTEND_AGENT_TYPE)
+                .unwrap(),
+            DeepReviewSubagentRole::Reviewer
         );
     }
 
@@ -568,6 +777,77 @@ mod tests {
         let result = policy.classify_subagent("UnknownAgent");
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().code, "deep_review_subagent_not_allowed");
+    }
+
+    #[test]
+    fn run_manifest_gate_allows_only_active_reviewers() {
+        let manifest = json!({
+            "reviewMode": "deep",
+            "coreReviewers": [
+                { "subagentId": "ReviewBusinessLogic" }
+            ],
+            "enabledExtraReviewers": [
+                { "subagentId": "ExtraReviewer" }
+            ],
+            "qualityGateReviewer": { "subagentId": "ReviewJudge" },
+            "skippedReviewers": [
+                { "subagentId": "ReviewFrontend", "reason": "not_applicable" }
+            ]
+        });
+
+        let gate = DeepReviewRunManifestGate::from_value(&manifest)
+            .expect("valid run manifest should produce a gate");
+
+        gate.ensure_active("ReviewBusinessLogic").unwrap();
+        gate.ensure_active("ExtraReviewer").unwrap();
+        gate.ensure_active("ReviewJudge").unwrap();
+
+        let violation = gate.ensure_active("ReviewFrontend").unwrap_err();
+        assert_eq!(violation.code, "deep_review_subagent_not_active_for_target");
+        assert!(violation.message.contains("ReviewFrontend"));
+        assert!(violation.message.contains("not_applicable"));
+    }
+
+    #[test]
+    fn run_manifest_gate_is_absent_without_review_team_shape() {
+        let manifest = json!({
+            "reviewMode": "deep",
+            "skippedReviewers": [
+                { "subagentId": "ReviewFrontend", "reason": "not_applicable" }
+            ]
+        });
+
+        assert!(DeepReviewRunManifestGate::from_value(&manifest).is_none());
+    }
+
+    #[test]
+    fn run_manifest_gate_accepts_work_packet_roster() {
+        let manifest = json!({
+            "reviewMode": "deep",
+            "workPackets": [
+                {
+                    "packetId": "reviewer:ReviewBusinessLogic",
+                    "subagentId": "ReviewBusinessLogic"
+                },
+                {
+                    "packet_id": "judge:ReviewJudge",
+                    "subagent_id": "ReviewJudge"
+                }
+            ],
+            "skippedReviewers": [
+                { "subagentId": "ReviewFrontend", "reason": "not_applicable" }
+            ]
+        });
+
+        let gate = DeepReviewRunManifestGate::from_value(&manifest)
+            .expect("work packet manifest should produce a gate");
+
+        gate.ensure_active("ReviewBusinessLogic").unwrap();
+        gate.ensure_active("ReviewJudge").unwrap();
+
+        let violation = gate.ensure_active("ReviewFrontend").unwrap_err();
+        assert_eq!(violation.code, "deep_review_subagent_not_active_for_target");
+        assert!(violation.message.contains("not_applicable"));
     }
 
     #[test]
@@ -648,6 +928,63 @@ mod tests {
             policy.effective_timeout_seconds(DeepReviewSubagentRole::Reviewer, None),
             None
         );
+    }
+
+    #[test]
+    fn predictive_timeout_scales_with_target_size_and_reviewer_count() {
+        let policy = DeepReviewExecutionPolicy::default();
+
+        assert_eq!(
+            policy.predictive_timeout(
+                DeepReviewSubagentRole::Reviewer,
+                DeepReviewStrategyLevel::Normal,
+                25,
+                0,
+                5,
+            ),
+            675
+        );
+        assert_eq!(
+            policy.predictive_timeout(
+                DeepReviewSubagentRole::Judge,
+                DeepReviewStrategyLevel::Normal,
+                25,
+                0,
+                5,
+            ),
+            1350
+        );
+    }
+
+    #[test]
+    fn run_manifest_execution_policy_overrides_static_timeouts() {
+        let policy = DeepReviewExecutionPolicy::from_config_value(Some(&json!({
+            "reviewer_timeout_seconds": 300,
+            "judge_timeout_seconds": 240,
+            "reviewer_file_split_threshold": 20,
+            "max_same_role_instances": 3
+        })));
+        let manifest = json!({
+            "reviewMode": "deep",
+            "strategyLevel": "normal",
+            "executionPolicy": {
+                "reviewerTimeoutSeconds": 675,
+                "judgeTimeoutSeconds": 1350,
+                "reviewerFileSplitThreshold": 10,
+                "maxSameRoleInstances": 4
+            },
+            "coreReviewers": [
+                { "subagentId": "ReviewBusinessLogic" }
+            ],
+            "qualityGateReviewer": { "subagentId": "ReviewJudge" }
+        });
+
+        let effective = policy.with_run_manifest_execution_policy(&manifest);
+
+        assert_eq!(effective.reviewer_timeout_seconds, 675);
+        assert_eq!(effective.judge_timeout_seconds, 1350);
+        assert_eq!(effective.reviewer_file_split_threshold, 10);
+        assert_eq!(effective.max_same_role_instances, 4);
     }
 
     #[test]
