@@ -10,8 +10,11 @@ import {
   canUseSubagentAsReviewTeamMember,
   loadDefaultReviewTeamDefinition,
   loadDefaultReviewTeamConfig,
+  loadReviewTeamProjectStrategyOverride,
+  loadReviewTeamRateLimitStatus,
   prepareDefaultReviewTeamForLaunch,
   resolveDefaultReviewTeam,
+  saveReviewTeamProjectStrategyOverride,
   type ReviewTeamStoredConfig,
 } from './reviewTeamService';
 import { agentAPI } from '@/infrastructure/api/service-api/AgentAPI';
@@ -150,6 +153,78 @@ describe('reviewTeamService', () => {
     vi.mocked(configAPI.getConfig).mockRejectedValueOnce(error);
 
     await expect(loadDefaultReviewTeamConfig()).rejects.toThrow(error.message);
+  });
+
+  it('loads cached review team rate limit status when available', async () => {
+    vi.mocked(configAPI.getConfig).mockResolvedValueOnce({
+      remaining: 3.8,
+    });
+
+    await expect(loadReviewTeamRateLimitStatus()).resolves.toEqual({
+      remaining: 3,
+    });
+    expect(configAPI.getConfig).toHaveBeenCalledWith(
+      'ai.review_teams.rate_limit_status',
+      { skipRetryOnNotFound: true },
+    );
+  });
+
+  it('ignores missing or invalid cached review team rate limit status', async () => {
+    vi.mocked(configAPI.getConfig)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce({ remaining: 'not-a-number' })
+      .mockRejectedValueOnce(new Error('rate status unavailable'));
+
+    await expect(loadReviewTeamRateLimitStatus()).resolves.toBeNull();
+    await expect(loadReviewTeamRateLimitStatus()).resolves.toBeNull();
+    await expect(loadReviewTeamRateLimitStatus()).resolves.toBeNull();
+  });
+
+  it('loads project strategy overrides by normalized workspace path', async () => {
+    vi.mocked(configAPI.getConfig).mockResolvedValueOnce({
+      'd:/workspace/repo': 'deep',
+      '/test-fixtures/project-a': 'quick',
+      invalid: 'invalid',
+    });
+
+    await expect(
+      loadReviewTeamProjectStrategyOverride('D:\\workspace\\repo'),
+    ).resolves.toBe('deep');
+    expect(configAPI.getConfig).toHaveBeenCalledWith(
+      'ai.review_teams.project_strategy_overrides',
+      { skipRetryOnNotFound: true },
+    );
+  });
+
+  it('saves and clears project strategy overrides by normalized workspace path', async () => {
+    vi.mocked(configAPI.getConfig)
+      .mockResolvedValueOnce({
+        'd:/workspace/repo': 'quick',
+        '/test-fixtures/project-a': 'normal',
+      })
+      .mockResolvedValueOnce({
+        'd:/workspace/repo': 'deep',
+        '/test-fixtures/project-a': 'normal',
+      });
+
+    await saveReviewTeamProjectStrategyOverride('D:\\workspace\\repo', 'deep');
+    expect(configAPI.setConfig).toHaveBeenNthCalledWith(
+      1,
+      'ai.review_teams.project_strategy_overrides',
+      {
+        'd:/workspace/repo': 'deep',
+        '/test-fixtures/project-a': 'normal',
+      },
+    );
+
+    await saveReviewTeamProjectStrategyOverride('D:\\workspace\\repo');
+    expect(configAPI.setConfig).toHaveBeenNthCalledWith(
+      2,
+      'ai.review_teams.project_strategy_overrides',
+      {
+        '/test-fixtures/project-a': 'normal',
+      },
+    );
   });
 
   it('only force-enables locked core members before launch', async () => {
@@ -1301,6 +1376,55 @@ describe('reviewTeamService', () => {
     expect(promptBlock).toContain(`prompt_directive: ${REVIEW_STRATEGY_DEFINITIONS.deep.roleDirectives.ReviewSecurity}`);
     expect(promptBlock).toContain('pass model_id with that value to the matching Task call');
     expect(promptBlock).toContain('Token/time impact: approximately 1.8-2.5x token usage and 1.5-2.5x runtime.');
+  });
+
+  it('applies a project strategy override to the launch manifest without changing member overrides', () => {
+    const team = resolveDefaultReviewTeam(
+      [
+        ...coreSubagents(),
+        subagent('ExtraEnabled', true, 'user', 'fast', true, true),
+      ],
+      storedConfigWithExtra(['ExtraEnabled'], {
+        strategy_level: 'normal',
+        member_strategy_overrides: {
+          ReviewSecurity: 'quick',
+        },
+      }),
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      workspacePath: WORKSPACE_PATH,
+      strategyOverride: 'deep',
+    });
+
+    expect(manifest.strategyLevel).toBe('deep');
+    expect(manifest.coreReviewers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          subagentId: 'ReviewBusinessLogic',
+          strategyLevel: 'deep',
+          strategySource: 'team',
+          defaultModelSlot: 'primary',
+        }),
+        expect.objectContaining({
+          subagentId: 'ReviewSecurity',
+          strategyLevel: 'quick',
+          strategySource: 'member',
+          defaultModelSlot: 'fast',
+        }),
+      ]),
+    );
+    expect(manifest.enabledExtraReviewers[0]).toMatchObject({
+      subagentId: 'ExtraEnabled',
+      strategyLevel: 'deep',
+      strategySource: 'team',
+      defaultModelSlot: 'primary',
+    });
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
+    expect(promptBlock).toContain('- team_strategy: deep');
+    expect(promptBlock).toContain('subagent_type: ReviewSecurity');
+    expect(promptBlock).toContain('strategy: quick');
   });
 
   it('falls back removed concrete reviewer models to the strategy default model slot', () => {

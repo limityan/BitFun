@@ -483,8 +483,17 @@
     "cancel": "Cancel",
     "confirm": "Start Deep Review",
     "estimatedTokens": "Estimated: {{min}} - {{max}} tokens",
+    "runStrategy": "Run strategy: {{strategy}}",
     "recommendedStrategy": "Recommended strategy: {{strategy}}",
-    "recommendationTitle": "Risk recommendation"
+    "recommendationTitle": "Risk recommendation",
+    "strategyOverrideTitle": "Run strategy",
+    "strategyOverrideBody": "Choose a project-specific strategy for this launch.",
+    "teamDefaultStrategy": "Team default",
+    "strategyLabels": {
+      "quick": "Quick",
+      "normal": "Normal",
+      "deep": "Deep"
+    }
   },
   "flowChatHeader": {
     "turnList": "Turn list",

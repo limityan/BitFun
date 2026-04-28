@@ -15,6 +15,8 @@ import {
   buildEffectiveReviewTeamManifest,
   buildReviewTeamPromptBlock,
   loadDefaultReviewTeam,
+  loadReviewTeamProjectStrategyOverride,
+  loadReviewTeamRateLimitStatus,
   prepareDefaultReviewTeamForLaunch,
   type ReviewTeamChangeStats,
   type ReviewTeamRunManifest,
@@ -487,6 +489,31 @@ async function resolveSlashCommandReviewTarget(
   return { target, changeStats: buildUnknownChangeStats(target) };
 }
 
+async function buildReviewTeamManifestWithRuntimeSignals(
+  team: Parameters<typeof buildEffectiveReviewTeamManifest>[0],
+  options: Parameters<typeof buildEffectiveReviewTeamManifest>[1],
+): Promise<ReviewTeamRunManifest> {
+  const manifestOptions = options ?? {};
+  const [rateLimitStatus, strategyOverride] = await Promise.all([
+    loadReviewTeamRateLimitStatus().catch((error) => {
+      log.warn('Failed to load Deep Review rate limit status', { error });
+      return null;
+    }),
+    manifestOptions.workspacePath
+      ? loadReviewTeamProjectStrategyOverride(manifestOptions.workspacePath).catch((error) => {
+        log.warn('Failed to load Deep Review project strategy override', { error });
+        return undefined;
+      })
+      : Promise.resolve(undefined),
+  ]);
+
+  return buildEffectiveReviewTeamManifest(team, {
+    ...manifestOptions,
+    ...(rateLimitStatus ? { rateLimitStatus } : {}),
+    ...(strategyOverride ? { strategyOverride } : {}),
+  });
+}
+
 export async function buildDeepReviewLaunchFromSessionFiles(
   filePaths: string[],
   extraContext?: string,
@@ -495,7 +522,7 @@ export async function buildDeepReviewLaunchFromSessionFiles(
   const team = await prepareDefaultReviewTeamForLaunch(workspacePath);
   const target = classifyReviewTargetFromFiles(filePaths, 'session_files');
   const changeStats = buildUnknownChangeStats(target);
-  const manifest = buildEffectiveReviewTeamManifest(team, {
+  const manifest = await buildReviewTeamManifestWithRuntimeSignals(team, {
     workspacePath,
     target,
     changeStats,
@@ -524,7 +551,7 @@ export async function buildDeepReviewPreviewFromSessionFiles(
   const team = await loadDefaultReviewTeam(workspacePath);
   const target = classifyReviewTargetFromFiles(filePaths, 'session_files');
   const changeStats = buildUnknownChangeStats(target);
-  return buildEffectiveReviewTeamManifest(team, {
+  return buildReviewTeamManifestWithRuntimeSignals(team, {
     workspacePath,
     target,
     changeStats,
@@ -551,7 +578,7 @@ export async function buildDeepReviewLaunchFromSlashCommand(
   const trimmed = commandText.trim();
   const extraContext = getDeepReviewCommandFocus(trimmed);
   const { target, changeStats } = await resolveSlashCommandReviewTarget(extraContext, workspacePath);
-  const manifest = buildEffectiveReviewTeamManifest(team, {
+  const manifest = await buildReviewTeamManifestWithRuntimeSignals(team, {
     workspacePath,
     target,
     changeStats,
@@ -581,7 +608,7 @@ export async function buildDeepReviewPreviewFromSlashCommand(
   const trimmed = commandText.trim();
   const extraContext = getDeepReviewCommandFocus(trimmed);
   const { target, changeStats } = await resolveSlashCommandReviewTarget(extraContext, workspacePath);
-  return buildEffectiveReviewTeamManifest(team, {
+  return buildReviewTeamManifestWithRuntimeSignals(team, {
     workspacePath,
     target,
     changeStats,

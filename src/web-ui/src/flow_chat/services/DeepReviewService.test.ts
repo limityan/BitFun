@@ -23,6 +23,8 @@ const mockGitGetChangedFiles = vi.fn();
 const mockGitGetDiff = vi.fn();
 const mockLoadDefaultReviewTeam = vi.fn();
 const mockPrepareDefaultReviewTeamForLaunch = vi.fn();
+const mockLoadReviewTeamRateLimitStatus = vi.fn();
+const mockLoadReviewTeamProjectStrategyOverride = vi.fn();
 
 vi.mock('@/infrastructure/api', () => ({
   agentAPI: {
@@ -67,6 +69,8 @@ vi.mock('./ReviewSessionMarkerService', () => ({
 vi.mock('@/shared/services/reviewTeamService', () => ({
   loadDefaultReviewTeam: (...args: any[]) => mockLoadDefaultReviewTeam(...args),
   prepareDefaultReviewTeamForLaunch: (...args: any[]) => mockPrepareDefaultReviewTeamForLaunch(...args),
+  loadReviewTeamRateLimitStatus: (...args: any[]) => mockLoadReviewTeamRateLimitStatus(...args),
+  loadReviewTeamProjectStrategyOverride: (...args: any[]) => mockLoadReviewTeamProjectStrategyOverride(...args),
   buildEffectiveReviewTeamManifest: vi.fn(() => ({ reviewers: [] })),
   buildReviewTeamPromptBlock: vi.fn(() => 'Review team manifest.'),
 }));
@@ -76,6 +80,8 @@ describe('DeepReviewService slash command', () => {
     vi.clearAllMocks();
     mockLoadDefaultReviewTeam.mockResolvedValue({ members: [] });
     mockPrepareDefaultReviewTeamForLaunch.mockResolvedValue({ members: [] });
+    mockLoadReviewTeamRateLimitStatus.mockResolvedValue(null);
+    mockLoadReviewTeamProjectStrategyOverride.mockResolvedValue(undefined);
     mockGitGetStatus.mockResolvedValue({
       staged: [],
       unstaged: [],
@@ -200,6 +206,68 @@ describe('DeepReviewService slash command', () => {
         }),
       }),
     );
+  });
+
+  it('passes cached rate limit status into slash-command launch manifests', async () => {
+    mockLoadReviewTeamRateLimitStatus.mockResolvedValueOnce({ remaining: 2 });
+
+    await buildDeepReviewLaunchFromSlashCommand(
+      '/DeepReview',
+      'D:\\workspace\\repo',
+    );
+
+    expect(mockLoadReviewTeamRateLimitStatus).toHaveBeenCalled();
+    expect(buildEffectiveReviewTeamManifest).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        workspacePath: 'D:\\workspace\\repo',
+        rateLimitStatus: { remaining: 2 },
+      }),
+    );
+  });
+
+  it('does not block slash-command launch manifests when rate limit status is unavailable', async () => {
+    mockLoadReviewTeamRateLimitStatus.mockRejectedValueOnce(new Error('rate status unavailable'));
+
+    await buildDeepReviewLaunchFromSlashCommand(
+      '/DeepReview',
+      'D:\\workspace\\repo',
+    );
+
+    const lastCall = vi.mocked(buildEffectiveReviewTeamManifest).mock.calls.at(-1);
+    expect(lastCall?.[1]).not.toHaveProperty('rateLimitStatus');
+  });
+
+  it('passes project strategy overrides into slash-command launch manifests', async () => {
+    mockLoadReviewTeamProjectStrategyOverride.mockResolvedValueOnce('deep');
+
+    await buildDeepReviewLaunchFromSlashCommand(
+      '/DeepReview',
+      'D:\\workspace\\repo',
+    );
+
+    expect(mockLoadReviewTeamProjectStrategyOverride).toHaveBeenCalledWith(
+      'D:\\workspace\\repo',
+    );
+    expect(buildEffectiveReviewTeamManifest).toHaveBeenLastCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        workspacePath: 'D:\\workspace\\repo',
+        strategyOverride: 'deep',
+      }),
+    );
+  });
+
+  it('does not block slash-command launch manifests when project strategy overrides are unavailable', async () => {
+    mockLoadReviewTeamProjectStrategyOverride.mockRejectedValueOnce(new Error('strategy unavailable'));
+
+    await buildDeepReviewLaunchFromSlashCommand(
+      '/DeepReview',
+      'D:\\workspace\\repo',
+    );
+
+    const lastCall = vi.mocked(buildEffectiveReviewTeamManifest).mock.calls.at(-1);
+    expect(lastCall?.[1]).not.toHaveProperty('strategyOverride');
   });
 
   it('classifies commit target files through the git changed-files API', async () => {

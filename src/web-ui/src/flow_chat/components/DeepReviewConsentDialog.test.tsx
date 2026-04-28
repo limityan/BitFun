@@ -5,6 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDeepReviewConsent } from './DeepReviewConsentDialog';
 import type { ReviewTeamRunManifest } from '@/shared/services/reviewTeamService';
 
+const mockSaveReviewTeamProjectStrategyOverride = vi.hoisted(() => vi.fn());
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (_key: string, options?: Record<string, unknown>) => {
@@ -49,6 +51,16 @@ vi.mock('@/component-library', () => ({
   }) => (isOpen ? <div role="dialog">{children}</div> : null),
 }));
 
+vi.mock('@/shared/services/reviewTeamService', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/shared/services/reviewTeamService')>();
+  return {
+    ...actual,
+    saveReviewTeamProjectStrategyOverride: (
+      ...args: Parameters<typeof actual.saveReviewTeamProjectStrategyOverride>
+    ) => mockSaveReviewTeamProjectStrategyOverride(...args),
+  };
+});
+
 let JSDOMCtor: (new (
   html?: string,
   options?: { pretendToBeVisual?: boolean; url?: string }
@@ -89,6 +101,7 @@ function Harness({
 function buildPreview(): ReviewTeamRunManifest {
   return {
     reviewMode: 'deep',
+    workspacePath: '/test-fixtures/project-a',
     policySource: 'default-review-team-config',
     target: {
       source: 'session_files',
@@ -213,6 +226,7 @@ describeWithJsdom('DeepReviewConsentDialog', () => {
   let root: Root;
 
   beforeEach(() => {
+    mockSaveReviewTeamProjectStrategyOverride.mockResolvedValue(undefined);
     dom = new JSDOMCtor!('<!doctype html><html><body></body></html>', {
       pretendToBeVisual: true,
       url: 'http://localhost',
@@ -276,5 +290,35 @@ describeWithJsdom('DeepReviewConsentDialog', () => {
 
     expect(container.querySelector('[role="dialog"]')).not.toBeNull();
     expect(result).not.toHaveBeenCalled();
+  });
+
+  it('persists a selected project strategy override before confirming', async () => {
+    const result = vi.fn();
+
+    await act(async () => {
+      root.render(<Harness preview={buildPreview()} onResult={result} />);
+    });
+    await act(async () => {
+      container.querySelector('button')?.dispatchEvent(new window.Event('click', { bubbles: true }));
+    });
+
+    const deepStrategyButton = Array.from(container.querySelectorAll('button'))
+      .find((button) => button.textContent === 'Deep');
+    expect(deepStrategyButton).not.toBeUndefined();
+
+    await act(async () => {
+      deepStrategyButton?.dispatchEvent(new window.Event('click', { bubbles: true }));
+    });
+    await act(async () => {
+      Array.from(container.querySelectorAll('button'))
+        .find((button) => button.textContent === 'deepReviewConsent.confirm')
+        ?.dispatchEvent(new window.Event('click', { bubbles: true }));
+    });
+
+    expect(mockSaveReviewTeamProjectStrategyOverride).toHaveBeenCalledWith(
+      '/test-fixtures/project-a',
+      'deep',
+    );
+    expect(result).toHaveBeenCalledWith(true);
   });
 });

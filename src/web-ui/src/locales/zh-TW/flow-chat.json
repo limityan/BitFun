@@ -474,8 +474,17 @@
     "cancel": "取消",
     "confirm": "開始深度審核",
     "estimatedTokens": "預計消耗：{{min}} - {{max}} tokens",
+    "runStrategy": "運行策略：{{strategy}}",
     "recommendedStrategy": "推薦策略：{{strategy}}",
-    "recommendationTitle": "風險推薦"
+    "recommendationTitle": "風險推薦",
+    "strategyOverrideTitle": "運行策略",
+    "strategyOverrideBody": "為本專案的本次啟動選擇審核策略。",
+    "teamDefaultStrategy": "團隊預設",
+    "strategyLabels": {
+      "quick": "快速",
+      "normal": "標準",
+      "deep": "深度"
+    }
   },
   "flowChatHeader": {
     "turnList": "輪次列表",

@@ -5,11 +5,17 @@ import { useTranslation } from 'react-i18next';
 import { Button, Checkbox, Modal } from '@/component-library';
 import { createLogger } from '@/shared/utils/logger';
 import type {
+  ReviewStrategyLevel,
   ReviewTeamManifestMember,
   ReviewTeamManifestMemberReason,
   ReviewTeamRunManifest,
 } from '@/shared/services/reviewTeamService';
-import { getActiveReviewTeamManifestMembers } from '@/shared/services/reviewTeamService';
+import {
+  REVIEW_STRATEGY_LEVELS,
+  getActiveReviewTeamManifestMembers,
+  getReviewStrategyProfile,
+  saveReviewTeamProjectStrategyOverride,
+} from '@/shared/services/reviewTeamService';
 import './DeepReviewConsentDialog.scss';
 
 const log = createLogger('DeepReviewConsentDialog');
@@ -37,6 +43,9 @@ export function useDeepReviewConsent(): DeepReviewConsentControls {
   const { t } = useTranslation('flow-chat');
   const [pendingConsent, setPendingConsent] = useState<PendingConsent | null>(null);
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [selectedStrategyOverride, setSelectedStrategyOverride] =
+    useState<ReviewStrategyLevel | null>(null);
+  const [strategySelectionTouched, setStrategySelectionTouched] = useState(false);
 
   const confirmDeepReviewLaunch = useCallback(async (preview?: ReviewTeamRunManifest) => {
     try {
@@ -52,6 +61,8 @@ export function useDeepReviewConsent(): DeepReviewConsentControls {
 
     return new Promise<boolean>((resolve) => {
       setDontShowAgain(false);
+      setSelectedStrategyOverride(null);
+      setStrategySelectionTouched(false);
       setPendingConsent({ resolve, preview });
     });
   }, []);
@@ -60,6 +71,21 @@ export function useDeepReviewConsent(): DeepReviewConsentControls {
     const pending = pendingConsent;
     if (!pending) {
       return;
+    }
+
+    if (
+      confirmed &&
+      strategySelectionTouched &&
+      pending.preview?.workspacePath
+    ) {
+      try {
+        await saveReviewTeamProjectStrategyOverride(
+          pending.preview.workspacePath,
+          selectedStrategyOverride ?? undefined,
+        );
+      } catch (error) {
+        log.warn('Failed to persist Deep Review project strategy override', error);
+      }
     }
 
     if (confirmed && dontShowAgain) {
@@ -72,7 +98,12 @@ export function useDeepReviewConsent(): DeepReviewConsentControls {
 
     setPendingConsent(null);
     pending.resolve(confirmed);
-  }, [dontShowAgain, pendingConsent]);
+  }, [dontShowAgain, pendingConsent, selectedStrategyOverride, strategySelectionTouched]);
+
+  const selectStrategyOverride = useCallback((strategyLevel: ReviewStrategyLevel | null) => {
+    setSelectedStrategyOverride(strategyLevel);
+    setStrategySelectionTouched(true);
+  }, []);
 
   const getSkippedReasonLabel = useCallback((reason?: ReviewTeamManifestMemberReason) => {
     switch (reason) {
@@ -108,6 +139,16 @@ export function useDeepReviewConsent(): DeepReviewConsentControls {
     const skippedReviewers = preview.skippedReviewers;
     const activeCount = activeReviewers.length;
     const skippedCount = skippedReviewers.length;
+    const selectedStrategy = strategySelectionTouched
+      ? selectedStrategyOverride
+      : preview.strategyLevel;
+    const selectedStrategyLabel = selectedStrategy
+      ? t(`deepReviewConsent.strategyLabels.${selectedStrategy}`, {
+        defaultValue: getReviewStrategyProfile(selectedStrategy).label,
+      })
+      : t('deepReviewConsent.teamDefaultStrategy', {
+        defaultValue: 'Team default',
+      });
 
     return (
       <div className="deep-review-consent__lineup">
@@ -146,6 +187,12 @@ export function useDeepReviewConsent(): DeepReviewConsentControls {
               defaultValue: '{{count}} skipped',
             })}
           </span>
+          <span>
+            {t('deepReviewConsent.runStrategy', {
+              strategy: selectedStrategyLabel,
+              defaultValue: 'Run strategy: {{strategy}}',
+            })}
+          </span>
           {preview.strategyRecommendation && (
             <span>
               {t('deepReviewConsent.recommendedStrategy', {
@@ -164,6 +211,65 @@ export function useDeepReviewConsent(): DeepReviewConsentControls {
               })}
             </div>
             <p>{preview.strategyRecommendation.rationale}</p>
+          </div>
+        )}
+
+        {preview.workspacePath && (
+          <div className="deep-review-consent__strategy-control">
+            <div>
+              <div className="deep-review-consent__reviewer-group-title">
+                {t('deepReviewConsent.strategyOverrideTitle', {
+                  defaultValue: 'Run strategy',
+                })}
+              </div>
+              <p>
+                {t('deepReviewConsent.strategyOverrideBody', {
+                  defaultValue: 'Choose a project-specific strategy for this launch.',
+                })}
+              </p>
+            </div>
+            <div
+              className="deep-review-consent__strategy-options"
+              role="group"
+              aria-label={t('deepReviewConsent.strategyOverrideTitle', {
+                defaultValue: 'Run strategy',
+              })}
+            >
+              <button
+                type="button"
+                className={[
+                  'deep-review-consent__strategy-option',
+                  strategySelectionTouched && selectedStrategyOverride === null
+                    ? 'deep-review-consent__strategy-option--active'
+                    : '',
+                ].filter(Boolean).join(' ')}
+                aria-pressed={strategySelectionTouched && selectedStrategyOverride === null}
+                onClick={() => selectStrategyOverride(null)}
+              >
+                {t('deepReviewConsent.teamDefaultStrategy', {
+                  defaultValue: 'Team default',
+                })}
+              </button>
+              {REVIEW_STRATEGY_LEVELS.map((strategyLevel) => {
+                const isActive = selectedStrategy === strategyLevel;
+                return (
+                  <button
+                    key={strategyLevel}
+                    type="button"
+                    className={[
+                      'deep-review-consent__strategy-option',
+                      isActive ? 'deep-review-consent__strategy-option--active' : '',
+                    ].filter(Boolean).join(' ')}
+                    aria-pressed={isActive}
+                    onClick={() => selectStrategyOverride(strategyLevel)}
+                  >
+                    {t(`deepReviewConsent.strategyLabels.${strategyLevel}`, {
+                      defaultValue: getReviewStrategyProfile(strategyLevel).label,
+                    })}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -200,7 +306,13 @@ export function useDeepReviewConsent(): DeepReviewConsentControls {
         )}
       </div>
     );
-  }, [getSkippedReasonLabel, t]);
+  }, [
+    getSkippedReasonLabel,
+    selectStrategyOverride,
+    selectedStrategyOverride,
+    strategySelectionTouched,
+    t,
+  ]);
 
   const deepReviewConsentDialog = pendingConsent ? (
     <Modal

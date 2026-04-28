@@ -9,8 +9,15 @@ type Locale = (typeof REVIEW_TEAM_LOCALES)[number];
 type JsonObject = Record<string, unknown>;
 
 const REVIEW_TEAM_FLOW_CHAT_KEYS = [
+  'deepReviewConsent.runStrategy',
   'deepReviewConsent.recommendedStrategy',
   'deepReviewConsent.recommendationTitle',
+  'deepReviewConsent.strategyOverrideTitle',
+  'deepReviewConsent.strategyOverrideBody',
+  'deepReviewConsent.teamDefaultStrategy',
+  'deepReviewConsent.strategyLabels.quick',
+  'deepReviewConsent.strategyLabels.normal',
+  'deepReviewConsent.strategyLabels.deep',
   'toolCards.codeReview.runManifest.recommendedStrategy',
   'toolCards.codeReview.runManifest.riskRecommendationTitle',
 ] as const;

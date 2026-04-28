@@ -483,8 +483,17 @@
     "cancel": "取消",
     "confirm": "开始深度审核",
     "estimatedTokens": "预计消耗：{{min}} - {{max}} tokens",
+    "runStrategy": "运行策略：{{strategy}}",
     "recommendedStrategy": "推荐策略：{{strategy}}",
-    "recommendationTitle": "风险推荐"
+    "recommendationTitle": "风险推荐",
+    "strategyOverrideTitle": "运行策略",
+    "strategyOverrideBody": "为本项目的本次启动选择审核策略。",
+    "teamDefaultStrategy": "团队默认",
+    "strategyLabels": {
+      "quick": "快速",
+      "normal": "标准",
+      "deep": "深度"
+    }
   },
   "flowChatHeader": {
     "turnList": "轮次列表",
