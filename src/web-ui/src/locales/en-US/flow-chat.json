@@ -1167,6 +1167,25 @@
       },
       "sectionItemCount": "{{count}} items",
       "remediationPlan": "Remediation Plan",
+      "reliabilityStatus": {
+        "title": "Review status",
+        "context_pressure": {
+          "label": "Context pressure rising",
+          "detail": "{{count}} reviewer calls planned for a large or constrained target."
+        },
+        "compression_preserved": {
+          "label": "Compression preserved key facts",
+          "detail": "Coverage notes include preserved context from compression."
+        },
+        "partial_reviewer": {
+          "label": "Reviewer timed out with partial result",
+          "detail": "{{count}} reviewer result is partial; confidence is reduced."
+        },
+        "user_decision": {
+          "label": "User decision needed",
+          "detail": "{{count}} review item needs your decision before fixing."
+        }
+      },
       "sections": {
         "summary": "Executive Summary",
         "issues": "Issues",
@@ -1197,6 +1216,7 @@
         "findings": "Findings",
         "validation": "Validation",
         "source": "Source",
+        "reliabilitySignals": "Review Reliability",
         "noItems": "None."
       },
       "export": {

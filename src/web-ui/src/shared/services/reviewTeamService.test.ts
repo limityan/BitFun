@@ -16,6 +16,10 @@ import {
   SubagentAPI,
   type SubagentInfo,
 } from '@/infrastructure/api/service-api/SubagentAPI';
+import {
+  classifyReviewTargetFromFiles,
+  createUnknownReviewTargetClassification,
+} from './reviewTargetClassifier';
 
 vi.mock('@/infrastructure/api/service-api/ConfigAPI', () => ({
   configAPI: {
@@ -35,6 +39,8 @@ describe('reviewTeamService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
+
+  const WORKSPACE_PATH = '/test-fixtures/project-a';
 
   const storedConfigWithExtra = (
     extraSubagentIds: string[] = [],
@@ -57,14 +63,15 @@ describe('reviewTeamService', () => {
     model = 'fast',
     isReadonly = true,
     isReview = id.startsWith('Review'),
+    defaultTools = ['GetFileDiff', 'Read', 'Grep', 'Glob', 'LS'],
   ): SubagentInfo => ({
     id,
     name: id,
     description: `${id} description`,
     isReadonly,
     isReview,
-    toolCount: 1,
-    defaultTools: ['Read'],
+    toolCount: defaultTools.length,
+    defaultTools,
     enabled,
     subagentSource,
     model,
@@ -144,38 +151,38 @@ describe('reviewTeamService', () => {
       subagent('ExtraDisabled', false, 'project', 'fast', true, true),
     ]);
 
-    await prepareDefaultReviewTeamForLaunch('D:/workspace/project-a');
+    await prepareDefaultReviewTeamForLaunch(WORKSPACE_PATH);
 
     expect(SubagentAPI.updateSubagentConfig).toHaveBeenCalledTimes(6);
     expect(SubagentAPI.updateSubagentConfig).toHaveBeenCalledWith({
       subagentId: 'ReviewBusinessLogic',
       enabled: true,
-      workspacePath: 'D:/workspace/project-a',
+      workspacePath: WORKSPACE_PATH,
     });
     expect(SubagentAPI.updateSubagentConfig).toHaveBeenCalledWith({
       subagentId: 'ReviewPerformance',
       enabled: true,
-      workspacePath: 'D:/workspace/project-a',
+      workspacePath: WORKSPACE_PATH,
     });
     expect(SubagentAPI.updateSubagentConfig).toHaveBeenCalledWith({
       subagentId: 'ReviewSecurity',
       enabled: true,
-      workspacePath: 'D:/workspace/project-a',
+      workspacePath: WORKSPACE_PATH,
     });
     expect(SubagentAPI.updateSubagentConfig).toHaveBeenCalledWith({
       subagentId: 'ReviewArchitecture',
       enabled: true,
-      workspacePath: 'D:/workspace/project-a',
+      workspacePath: WORKSPACE_PATH,
     });
     expect(SubagentAPI.updateSubagentConfig).toHaveBeenCalledWith({
       subagentId: 'ReviewFrontend',
       enabled: true,
-      workspacePath: 'D:/workspace/project-a',
+      workspacePath: WORKSPACE_PATH,
     });
     expect(SubagentAPI.updateSubagentConfig).toHaveBeenCalledWith({
       subagentId: 'ReviewJudge',
       enabled: true,
-      workspacePath: 'D:/workspace/project-a',
+      workspacePath: WORKSPACE_PATH,
     });
     expect(SubagentAPI.updateSubagentConfig).not.toHaveBeenCalledWith(
       expect.objectContaining({ subagentId: 'ExtraEnabled' }),
@@ -203,7 +210,7 @@ describe('reviewTeamService', () => {
     expect(promptBlock).not.toContain('Always run the three locked reviewer roles');
   });
 
-  it('requires extra members to be explicitly marked for review and readonly', () => {
+  it('keeps invalid configured extra members explainable in the run manifest', () => {
     const readonlyReviewExtra = subagent('ExtraReadonlyReview', true, 'user', 'fast', true, true);
     const readonlyPlainExtra = subagent('ExtraReadonlyPlain', true, 'user', 'fast', true, false);
     const writableReviewExtra = subagent('ExtraWritableReview', true, 'project', 'fast', false, true);
@@ -219,15 +226,113 @@ describe('reviewTeamService', () => {
         readonlyPlainExtra,
         writableReviewExtra,
       ],
-      storedConfigWithExtra(['ExtraReadonlyReview', 'ExtraReadonlyPlain', 'ExtraWritableReview']),
+      storedConfigWithExtra([
+        'ExtraReadonlyReview',
+        'ExtraReadonlyPlain',
+        'ExtraWritableReview',
+        'ExtraMissingReviewer',
+      ]),
     );
 
-    expect(team.extraMembers.map((member) => member.subagentId)).toEqual(['ExtraReadonlyReview']);
+    expect(
+      team.extraMembers
+        .filter((member) => member.available)
+        .map((member) => member.subagentId),
+    ).toEqual(['ExtraReadonlyReview']);
 
-    const promptBlock = buildReviewTeamPromptBlock(team);
+    const manifest = buildEffectiveReviewTeamManifest(team);
+
+    expect(manifest.skippedReviewers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          subagentId: 'ExtraReadonlyPlain',
+          reason: 'invalid_tooling',
+        }),
+        expect.objectContaining({
+          subagentId: 'ExtraWritableReview',
+          reason: 'invalid_tooling',
+        }),
+        expect.objectContaining({
+          subagentId: 'ExtraMissingReviewer',
+          reason: 'unavailable',
+        }),
+      ]),
+    );
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
     expect(promptBlock).toContain('subagent_type: ExtraReadonlyReview');
-    expect(promptBlock).not.toContain('ExtraReadonlyPlain');
-    expect(promptBlock).not.toContain('ExtraWritableReview');
+    expect(promptBlock).toContain('- ExtraReadonlyPlain: invalid_tooling');
+    expect(promptBlock).toContain('- ExtraWritableReview: invalid_tooling');
+    expect(promptBlock).toContain('- ExtraMissingReviewer: unavailable');
+    expect(promptBlock).not.toContain('subagent_type: ExtraReadonlyPlain');
+    expect(promptBlock).not.toContain('subagent_type: ExtraWritableReview');
+    expect(promptBlock).not.toContain('subagent_type: ExtraMissingReviewer');
+  });
+
+  it('requires extra review members to have the minimum review tools', () => {
+    const readyReviewExtra = subagent('ExtraReadyReview', true, 'user', 'fast', true, true);
+    const missingDiffExtra = subagent(
+      'ExtraMissingDiff',
+      true,
+      'user',
+      'fast',
+      true,
+      true,
+      ['Read', 'Grep'],
+    );
+    const missingReadExtra = subagent(
+      'ExtraMissingRead',
+      true,
+      'project',
+      'fast',
+      true,
+      true,
+      ['GetFileDiff', 'Grep'],
+    );
+
+    expect(canUseSubagentAsReviewTeamMember(readyReviewExtra)).toBe(true);
+    expect(canUseSubagentAsReviewTeamMember(missingDiffExtra)).toBe(false);
+    expect(canUseSubagentAsReviewTeamMember(missingReadExtra)).toBe(false);
+
+    const team = resolveDefaultReviewTeam(
+      [
+        ...coreSubagents(),
+        readyReviewExtra,
+        missingDiffExtra,
+        missingReadExtra,
+      ],
+      storedConfigWithExtra(['ExtraReadyReview', 'ExtraMissingDiff', 'ExtraMissingRead']),
+    );
+
+    expect(
+      team.extraMembers
+        .filter((member) => member.available)
+        .map((member) => member.subagentId),
+    ).toEqual(['ExtraReadyReview']);
+
+    const manifest = buildEffectiveReviewTeamManifest(team);
+
+    expect(manifest.enabledExtraReviewers.map((member) => member.subagentId)).toEqual([
+      'ExtraReadyReview',
+    ]);
+    expect(manifest.skippedReviewers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          subagentId: 'ExtraMissingDiff',
+          reason: 'invalid_tooling',
+        }),
+        expect.objectContaining({
+          subagentId: 'ExtraMissingRead',
+          reason: 'invalid_tooling',
+        }),
+      ]),
+    );
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
+    expect(promptBlock).toContain('- ExtraMissingDiff: invalid_tooling');
+    expect(promptBlock).toContain('- ExtraMissingRead: invalid_tooling');
+    expect(promptBlock).not.toContain('subagent_type: ExtraMissingDiff');
+    expect(promptBlock).not.toContain('subagent_type: ExtraMissingRead');
   });
 
   it('builds an explicit run manifest for enabled, skipped, and quality-gate reviewers', () => {
@@ -241,13 +346,13 @@ describe('reviewTeamService', () => {
     );
 
     const manifest = buildEffectiveReviewTeamManifest(team, {
-      workspacePath: 'D:/workspace/project-a',
+      workspacePath: WORKSPACE_PATH,
       policySource: 'default-review-team-config',
     });
 
     expect(manifest.reviewMode).toBe('deep');
     expect(manifest.strategyLevel).toBe('normal');
-    expect(manifest.workspacePath).toBe('D:/workspace/project-a');
+    expect(manifest.workspacePath).toBe(WORKSPACE_PATH);
     expect(manifest.policySource).toBe('default-review-team-config');
     expect(manifest.coreReviewers.map((member) => member.subagentId)).toEqual([
       'ReviewBusinessLogic',
@@ -268,6 +373,348 @@ describe('reviewTeamService', () => {
     ]);
   });
 
+  it('generates structured work packets for active reviewers and the judge', () => {
+    const team = resolveDefaultReviewTeam(
+      [
+        ...coreSubagents(),
+        subagent('ExtraEnabled', true, 'user', 'fast', true, true),
+      ],
+      storedConfigWithExtra(['ExtraEnabled']),
+    );
+    const target = classifyReviewTargetFromFiles(
+      ['src/web-ui/src/components/ReviewPanel.tsx'],
+      'session_files',
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      workspacePath: WORKSPACE_PATH,
+      target,
+    });
+
+    const logicPacket = manifest.workPackets?.find(
+      (packet) => packet.subagentId === 'ReviewBusinessLogic',
+    );
+    const judgePacket = manifest.workPackets?.find(
+      (packet) => packet.subagentId === 'ReviewJudge',
+    );
+
+    expect(logicPacket).toMatchObject({
+      packetId: 'reviewer:ReviewBusinessLogic',
+      phase: 'reviewer',
+      subagentId: 'ReviewBusinessLogic',
+      roleName: 'Business Logic Reviewer',
+      assignedScope: {
+        kind: 'review_target',
+        fileCount: 1,
+        files: ['src/web-ui/src/components/ReviewPanel.tsx'],
+      },
+      allowedTools: ['GetFileDiff', 'Read', 'Grep', 'Glob', 'LS', 'Git'],
+      timeoutSeconds: manifest.executionPolicy.reviewerTimeoutSeconds,
+      requiredOutputFields: expect.arrayContaining([
+        'packet_id',
+        'status',
+        'findings',
+      ]),
+    });
+    expect(judgePacket).toMatchObject({
+      packetId: 'judge:ReviewJudge',
+      phase: 'judge',
+      subagentId: 'ReviewJudge',
+      timeoutSeconds: manifest.executionPolicy.judgeTimeoutSeconds,
+      requiredOutputFields: expect.arrayContaining([
+        'packet_id',
+        'status',
+        'validated_findings',
+      ]),
+    });
+    expect(manifest.workPackets?.map((packet) => packet.subagentId)).not.toContain(
+      'ExtraDisabled',
+    );
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
+    expect(promptBlock).toContain('Review work packets:');
+    expect(promptBlock).toContain('"packet_id": "reviewer:ReviewBusinessLogic"');
+    expect(promptBlock).toContain('"allowed_tools"');
+    expect(promptBlock).toContain('Each reviewer Task prompt must include the matching work packet verbatim.');
+    expect(promptBlock).toContain('If the reviewer omits packet_id but the Task was launched from a packet, infer the packet_id from the Task description or work packet and mark packet_status_source as inferred.');
+  });
+
+  it('splits reviewer work packets across file groups for large targets', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra([], {
+        reviewer_file_split_threshold: 10,
+        max_same_role_instances: 3,
+      }),
+    );
+    const target = classifyReviewTargetFromFiles(
+      Array.from(
+        { length: 25 },
+        (_, index) => `src/web-ui/src/components/ReviewPanel${index}.tsx`,
+      ),
+      'session_files',
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, { target });
+    const logicPackets = manifest.workPackets?.filter(
+      (packet) => packet.subagentId === 'ReviewBusinessLogic',
+    );
+    const judgePackets = manifest.workPackets?.filter(
+      (packet) => packet.subagentId === 'ReviewJudge',
+    );
+
+    expect(logicPackets).toHaveLength(3);
+    expect(logicPackets?.map((packet) => packet.packetId)).toEqual([
+      'reviewer:ReviewBusinessLogic:group-1-of-3',
+      'reviewer:ReviewBusinessLogic:group-2-of-3',
+      'reviewer:ReviewBusinessLogic:group-3-of-3',
+    ]);
+    expect(logicPackets?.map((packet) => packet.assignedScope.fileCount)).toEqual([
+      9,
+      8,
+      8,
+    ]);
+    expect(logicPackets?.[0].assignedScope).toMatchObject({
+      groupIndex: 1,
+      groupCount: 3,
+    });
+    expect(logicPackets?.[0].assignedScope.files.slice(0, 2)).toEqual([
+      'src/web-ui/src/components/ReviewPanel0.tsx',
+      'src/web-ui/src/components/ReviewPanel1.tsx',
+    ]);
+    expect(logicPackets?.[0].assignedScope.files.at(-1)).toBe(
+      'src/web-ui/src/components/ReviewPanel8.tsx',
+    );
+    expect(judgePackets).toHaveLength(1);
+    expect(judgePackets?.[0].assignedScope).toMatchObject({
+      fileCount: 25,
+    });
+    expect(judgePackets?.[0].assignedScope.groupCount).toBeUndefined();
+    expect(manifest.tokenBudget).toMatchObject({
+      estimatedReviewerCalls: 16,
+      maxFilesPerReviewer: 10,
+      largeDiffSummaryFirst: true,
+    });
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
+    expect(promptBlock).toContain('"packet_id": "reviewer:ReviewBusinessLogic:group-1-of-3"');
+    expect(promptBlock).toContain('"group_index": 1');
+    expect(promptBlock).toContain('"group_count": 3');
+  });
+
+  it('skips the frontend reviewer when the resolved target has no frontend tags', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra(),
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      target: classifyReviewTargetFromFiles(
+        ['src/crates/core/src/service/config/types.rs'],
+        'session_files',
+      ),
+    });
+
+    expect(manifest.target.resolution).toBe('resolved');
+    expect(manifest.target.tags).toEqual(['backend_core']);
+    expect(manifest.coreReviewers.map((member) => member.subagentId)).toEqual([
+      'ReviewBusinessLogic',
+      'ReviewPerformance',
+      'ReviewSecurity',
+      'ReviewArchitecture',
+    ]);
+    expect(manifest.skippedReviewers).toEqual([
+      expect.objectContaining({
+        subagentId: 'ReviewFrontend',
+        reason: 'not_applicable',
+      }),
+    ]);
+  });
+
+  it('runs the frontend reviewer for frontend and contract targets', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra(),
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      target: classifyReviewTargetFromFiles(
+        ['src/apps/desktop/src/api/agentic_api.rs'],
+        'session_files',
+      ),
+    });
+
+    expect(manifest.target.tags).toEqual(
+      expect.arrayContaining(['desktop_contract', 'frontend_contract']),
+    );
+    expect(manifest.coreReviewers.map((member) => member.subagentId)).toContain(
+      'ReviewFrontend',
+    );
+    expect(manifest.skippedReviewers).not.toEqual([
+      expect.objectContaining({ subagentId: 'ReviewFrontend' }),
+    ]);
+  });
+
+  it('runs conditional reviewers conservatively for unknown targets', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra(),
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      target: createUnknownReviewTargetClassification('manual_prompt'),
+    });
+
+    expect(manifest.target.resolution).toBe('unknown');
+    expect(manifest.coreReviewers.map((member) => member.subagentId)).toContain(
+      'ReviewFrontend',
+    );
+  });
+
+  it('adds a balanced token budget to the run manifest by default', () => {
+    const team = resolveDefaultReviewTeam(
+      [
+        ...coreSubagents(),
+        subagent('ExtraEnabled', true, 'user', 'fast', true, true),
+      ],
+      storedConfigWithExtra(['ExtraEnabled']),
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team);
+
+    expect(manifest.tokenBudget).toMatchObject({
+      mode: 'balanced',
+      estimatedReviewerCalls: 7,
+      maxExtraReviewers: 1,
+      skippedReviewerIds: [],
+    });
+  });
+
+  it('predicts manifest timeouts from resolved target size', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra(),
+    );
+    const target = classifyReviewTargetFromFiles(
+      Array.from(
+        { length: 25 },
+        (_, index) => `src/web-ui/src/components/ReviewPanel${index}.tsx`,
+      ),
+      'session_files',
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, { target });
+
+    expect(manifest.changeStats).toMatchObject({
+      fileCount: 25,
+      lineCountSource: 'unknown',
+    });
+    expect(manifest.executionPolicy).toMatchObject({
+      reviewerTimeoutSeconds: 675,
+      judgeTimeoutSeconds: 1350,
+    });
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
+    expect(promptBlock).toContain('- target_file_count: 25');
+    expect(promptBlock).toContain('- target_line_count: unknown');
+    expect(promptBlock).toContain('- reviewer_timeout_seconds: 675');
+    expect(promptBlock).toContain('- judge_timeout_seconds: 1350');
+  });
+
+  it('includes diff line stats in predictive manifest timeouts', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra(),
+    );
+    const target = classifyReviewTargetFromFiles(
+      Array.from(
+        { length: 25 },
+        (_, index) => `src/web-ui/src/components/ReviewPanel${index}.tsx`,
+      ),
+      'workspace_diff',
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      target,
+      changeStats: {
+        fileCount: 25,
+        totalLinesChanged: 800,
+        lineCountSource: 'diff_stat',
+      },
+    });
+
+    expect(manifest.changeStats).toMatchObject({
+      fileCount: 25,
+      totalLinesChanged: 800,
+      lineCountSource: 'diff_stat',
+    });
+    expect(manifest.executionPolicy).toMatchObject({
+      reviewerTimeoutSeconds: 915,
+      judgeTimeoutSeconds: 1830,
+    });
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
+    expect(promptBlock).toContain('- target_line_count: 800');
+    expect(promptBlock).toContain('- target_line_count_source: diff_stat');
+    expect(promptBlock).toContain('- reviewer_timeout_seconds: 915');
+    expect(promptBlock).toContain('- judge_timeout_seconds: 1830');
+  });
+
+  it('preserves explicit zero timeout policy when predicting manifest timeouts', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra([], {
+        reviewer_timeout_seconds: 0,
+        judge_timeout_seconds: 0,
+      }),
+    );
+    const target = classifyReviewTargetFromFiles(
+      ['src/web-ui/src/components/ReviewPanel.tsx'],
+      'session_files',
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, { target });
+
+    expect(manifest.executionPolicy).toMatchObject({
+      reviewerTimeoutSeconds: 0,
+      judgeTimeoutSeconds: 0,
+    });
+  });
+
+  it('marks excess extra reviewers as budget-limited in economy mode', () => {
+    const team = resolveDefaultReviewTeam(
+      [
+        ...coreSubagents(),
+        subagent('ExtraOne', true, 'user', 'fast', true, true),
+        subagent('ExtraTwo', true, 'user', 'fast', true, true),
+      ],
+      storedConfigWithExtra(['ExtraOne', 'ExtraTwo']),
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      tokenBudgetMode: 'economy',
+    });
+
+    expect(manifest.enabledExtraReviewers).toEqual([]);
+    expect(manifest.skippedReviewers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          subagentId: 'ExtraOne',
+          reason: 'budget_limited',
+        }),
+        expect.objectContaining({
+          subagentId: 'ExtraTwo',
+          reason: 'budget_limited',
+        }),
+      ]),
+    );
+    expect(manifest.tokenBudget).toMatchObject({
+      mode: 'economy',
+      maxExtraReviewers: 0,
+      skippedReviewerIds: ['ExtraOne', 'ExtraTwo'],
+    });
+  });
+
   it('applies per-member strategy overrides in the launch manifest and prompt', () => {
     const team = resolveDefaultReviewTeam(
       [
@@ -284,7 +731,7 @@ describe('reviewTeamService', () => {
     );
 
     const manifest = buildEffectiveReviewTeamManifest(team, {
-      workspacePath: 'D:/workspace/project-a',
+      workspacePath: WORKSPACE_PATH,
     });
 
     expect(manifest.strategyLevel).toBe('quick');
@@ -391,18 +838,21 @@ describe('reviewTeamService', () => {
     const promptBlock = buildReviewTeamPromptBlock(
       team,
       buildEffectiveReviewTeamManifest(team, {
-        workspacePath: 'D:/workspace/project-a',
+        workspacePath: WORKSPACE_PATH,
       }),
     );
 
     expect(promptBlock).toContain('Run manifest:');
+    expect(promptBlock).toContain('target_resolution: unknown');
     expect(promptBlock).toContain('- team_strategy: normal');
-    expect(promptBlock).toContain('- workspace_path: D:/workspace/project-a');
+    expect(promptBlock).toContain(`- workspace_path: ${WORKSPACE_PATH}`);
     expect(promptBlock).toContain('quality_gate_reviewer: ReviewJudge');
     expect(promptBlock).toContain('enabled_extra_reviewers: ExtraEnabled');
     expect(promptBlock).toContain('skipped_reviewers:');
     expect(promptBlock).toContain('- ExtraDisabled: disabled');
     expect(promptBlock).not.toContain('subagent_type: ExtraDisabled');
+    expect(promptBlock).toContain('Run only reviewers listed in core_reviewers and enabled_extra_reviewers.');
+    expect(promptBlock).not.toContain('run it in parallel with the locked reviewers whenever the change contains frontend files');
   });
 
   it('tells DeepReview to wait for user approval before running ReviewFixer', () => {

@@ -62,6 +62,7 @@ export interface StartDialogTurnRequest {
   workspacePath?: string;
   /** Optional multimodal image contexts (snake_case fields, aligned with backend ImageContextData). */
   imageContexts?: ImageInputContextData[];
+  userMessageMetadata?: Record<string, unknown>;
 }
 
 export interface CompactSessionRequest {

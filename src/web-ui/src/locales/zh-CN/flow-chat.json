@@ -1171,6 +1171,25 @@
       },
       "sectionItemCount": "{{count}} 项",
       "remediationPlan": "修复计划",
+      "reliabilityStatus": {
+        "title": "审核状态",
+        "context_pressure": {
+          "label": "上下文压力上升",
+          "detail": "大型或受限目标预计会调用 {{count}} 次审核者。"
+        },
+        "compression_preserved": {
+          "label": "压缩已保留关键事实",
+          "detail": "覆盖说明包含压缩保留下来的上下文。"
+        },
+        "partial_reviewer": {
+          "label": "审核者超时但有部分结果",
+          "detail": "{{count}} 个审核者结果是部分结果，置信度已降低。"
+        },
+        "user_decision": {
+          "label": "需要用户决策",
+          "detail": "{{count}} 个审核项需要先决策再修复。"
+        }
+      },
       "sections": {
         "summary": "结论摘要",
         "issues": "问题列表",
@@ -1201,6 +1220,7 @@
         "findings": "问题数",
         "validation": "验证说明",
         "source": "来源",
+        "reliabilitySignals": "审核可靠性",
         "noItems": "无。"
       },
       "export": {

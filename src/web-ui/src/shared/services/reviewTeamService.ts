@@ -4,6 +4,13 @@ import {
   type SubagentInfo,
   type SubagentSource,
 } from '@/infrastructure/api/service-api/SubagentAPI';
+import {
+  FRONTEND_REVIEW_DOMAIN_TAGS,
+  createUnknownReviewTargetClassification,
+  type ReviewDomainTag,
+  type ReviewTargetClassification,
+} from './reviewTargetClassifier';
+import { evaluateReviewSubagentToolReadiness } from './reviewSubagentCapabilities';
 
 export const DEFAULT_REVIEW_TEAM_ID = 'default-review-team';
 export const DEFAULT_REVIEW_TEAM_CONFIG_PATH = 'ai.review_teams.default';
@@ -16,6 +23,14 @@ export const DEFAULT_REVIEW_TEAM_EXECUTION_POLICY = {
   reviewerFileSplitThreshold: 20,
   maxSameRoleInstances: 3,
 } as const;
+const MAX_PREDICTIVE_TIMEOUT_SECONDS = 3600;
+const PREDICTIVE_TIMEOUT_PER_FILE_SECONDS = 15;
+const PREDICTIVE_TIMEOUT_PER_100_LINES_SECONDS = 30;
+const PREDICTIVE_TIMEOUT_BASE_SECONDS: Record<ReviewStrategyLevel, number> = {
+  quick: 180,
+  normal: 300,
+  deep: 600,
+};
 
 export type ReviewStrategyLevel = 'quick' | 'normal' | 'deep';
 export type ReviewMemberStrategyLevel = ReviewStrategyLevel | 'inherit';
@@ -188,6 +203,60 @@ export interface ReviewTeamExecutionPolicy {
   maxSameRoleInstances: number;
 }
 
+export type ReviewTeamManifestMemberReason =
+  | 'disabled'
+  | 'unavailable'
+  | 'not_applicable'
+  | 'budget_limited'
+  | 'invalid_tooling';
+
+export type ReviewTokenBudgetMode = 'economy' | 'balanced' | 'thorough';
+
+export interface ReviewTeamTokenBudgetPlan {
+  mode: ReviewTokenBudgetMode;
+  estimatedReviewerCalls: number;
+  maxReviewerCalls: number;
+  maxExtraReviewers: number;
+  maxFilesPerReviewer?: number;
+  maxPromptBytesPerReviewer?: number;
+  largeDiffSummaryFirst: boolean;
+  skippedReviewerIds: string[];
+  warnings: string[];
+}
+
+export interface ReviewTeamChangeStats {
+  fileCount: number;
+  totalLinesChanged?: number;
+  lineCountSource: 'unknown' | 'diff_stat' | 'estimated';
+}
+
+export interface ReviewTeamWorkPacketScope {
+  kind: 'review_target';
+  targetSource: ReviewTargetClassification['source'];
+  targetResolution: ReviewTargetClassification['resolution'];
+  targetTags: ReviewDomainTag[];
+  fileCount: number;
+  files: string[];
+  excludedFileCount: number;
+  groupIndex?: number;
+  groupCount?: number;
+}
+
+export interface ReviewTeamWorkPacket {
+  packetId: string;
+  phase: 'reviewer' | 'judge';
+  subagentId: string;
+  displayName: string;
+  roleName: string;
+  assignedScope: ReviewTeamWorkPacketScope;
+  allowedTools: string[];
+  timeoutSeconds: number;
+  requiredOutputFields: string[];
+  strategyLevel: ReviewStrategyLevel;
+  strategyDirective: string;
+  model: string;
+}
+
 export interface ReviewTeamMember {
   id: string;
   subagentId: string;
@@ -208,6 +277,8 @@ export interface ReviewTeamMember {
   source: 'core' | 'extra';
   subagentSource: SubagentSource;
   accentColor: string;
+  allowedTools: string[];
+  skipReason?: ReviewTeamManifestMemberReason;
 }
 
 export interface ReviewTeam {
@@ -237,19 +308,33 @@ export interface ReviewTeamManifestMember {
   locked: boolean;
   source: ReviewTeamMember['source'];
   subagentSource: ReviewTeamMember['subagentSource'];
-  reason?: 'disabled' | 'unavailable';
+  reason?: ReviewTeamManifestMemberReason;
 }
 
 export interface ReviewTeamRunManifest {
   reviewMode: 'deep';
   workspacePath?: string;
   policySource: 'default-review-team-config';
+  target: ReviewTargetClassification;
   strategyLevel: ReviewStrategyLevel;
   executionPolicy: ReviewTeamExecutionPolicy;
+  changeStats?: ReviewTeamChangeStats;
+  tokenBudget: ReviewTeamTokenBudgetPlan;
   coreReviewers: ReviewTeamManifestMember[];
   qualityGateReviewer?: ReviewTeamManifestMember;
   enabledExtraReviewers: ReviewTeamManifestMember[];
   skippedReviewers: ReviewTeamManifestMember[];
+  workPackets?: ReviewTeamWorkPacket[];
+}
+
+export function getActiveReviewTeamManifestMembers(
+  manifest: ReviewTeamRunManifest,
+): ReviewTeamManifestMember[] {
+  return [
+    ...manifest.coreReviewers,
+    ...manifest.enabledExtraReviewers,
+    ...(manifest.qualityGateReviewer ? [manifest.qualityGateReviewer] : []),
+  ];
 }
 
 const EXTRA_MEMBER_DEFAULTS = {
@@ -263,6 +348,32 @@ const EXTRA_MEMBER_DEFAULTS = {
   ],
   accentColor: '#64748b',
 };
+
+const REVIEW_WORK_PACKET_ALLOWED_TOOLS = [
+  'GetFileDiff',
+  'Read',
+  'Grep',
+  'Glob',
+  'LS',
+  'Git',
+] as const;
+
+const REVIEWER_WORK_PACKET_REQUIRED_OUTPUT_FIELDS = [
+  'packet_id',
+  'status',
+  'verdict',
+  'findings',
+  'reviewer_summary',
+] as const;
+
+const JUDGE_WORK_PACKET_REQUIRED_OUTPUT_FIELDS = [
+  'packet_id',
+  'status',
+  'decision_summary',
+  'validated_findings',
+  'rejected_or_downgraded_notes',
+  'coverage_notes',
+] as const;
 
 export const DEFAULT_REVIEW_TEAM_CORE_ROLES: ReviewTeamCoreRoleDefinition[] = [
   {
@@ -711,6 +822,7 @@ function buildCoreMember(
     source: 'core',
     subagentSource: info?.subagentSource ?? 'builtin',
     accentColor: definition.accentColor,
+    allowedTools: [...REVIEW_WORK_PACKET_ALLOWED_TOOLS],
   };
 }
 
@@ -718,6 +830,10 @@ function buildExtraMember(
   info: SubagentInfo,
   storedConfig: ReviewTeamStoredConfig,
   availableModelIds?: Set<string>,
+  options: {
+    available?: boolean;
+    skipReason?: ReviewTeamManifestMemberReason;
+  } = {},
 ): ReviewTeamMember {
   const strategy = resolveMemberStrategy(storedConfig, info.id);
   const model = resolveMemberModel(
@@ -740,11 +856,52 @@ function buildExtraMember(
       : {}),
     ...strategy,
     enabled: info.enabled,
-    available: true,
+    available: options.available ?? true,
     locked: false,
     source: 'extra',
     subagentSource: info.subagentSource ?? 'builtin',
     accentColor: EXTRA_MEMBER_DEFAULTS.accentColor,
+    allowedTools:
+      info.defaultTools && info.defaultTools.length > 0
+        ? [...info.defaultTools]
+        : [...REVIEW_WORK_PACKET_ALLOWED_TOOLS],
+    ...(options.skipReason ? { skipReason: options.skipReason } : {}),
+  };
+}
+
+function buildUnavailableExtraMember(
+  subagentId: string,
+  storedConfig: ReviewTeamStoredConfig,
+  availableModelIds?: Set<string>,
+): ReviewTeamMember {
+  const strategy = resolveMemberStrategy(storedConfig, subagentId);
+  const model = resolveMemberModel(
+    DEFAULT_REVIEW_TEAM_MODEL,
+    strategy.strategyLevel,
+    availableModelIds,
+  );
+
+  return {
+    id: `extra:${subagentId}`,
+    subagentId,
+    displayName: subagentId,
+    roleName: EXTRA_MEMBER_DEFAULTS.roleName,
+    description: EXTRA_MEMBER_DEFAULTS.description,
+    responsibilities: EXTRA_MEMBER_DEFAULTS.responsibilities,
+    model: model.model,
+    configuredModel: model.configuredModel,
+    ...(model.modelFallbackReason
+      ? { modelFallbackReason: model.modelFallbackReason }
+      : {}),
+    ...strategy,
+    enabled: true,
+    available: false,
+    locked: false,
+    source: 'extra',
+    subagentSource: 'user',
+    accentColor: EXTRA_MEMBER_DEFAULTS.accentColor,
+    allowedTools: [],
+    skipReason: 'unavailable',
   };
 }
 
@@ -789,10 +946,23 @@ export function canAddSubagentToReviewTeam(subagentId: string): boolean {
   return !DISALLOWED_REVIEW_TEAM_MEMBER_IDS.has(subagentId);
 }
 
-export function canUseSubagentAsReviewTeamMember(
+function hasReviewTeamExtraMemberShape(
   subagent: Pick<SubagentInfo, 'id' | 'isReadonly' | 'isReview'>,
 ): boolean {
-  return subagent.isReview && subagent.isReadonly && canAddSubagentToReviewTeam(subagent.id);
+  return (
+    subagent.isReview &&
+    subagent.isReadonly &&
+    canAddSubagentToReviewTeam(subagent.id)
+  );
+}
+
+export function canUseSubagentAsReviewTeamMember(
+  subagent: Pick<SubagentInfo, 'id' | 'isReadonly' | 'isReview' | 'defaultTools'>,
+): boolean {
+  return (
+    hasReviewTeamExtraMemberShape(subagent) &&
+    evaluateReviewSubagentToolReadiness(subagent.defaultTools ?? []).readiness !== 'invalid'
+  );
 }
 
 export function resolveDefaultReviewTeam(
@@ -812,11 +982,33 @@ export function resolveDefaultReviewTeam(
       availableModelIds,
     ),
   );
-  const extraMembers = storedConfig.extra_subagent_ids
-    .map((subagentId) => byId.get(subagentId))
-    .filter((subagent): subagent is SubagentInfo => Boolean(subagent))
-    .filter(canUseSubagentAsReviewTeamMember)
-    .map((subagent) => buildExtraMember(subagent, storedConfig, availableModelIds));
+  const extraMembers = storedConfig.extra_subagent_ids.map((subagentId) => {
+    const subagent = byId.get(subagentId);
+    if (!subagent) {
+      return buildUnavailableExtraMember(
+        subagentId,
+        storedConfig,
+        availableModelIds,
+      );
+    }
+    if (!hasReviewTeamExtraMemberShape(subagent)) {
+      return buildExtraMember(subagent, storedConfig, availableModelIds, {
+        available: false,
+        skipReason: 'invalid_tooling',
+      });
+    }
+    const toolingReadiness = evaluateReviewSubagentToolReadiness(
+      subagent.defaultTools ?? [],
+    );
+    return buildExtraMember(
+      subagent,
+      storedConfig,
+      availableModelIds,
+      toolingReadiness.readiness === 'invalid'
+        ? { available: false, skipReason: 'invalid_tooling' }
+        : undefined,
+    );
+  });
 
   return {
     id: DEFAULT_REVIEW_TEAM_ID,
@@ -918,32 +1110,383 @@ function toManifestMember(
   };
 }
 
+function targetHasAnyTag(
+  target: ReviewTargetClassification,
+  tags: ReviewDomainTag[],
+): boolean {
+  return tags.some((tag) => target.tags.includes(tag));
+}
+
+function shouldRunCoreReviewerForTarget(
+  member: ReviewTeamMember,
+  target: ReviewTargetClassification,
+): boolean {
+  if (member.definitionKey !== 'frontend') {
+    return true;
+  }
+
+  if (target.resolution === 'unknown') {
+    return true;
+  }
+
+  return targetHasAnyTag(target, FRONTEND_REVIEW_DOMAIN_TAGS);
+}
+
+function resolveMaxExtraReviewers(
+  mode: ReviewTokenBudgetMode,
+  eligibleExtraReviewerCount: number,
+): number {
+  if (mode === 'economy') {
+    return 0;
+  }
+  return eligibleExtraReviewerCount;
+}
+
+function resolveChangeStats(
+  target: ReviewTargetClassification,
+  stats?: Partial<ReviewTeamChangeStats>,
+): ReviewTeamChangeStats {
+  const fileCount = Math.max(
+    0,
+    Math.floor(
+      stats?.fileCount ??
+        target.files.filter((file) => !file.excluded).length,
+    ),
+  );
+  const totalLinesChanged =
+    typeof stats?.totalLinesChanged === 'number' &&
+    Number.isFinite(stats.totalLinesChanged)
+      ? Math.max(0, Math.floor(stats.totalLinesChanged))
+      : undefined;
+
+  return {
+    fileCount,
+    ...(totalLinesChanged !== undefined ? { totalLinesChanged } : {}),
+    lineCountSource:
+      totalLinesChanged !== undefined
+        ? stats?.lineCountSource ?? 'diff_stat'
+        : 'unknown',
+  };
+}
+
+function buildWorkPacketScopeFromFiles(
+  target: ReviewTargetClassification,
+  files: string[],
+  group?: { index: number; count: number },
+): ReviewTeamWorkPacketScope {
+  return {
+    kind: 'review_target',
+    targetSource: target.source,
+    targetResolution: target.resolution,
+    targetTags: [...target.tags],
+    fileCount: files.length,
+    files,
+    excludedFileCount:
+      target.files.length - target.files.filter((file) => !file.excluded).length,
+    ...(group ? { groupIndex: group.index, groupCount: group.count } : {}),
+  };
+}
+
+function buildWorkPacket(params: {
+  member: ReviewTeamMember;
+  phase: ReviewTeamWorkPacket['phase'];
+  scope: ReviewTeamWorkPacketScope;
+  timeoutSeconds: number;
+}): ReviewTeamWorkPacket {
+  const manifestMember = toManifestMember(params.member);
+  const packetGroupSuffix =
+    params.phase === 'reviewer' &&
+    params.scope.groupIndex !== undefined &&
+    params.scope.groupCount !== undefined
+      ? `:group-${params.scope.groupIndex}-of-${params.scope.groupCount}`
+      : '';
+
+  return {
+    packetId: `${params.phase}:${manifestMember.subagentId}${packetGroupSuffix}`,
+    phase: params.phase,
+    subagentId: manifestMember.subagentId,
+    displayName: manifestMember.displayName,
+    roleName: manifestMember.roleName,
+    assignedScope: params.scope,
+    allowedTools: [...params.member.allowedTools],
+    timeoutSeconds: params.timeoutSeconds,
+    requiredOutputFields:
+      params.phase === 'judge'
+        ? [...JUDGE_WORK_PACKET_REQUIRED_OUTPUT_FIELDS]
+        : [...REVIEWER_WORK_PACKET_REQUIRED_OUTPUT_FIELDS],
+    strategyLevel: manifestMember.strategyLevel,
+    strategyDirective: manifestMember.strategyDirective,
+    model: manifestMember.model || DEFAULT_REVIEW_TEAM_MODEL,
+  };
+}
+
+function splitFilesIntoGroups(files: string[], groupCount: number): string[][] {
+  if (groupCount <= 1) {
+    return [files];
+  }
+
+  const groups: string[][] = [];
+  let cursor = 0;
+  for (let index = 0; index < groupCount; index += 1) {
+    const remainingFiles = files.length - cursor;
+    const remainingGroups = groupCount - index;
+    const groupSize = Math.ceil(remainingFiles / remainingGroups);
+    groups.push(files.slice(cursor, cursor + groupSize));
+    cursor += groupSize;
+  }
+  return groups;
+}
+
+function resolveReviewerPacketScopes(
+  target: ReviewTargetClassification,
+  executionPolicy: ReviewTeamExecutionPolicy,
+): ReviewTeamWorkPacketScope[] {
+  const includedFiles = target.files
+    .filter((file) => !file.excluded)
+    .map((file) => file.normalizedPath);
+  const shouldSplit =
+    executionPolicy.reviewerFileSplitThreshold > 0 &&
+    executionPolicy.maxSameRoleInstances > 1 &&
+    includedFiles.length > executionPolicy.reviewerFileSplitThreshold;
+
+  if (!shouldSplit) {
+    return [buildWorkPacketScopeFromFiles(target, includedFiles)];
+  }
+
+  const groupCount = Math.min(
+    executionPolicy.maxSameRoleInstances,
+    Math.ceil(includedFiles.length / executionPolicy.reviewerFileSplitThreshold),
+  );
+
+  return splitFilesIntoGroups(includedFiles, groupCount).map((files, index) =>
+    buildWorkPacketScopeFromFiles(target, files, {
+      index: index + 1,
+      count: groupCount,
+    }),
+  );
+}
+
+function buildWorkPackets(params: {
+  reviewerMembers: ReviewTeamMember[];
+  judgeMember?: ReviewTeamMember;
+  target: ReviewTargetClassification;
+  executionPolicy: ReviewTeamExecutionPolicy;
+}): ReviewTeamWorkPacket[] {
+  const reviewerScopes = resolveReviewerPacketScopes(
+    params.target,
+    params.executionPolicy,
+  );
+  const fullScope = buildWorkPacketScopeFromFiles(
+    params.target,
+    params.target.files
+      .filter((file) => !file.excluded)
+      .map((file) => file.normalizedPath),
+  );
+  const reviewerPackets = params.reviewerMembers.flatMap((member) =>
+    reviewerScopes.map((scope) =>
+      buildWorkPacket({
+        member,
+        phase: 'reviewer',
+        scope,
+        timeoutSeconds: params.executionPolicy.reviewerTimeoutSeconds,
+      }),
+    ),
+  );
+  const judgePacket = params.judgeMember
+    ? [
+      buildWorkPacket({
+        member: params.judgeMember,
+        phase: 'judge',
+        scope: fullScope,
+        timeoutSeconds: params.executionPolicy.judgeTimeoutSeconds,
+      }),
+    ]
+    : [];
+
+  return [...reviewerPackets, ...judgePacket];
+}
+
+function predictTimeoutSeconds(params: {
+  role: 'reviewer' | 'judge';
+  strategyLevel: ReviewStrategyLevel;
+  changeStats: ReviewTeamChangeStats;
+  reviewerCount: number;
+}): number {
+  const totalLinesChanged = params.changeStats.totalLinesChanged ?? 0;
+  const base = PREDICTIVE_TIMEOUT_BASE_SECONDS[params.strategyLevel];
+  const raw =
+    base +
+    params.changeStats.fileCount * PREDICTIVE_TIMEOUT_PER_FILE_SECONDS +
+    Math.floor(totalLinesChanged / 100) *
+      PREDICTIVE_TIMEOUT_PER_100_LINES_SECONDS;
+  const reviewerCount = Math.max(1, params.reviewerCount);
+  const multiplier =
+    params.role === 'judge'
+      ? 1 + Math.floor((reviewerCount - 1) / 3)
+      : 1;
+
+  return Math.min(raw * multiplier, MAX_PREDICTIVE_TIMEOUT_SECONDS);
+}
+
+function buildEffectiveExecutionPolicy(params: {
+  basePolicy: ReviewTeamExecutionPolicy;
+  strategyLevel: ReviewStrategyLevel;
+  target: ReviewTargetClassification;
+  changeStats: ReviewTeamChangeStats;
+  reviewerCount: number;
+}): ReviewTeamExecutionPolicy {
+  if (
+    params.target.resolution === 'unknown' &&
+    params.changeStats.fileCount === 0 &&
+    params.changeStats.totalLinesChanged === undefined
+  ) {
+    return params.basePolicy;
+  }
+
+  const reviewerTimeoutSeconds = predictTimeoutSeconds({
+    role: 'reviewer',
+    strategyLevel: params.strategyLevel,
+    changeStats: params.changeStats,
+    reviewerCount: params.reviewerCount,
+  });
+  const judgeTimeoutSeconds = predictTimeoutSeconds({
+    role: 'judge',
+    strategyLevel: params.strategyLevel,
+    changeStats: params.changeStats,
+    reviewerCount: params.reviewerCount,
+  });
+
+  return {
+    ...params.basePolicy,
+    reviewerTimeoutSeconds:
+      params.basePolicy.reviewerTimeoutSeconds === 0
+        ? 0
+        : Math.max(
+          params.basePolicy.reviewerTimeoutSeconds,
+          reviewerTimeoutSeconds,
+        ),
+    judgeTimeoutSeconds:
+      params.basePolicy.judgeTimeoutSeconds === 0
+        ? 0
+        : Math.max(
+          params.basePolicy.judgeTimeoutSeconds,
+          judgeTimeoutSeconds,
+        ),
+  };
+}
+
+function buildTokenBudgetPlan(params: {
+  mode: ReviewTokenBudgetMode;
+  activeReviewerCalls: number;
+  eligibleExtraReviewerCount: number;
+  maxExtraReviewers: number;
+  skippedReviewerIds: string[];
+  target: ReviewTargetClassification;
+  executionPolicy: ReviewTeamExecutionPolicy;
+}): ReviewTeamTokenBudgetPlan {
+  const largeDiffSummaryFirst =
+    params.executionPolicy.reviewerFileSplitThreshold > 0 &&
+    params.target.files.length > params.executionPolicy.reviewerFileSplitThreshold;
+  const warnings =
+    params.skippedReviewerIds.length > 0
+      ? ['Some extra reviewers were skipped by the selected token budget mode.']
+      : [];
+
+  return {
+    mode: params.mode,
+    estimatedReviewerCalls: params.activeReviewerCalls,
+    maxReviewerCalls:
+      params.activeReviewerCalls + Math.max(0, params.eligibleExtraReviewerCount - params.maxExtraReviewers),
+    maxExtraReviewers: params.maxExtraReviewers,
+    ...(largeDiffSummaryFirst
+      ? { maxFilesPerReviewer: params.executionPolicy.reviewerFileSplitThreshold }
+      : {}),
+    largeDiffSummaryFirst,
+    skippedReviewerIds: params.skippedReviewerIds,
+    warnings,
+  };
+}
+
 export function buildEffectiveReviewTeamManifest(
   team: ReviewTeam,
   options: {
     workspacePath?: string;
     policySource?: ReviewTeamRunManifest['policySource'];
+    target?: ReviewTargetClassification;
+    changeStats?: Partial<ReviewTeamChangeStats>;
+    tokenBudgetMode?: ReviewTokenBudgetMode;
   } = {},
 ): ReviewTeamRunManifest {
+  const target = options.target ?? createUnknownReviewTargetClassification('unknown');
+  const tokenBudgetMode = options.tokenBudgetMode ?? 'balanced';
+  const changeStats = resolveChangeStats(target, options.changeStats);
   const availableCoreMembers = team.coreMembers.filter((member) => member.available);
   const unavailableCoreMembers = team.coreMembers.filter((member) => !member.available);
-  const coreReviewers = availableCoreMembers
+  const notApplicableCoreMembers = availableCoreMembers.filter(
+    (member) =>
+      member.definitionKey !== 'judge' &&
+      !shouldRunCoreReviewerForTarget(member, target),
+  );
+  const coreReviewerMembers = availableCoreMembers
     .filter((member) => member.definitionKey !== 'judge')
-    .map((member) => toManifestMember(member));
-  const qualityGateReviewer = availableCoreMembers.find(
+    .filter((member) => shouldRunCoreReviewerForTarget(member, target));
+  const coreReviewers = coreReviewerMembers.map((member) => toManifestMember(member));
+  const qualityGateReviewerMember = availableCoreMembers.find(
     (member) => member.definitionKey === 'judge',
   );
-  const enabledExtraReviewers = team.extraMembers
-    .filter((member) => member.available && member.enabled)
+  const qualityGateReviewer = qualityGateReviewerMember
+    ? toManifestMember(qualityGateReviewerMember)
+    : undefined;
+  const eligibleExtraMembers = team.extraMembers
+    .filter((member) => member.available && member.enabled);
+  const maxExtraReviewers = resolveMaxExtraReviewers(
+    tokenBudgetMode,
+    eligibleExtraMembers.length,
+  );
+  const enabledExtraMembers = eligibleExtraMembers.slice(0, maxExtraReviewers);
+  const budgetLimitedExtraMembers = eligibleExtraMembers.slice(maxExtraReviewers);
+  const enabledExtraReviewers = enabledExtraMembers
     .map((member) => toManifestMember(member));
+  const reviewerCount = coreReviewers.length + enabledExtraReviewers.length;
+  const executionPolicy = buildEffectiveExecutionPolicy({
+    basePolicy: team.executionPolicy,
+    strategyLevel: team.strategyLevel,
+    target,
+    changeStats,
+    reviewerCount,
+  });
+  const workPackets = buildWorkPackets({
+    reviewerMembers: [...coreReviewerMembers, ...enabledExtraMembers],
+    judgeMember: qualityGateReviewerMember,
+    target,
+    executionPolicy,
+  });
+  const tokenBudget = buildTokenBudgetPlan({
+    mode: tokenBudgetMode,
+    activeReviewerCalls: workPackets.length,
+    eligibleExtraReviewerCount: eligibleExtraMembers.length,
+    maxExtraReviewers,
+    skippedReviewerIds: budgetLimitedExtraMembers.map((member) => member.subagentId),
+    target,
+    executionPolicy,
+  });
   const skippedReviewers = [
     ...team.extraMembers
       .filter((member) => !member.available || !member.enabled)
       .map((member) =>
-        toManifestMember(member, member.available ? 'disabled' : 'unavailable'),
+        toManifestMember(
+          member,
+          member.skipReason ?? (member.available ? 'disabled' : 'unavailable'),
+        ),
       ),
+    ...budgetLimitedExtraMembers.map((member) =>
+      toManifestMember(member, 'budget_limited'),
+    ),
     ...unavailableCoreMembers.map((member) =>
       toManifestMember(member, 'unavailable'),
+    ),
+    ...notApplicableCoreMembers.map((member) =>
+      toManifestMember(member, 'not_applicable'),
     ),
   ];
 
@@ -951,14 +1494,16 @@ export function buildEffectiveReviewTeamManifest(
     reviewMode: 'deep',
     ...(options.workspacePath ? { workspacePath: options.workspacePath } : {}),
     policySource: options.policySource ?? 'default-review-team-config',
+    target,
     strategyLevel: team.strategyLevel,
-    executionPolicy: team.executionPolicy,
+    executionPolicy,
+    changeStats,
+    tokenBudget,
     coreReviewers,
-    ...(qualityGateReviewer
-      ? { qualityGateReviewer: toManifestMember(qualityGateReviewer) }
-      : {}),
+    ...(qualityGateReviewer ? { qualityGateReviewer } : {}),
     enabledExtraReviewers,
     skippedReviewers,
+    workPackets,
   };
 }
 
@@ -986,6 +1531,49 @@ function formatManifestList(
         : member.subagentId,
     )
     .join(', ');
+}
+
+function workPacketToPromptPayload(packet: ReviewTeamWorkPacket) {
+  return {
+    packet_id: packet.packetId,
+    phase: packet.phase,
+    subagent_type: packet.subagentId,
+    display_name: packet.displayName,
+    role: packet.roleName,
+    assigned_scope: {
+      kind: packet.assignedScope.kind,
+      target_source: packet.assignedScope.targetSource,
+      target_resolution: packet.assignedScope.targetResolution,
+      target_tags: packet.assignedScope.targetTags,
+      file_count: packet.assignedScope.fileCount,
+      files: packet.assignedScope.files,
+      excluded_file_count: packet.assignedScope.excludedFileCount,
+      ...(packet.assignedScope.groupIndex !== undefined
+        ? { group_index: packet.assignedScope.groupIndex }
+        : {}),
+      ...(packet.assignedScope.groupCount !== undefined
+        ? { group_count: packet.assignedScope.groupCount }
+        : {}),
+    },
+    allowed_tools: packet.allowedTools,
+    timeout_seconds: packet.timeoutSeconds,
+    required_output_fields: packet.requiredOutputFields,
+    strategy: packet.strategyLevel,
+    model_id: packet.model,
+    prompt_directive: packet.strategyDirective,
+  };
+}
+
+function formatWorkPacketBlock(workPackets: ReviewTeamWorkPacket[] = []): string {
+  if (workPackets.length === 0) {
+    return '- none';
+  }
+
+  return [
+    '```json',
+    JSON.stringify(workPackets.map(workPacketToPromptPayload), null, 2),
+    '```',
+  ].join('\n');
 }
 
 export function buildReviewTeamPromptBlock(
@@ -1034,17 +1622,31 @@ export function buildReviewTeamPromptBlock(
     })
     .join('\n');
   const executionPolicy = [
-    `- reviewer_timeout_seconds: ${team.executionPolicy.reviewerTimeoutSeconds}`,
-    `- judge_timeout_seconds: ${team.executionPolicy.judgeTimeoutSeconds}`,
-    `- reviewer_file_split_threshold: ${team.executionPolicy.reviewerFileSplitThreshold}`,
-    `- max_same_role_instances: ${team.executionPolicy.maxSameRoleInstances}`,
+    `- reviewer_timeout_seconds: ${manifest.executionPolicy.reviewerTimeoutSeconds}`,
+    `- judge_timeout_seconds: ${manifest.executionPolicy.judgeTimeoutSeconds}`,
+    `- reviewer_file_split_threshold: ${manifest.executionPolicy.reviewerFileSplitThreshold}`,
+    `- max_same_role_instances: ${manifest.executionPolicy.maxSameRoleInstances}`,
   ].join('\n');
+  const targetLineCount =
+    manifest.changeStats?.totalLinesChanged !== undefined
+      ? `${manifest.changeStats.totalLinesChanged}`
+      : 'unknown';
   const manifestBlock = [
     'Run manifest:',
     `- review_mode: ${manifest.reviewMode}`,
     `- team_strategy: ${manifest.strategyLevel}`,
     `- workspace_path: ${manifest.workspacePath || 'inherited from current session'}`,
     `- policy_source: ${manifest.policySource}`,
+    `- target_source: ${manifest.target.source}`,
+    `- target_resolution: ${manifest.target.resolution}`,
+    `- target_tags: ${manifest.target.tags.join(', ') || 'none'}`,
+    `- target_warnings: ${manifest.target.warnings.map((warning) => warning.code).join(', ') || 'none'}`,
+    `- target_file_count: ${manifest.changeStats?.fileCount ?? manifest.target.files.length}`,
+    `- target_line_count: ${targetLineCount}`,
+    `- target_line_count_source: ${manifest.changeStats?.lineCountSource ?? 'unknown'}`,
+    `- token_budget_mode: ${manifest.tokenBudget.mode}`,
+    `- estimated_reviewer_calls: ${manifest.tokenBudget.estimatedReviewerCalls}`,
+    `- budget_limited_reviewers: ${manifest.tokenBudget.skippedReviewerIds.join(', ') || 'none'}`,
     `- core_reviewers: ${formatManifestList(manifest.coreReviewers, 'none')}`,
     `- quality_gate_reviewer: ${manifest.qualityGateReviewer?.subagentId || 'none'}`,
     `- enabled_extra_reviewers: ${formatManifestList(manifest.enabledExtraReviewers, 'none')}`,
@@ -1076,20 +1678,38 @@ export function buildReviewTeamPromptBlock(
 
   return [
     manifestBlock,
+    'Review work packets:',
+    formatWorkPacketBlock(manifest.workPackets),
+    'Work packet rules:',
+    '- Each reviewer Task prompt must include the matching work packet verbatim.',
+    '- Include the packet_id in each Task description, for example "Security review [packet reviewer:ReviewSecurity:group-1-of-3]".',
+    '- Each reviewer and judge response must echo packet_id and set status to completed, partial_timeout, timed_out, cancelled_by_user, failed, or skipped.',
+    '- If the reviewer reports packet_id itself, mark reviewers[].packet_status_source as reported in the final submit_code_review payload.',
+    '- If the reviewer omits packet_id but the Task was launched from a packet, infer the packet_id from the Task description or work packet and mark packet_status_source as inferred.',
+    '- If packet_id cannot be reported or inferred, mark packet_status_source as missing and explain the confidence impact in coverage_notes.',
+    '- If a reviewer response is missing packet_id or status, the judge must treat that reviewer output as lower confidence instead of discarding the whole review.',
+    '- The assigned_scope is the default scope for that packet; only widen it when a critical cross-file dependency requires it and note the reason in coverage_notes.',
     'Configured code review team:',
     members || '- No team members available.',
     'Execution policy:',
     executionPolicy,
     'Team execution rules:',
+    '- Run only reviewers listed in core_reviewers and enabled_extra_reviewers.',
+    '- Do not launch skipped_reviewers.',
+    '- If a skipped reviewer has reason not_applicable, mention it in coverage notes without treating it as reduced confidence.',
+    '- If a skipped reviewer has reason budget_limited, mention the budget mode and the coverage tradeoff.',
+    '- If a skipped reviewer has reason invalid_tooling, report it as a configuration issue and do not reduce confidence in the reviewers that did run.',
+    '- If target_resolution is unknown, conditional reviewers may be activated conservatively; report that as coverage context.',
     '- Always run the four locked core reviewer roles first: ReviewBusinessLogic, ReviewPerformance, ReviewSecurity, and ReviewArchitecture.',
     '- Run ReviewJudge only after the reviewer batch finishes, as the quality-gate pass.',
-    '- If the Frontend Reviewer is enabled, run it in parallel with the locked reviewers whenever the change contains frontend files (src/web-ui/, .tsx, .scss, .css, locales/).',
     '- If other extra reviewers are configured and enabled, run them in parallel with the locked reviewers whenever possible.',
     '- When a configured member entry provides model_id, pass model_id with that value to the matching Task call.',
     '- If reviewer_timeout_seconds is greater than 0, pass timeout_seconds with that value to every reviewer Task call.',
     '- If judge_timeout_seconds is greater than 0, pass timeout_seconds with that value to the ReviewJudge Task call.',
+    '- If a reviewer Task returns status partial_timeout, treat its output as partial evidence: preserve it in reviewers[].partial_output, mark the reviewer status partial_timeout, and mention the confidence impact in coverage_notes.',
+    '- In the final submit_code_review payload, populate reliability_signals for context_pressure, compression_preserved, partial_reviewer, and user_decision when those conditions apply. Use severity info/warning/action, count when useful, and source runtime/manifest/report/inferred.',
     '- If reviewer_file_split_threshold is greater than 0 and the target file count exceeds it, split files across multiple same-role reviewer instances (up to max_same_role_instances per role). Launch all split instances in the same parallel message.',
-    '- When file splitting is active, each same-role instance must only review its assigned file group. Label instances in the Task description (e.g. "Security review [group 1/3]").',
+    '- When file splitting is active, each same-role instance must only review its assigned file group. Label instances in the Task description with both group and packet_id (e.g. "Security review [group 1/3] [packet reviewer:ReviewSecurity:group-1-of-3]").',
     '- Do not run ReviewFixer during the review pass.',
     '- Wait for explicit user approval before starting any remediation.',
     '- The Review Quality Inspector acts as a third-party arbiter: it primarily examines reviewer reports for logical consistency and evidence quality, and only uses code inspection tools for targeted spot-checks when a specific claim needs verification.',

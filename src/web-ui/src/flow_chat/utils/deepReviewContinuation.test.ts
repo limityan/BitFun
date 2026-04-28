@@ -167,4 +167,107 @@ describe('deepReviewContinuation', () => {
     expect(prompt).toContain('ReviewPerformance: completed');
     expect(prompt).toContain('ReviewSecurity: timed_out');
   });
+
+  it('tracks reviewer partial timeout output when available', () => {
+    const session = createDeepReviewSession({
+      error: 'Timeout',
+      dialogTurns: [
+        {
+          id: 'turn-1',
+          sessionId: 'deep-review-session',
+          timestamp: 1,
+          status: 'error',
+          userMessage: {
+            id: 'user-1',
+            content: 'Original command:\n/DeepReview review latest commit',
+            timestamp: 1,
+          },
+          startTime: 1,
+          modelRounds: [
+            {
+              id: 'round-1',
+              index: 0,
+              startTime: 1,
+              isStreaming: false,
+              isComplete: true,
+              status: 'completed',
+              items: [
+                {
+                  id: 'tool-1',
+                  type: 'tool',
+                  toolName: 'Task',
+                  toolCall: {
+                    id: 'call-security',
+                    input: { subagent_type: 'ReviewSecurity' },
+                  },
+                  toolResult: {
+                    result: {
+                      status: 'partial_timeout',
+                      partial_output: 'Found one likely token logging issue before timeout.',
+                    },
+                    success: true,
+                    resultForAssistant:
+                      "Subagent 'ReviewSecurity' timed out with partial result.",
+                  },
+                  startTime: 1,
+                  timestamp: 1,
+                  status: 'completed',
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const interruption = deriveDeepReviewInterruption(session, { category: 'timeout' });
+    const prompt = buildDeepReviewContinuationPrompt(interruption!);
+
+    expect(interruption?.reviewers).toEqual([
+      expect.objectContaining({
+        reviewer: 'ReviewSecurity',
+        status: 'partial_timeout',
+        partialOutput: 'Found one likely token logging issue before timeout.',
+      }),
+    ]);
+    expect(prompt).toContain('ReviewSecurity: partial_timeout');
+    expect(prompt).toContain('partial output: Found one likely token logging issue before timeout.');
+  });
+
+  it('includes persisted manifest skips when continuing an interrupted review', () => {
+    const session = createDeepReviewSession({
+      error: 'Timeout',
+      deepReviewRunManifest: {
+        skippedReviewers: [
+          {
+            subagentId: 'ReviewFrontend',
+            displayName: 'Frontend Reviewer',
+            reason: 'not_applicable',
+          },
+        ],
+      },
+      dialogTurns: [
+        {
+          id: 'turn-1',
+          sessionId: 'deep-review-session',
+          timestamp: 1,
+          status: 'error',
+          userMessage: {
+            id: 'user-1',
+            content: 'Original command:\n/DeepReview review latest commit',
+            timestamp: 1,
+          },
+          startTime: 1,
+          modelRounds: [],
+          error: 'Timeout',
+        },
+      ],
+    } as Partial<Session>);
+
+    const interruption = deriveDeepReviewInterruption(session, { category: 'timeout' });
+    const prompt = buildDeepReviewContinuationPrompt(interruption!);
+
+    expect(prompt).toContain('Do not run reviewers skipped as not_applicable.');
+    expect(prompt).toContain('ReviewFrontend: skipped (not_applicable)');
+  });
 });
