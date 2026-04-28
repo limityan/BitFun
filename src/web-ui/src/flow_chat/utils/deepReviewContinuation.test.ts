@@ -234,6 +234,69 @@ describe('deepReviewContinuation', () => {
     expect(prompt).toContain('partial output: Found one likely token logging issue before timeout.');
   });
 
+  it('includes retry budget constraints from the persisted run manifest', () => {
+    const session = createDeepReviewSession({
+      error: 'Timeout',
+      deepReviewRunManifest: {
+        executionPolicy: {
+          maxRetriesPerRole: 1,
+        },
+        skippedReviewers: [],
+      },
+      dialogTurns: [
+        {
+          id: 'turn-1',
+          sessionId: 'deep-review-session',
+          timestamp: 1,
+          status: 'error',
+          userMessage: {
+            id: 'user-1',
+            content: 'Original command:\n/DeepReview review latest commit',
+            timestamp: 1,
+          },
+          startTime: 1,
+          modelRounds: [
+            {
+              id: 'round-1',
+              index: 0,
+              startTime: 1,
+              isStreaming: false,
+              isComplete: true,
+              status: 'completed',
+              items: [
+                {
+                  id: 'tool-1',
+                  type: 'tool',
+                  toolName: 'Task',
+                  toolCall: {
+                    id: 'call-security',
+                    input: { subagent_type: 'ReviewSecurity' },
+                  },
+                  toolResult: {
+                    result: { status: 'timed_out' },
+                    success: false,
+                    error: 'Reviewer timed out',
+                  },
+                  startTime: 1,
+                  timestamp: 1,
+                  status: 'error',
+                },
+              ],
+            },
+          ],
+          error: 'Timeout',
+        },
+      ],
+    } as Partial<Session>);
+
+    const interruption = deriveDeepReviewInterruption(session, { category: 'timeout' });
+    const prompt = buildDeepReviewContinuationPrompt(interruption!);
+
+    expect(prompt).toContain('max_retries_per_role = 1');
+    expect(prompt).toContain('retry = true');
+    expect(prompt).toContain('reduce the scope');
+  });
+
   it('includes persisted manifest skips when continuing an interrupted review', () => {
     const session = createDeepReviewSession({
       error: 'Timeout',

@@ -97,6 +97,7 @@ If a reviewer or the judge fails, times out, or is cancelled:
 - if the reviewer reports its packet id, copy it into `reviewers[].packet_id` and set `reviewers[].packet_status_source = "reported"`
 - if the reviewer omits `packet_id` but the Task was launched from a work packet, infer `reviewers[].packet_id` from the Task description or the matching work packet and set `reviewers[].packet_status_source = "inferred"`
 - if no packet id can be reported or inferred, set `reviewers[].packet_status_source = "missing"` and summarize the confidence impact in `report_sections.coverage_notes`
+- retry a failed or timed-out reviewer only when useful evidence is missing, and only within the configured retry budget; retry the same `subagent_type` with `retry = true`, a reduced scope, a downgraded strategy when possible, and a shorter timeout
 - lower confidence as needed
 - never drop the final report just because one subagent stopped
 

@@ -80,6 +80,7 @@ Usage notes:
 - The 'workspace_path' parameter must still be provided explicitly for the Explore and FileFinder agent.
 - Use 'model_id' when a caller needs a specific model or model slot for the subagent. Omit it to use the agent default.
 - Use 'timeout_seconds' when you need a hard deadline for the subagent. Omit it or set it to 0 to disable the timeout.
+- For DeepReview only, set 'retry' to true when re-dispatching a reviewer after that same reviewer failed or timed out in the current turn.
 - Launch multiple agents concurrently whenever possible, to maximize performance; to do that, use a single message with multiple tool calls
 - When the agent is done, it will return a single message back to you.
 - The agent's outputs should generally be trusted
@@ -201,6 +202,10 @@ impl Tool for TaskTool {
                     "type": "integer",
                     "minimum": 0,
                     "description": "Optional timeout for this subagent task in seconds. Use 0 or omit it to disable the timeout."
+                },
+                "retry": {
+                    "type": "boolean",
+                    "description": "DeepReview only: true when this Task call is a retry for the same reviewer role after a timeout or failure in the current turn."
                 }
             },
             "required": [
@@ -341,6 +346,7 @@ impl Tool for TaskTool {
             }
             None => None,
         };
+        let is_retry = input.get("retry").and_then(Value::as_bool).unwrap_or(false);
         let current_workspace_path = context
             .workspace_root()
             .map(|path| path.to_string_lossy().into_owned());
@@ -510,14 +516,19 @@ impl Tool for TaskTool {
                     })
                 )));
             }
-            record_deep_review_task_budget(&dialog_turn_id, &policy, role).map_err(
-                |violation| {
-                    BitFunError::tool(format!(
-                        "DeepReview Task policy violation: {}",
-                        violation.to_tool_error_message()
-                    ))
-                },
-            )?;
+            record_deep_review_task_budget(
+                &dialog_turn_id,
+                &policy,
+                role,
+                &subagent_type,
+                is_retry,
+            )
+            .map_err(|violation| {
+                BitFunError::tool(format!(
+                    "DeepReview Task policy violation: {}",
+                    violation.to_tool_error_message()
+                ))
+            })?;
             timeout_seconds = policy.effective_timeout_seconds(role, timeout_seconds);
         }
 
@@ -666,14 +677,32 @@ mod tests {
         let tracker = DeepReviewBudgetTracker::default();
 
         tracker
-            .record_task("turn-1", &policy, DeepReviewSubagentRole::Judge)
+            .record_task(
+                "turn-1",
+                &policy,
+                DeepReviewSubagentRole::Judge,
+                "ReviewJudge",
+                false,
+            )
             .unwrap();
         assert!(tracker
-            .record_task("turn-1", &policy, DeepReviewSubagentRole::Judge)
+            .record_task(
+                "turn-1",
+                &policy,
+                DeepReviewSubagentRole::Judge,
+                "ReviewJudge",
+                false,
+            )
             .is_err());
 
         tracker
-            .record_task("turn-2", &policy, DeepReviewSubagentRole::Judge)
+            .record_task(
+                "turn-2",
+                &policy,
+                DeepReviewSubagentRole::Judge,
+                "ReviewJudge",
+                false,
+            )
             .unwrap();
     }
 }

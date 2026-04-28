@@ -36,6 +36,8 @@ const TIMEOUT_PER_100_LINES_SECONDS: u64 = 30;
 const DEFAULT_REVIEWER_FILE_SPLIT_THRESHOLD: usize = 20;
 const DEFAULT_MAX_SAME_ROLE_INSTANCES: usize = 3;
 const MAX_SAME_ROLE_INSTANCES: usize = 8;
+const DEFAULT_MAX_RETRIES_PER_ROLE: usize = 1;
+const MAX_RETRIES_PER_ROLE: usize = 3;
 const BUDGET_TTL: Duration = Duration::from_secs(60 * 60);
 const PRUNE_INTERVAL: Duration = Duration::from_secs(300);
 
@@ -72,6 +74,7 @@ pub struct ReviewTeamExecutionPolicyDefinition {
     pub judge_timeout_seconds: u64,
     pub reviewer_file_split_threshold: usize,
     pub max_same_role_instances: usize,
+    pub max_retries_per_role: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -380,6 +383,7 @@ pub fn default_review_team_definition() -> ReviewTeamDefinition {
             judge_timeout_seconds: 240,
             reviewer_file_split_threshold: DEFAULT_REVIEWER_FILE_SPLIT_THRESHOLD,
             max_same_role_instances: DEFAULT_MAX_SAME_ROLE_INSTANCES,
+            max_retries_per_role: DEFAULT_MAX_RETRIES_PER_ROLE,
         },
         core_roles,
         strategy_profiles,
@@ -433,6 +437,9 @@ pub struct DeepReviewExecutionPolicy {
     /// Maximum number of same-role reviewer instances allowed per review turn.
     /// Clamped to [1, MAX_SAME_ROLE_INSTANCES].
     pub max_same_role_instances: usize,
+    /// Maximum retry launches allowed per reviewer role in one DeepReview turn.
+    /// Set to 0 to disable automatic reviewer retries.
+    pub max_retries_per_role: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -548,6 +555,7 @@ impl Default for DeepReviewExecutionPolicy {
             judge_timeout_seconds: DEFAULT_JUDGE_TIMEOUT_SECONDS,
             reviewer_file_split_threshold: DEFAULT_REVIEWER_FILE_SPLIT_THRESHOLD,
             max_same_role_instances: DEFAULT_MAX_SAME_ROLE_INSTANCES,
+            max_retries_per_role: DEFAULT_MAX_RETRIES_PER_ROLE,
         }
     }
 }
@@ -588,6 +596,12 @@ impl DeepReviewExecutionPolicy {
                 1,
                 MAX_SAME_ROLE_INSTANCES,
                 DEFAULT_MAX_SAME_ROLE_INSTANCES,
+            ),
+            max_retries_per_role: clamp_usize(
+                config.get("max_retries_per_role"),
+                0,
+                MAX_RETRIES_PER_ROLE,
+                DEFAULT_MAX_RETRIES_PER_ROLE,
             ),
         }
     }
@@ -724,6 +738,12 @@ impl DeepReviewExecutionPolicy {
             MAX_SAME_ROLE_INSTANCES,
             policy.max_same_role_instances,
         );
+        policy.max_retries_per_role = clamp_usize(
+            execution_policy.get("maxRetriesPerRole"),
+            0,
+            MAX_RETRIES_PER_ROLE,
+            policy.max_retries_per_role,
+        );
 
         policy
     }
@@ -759,6 +779,8 @@ struct DeepReviewTurnBudget {
     /// extra_subagent_ids.len()` so the orchestrator cannot spawn an unbounded
     /// number of same-role instances.
     reviewer_calls: usize,
+    reviewer_calls_by_subagent: HashMap<String, usize>,
+    retries_used_by_subagent: HashMap<String, usize>,
     updated_at: Instant,
 }
 
@@ -767,6 +789,8 @@ impl DeepReviewTurnBudget {
         Self {
             judge_calls: 0,
             reviewer_calls: 0,
+            reviewer_calls_by_subagent: HashMap::new(),
+            retries_used_by_subagent: HashMap::new(),
             updated_at: now,
         }
     }
@@ -792,6 +816,8 @@ impl DeepReviewBudgetTracker {
         parent_dialog_turn_id: &str,
         policy: &DeepReviewExecutionPolicy,
         role: DeepReviewSubagentRole,
+        subagent_type: &str,
+        is_retry: bool,
     ) -> Result<(), DeepReviewPolicyViolation> {
         let now = Instant::now();
         if let Ok(last_pruned) = self.last_pruned_at.lock() {
@@ -808,6 +834,47 @@ impl DeepReviewBudgetTracker {
 
         match role {
             DeepReviewSubagentRole::Reviewer => {
+                let subagent_type = normalize_budget_subagent_type(subagent_type)?;
+                if is_retry {
+                    if policy.max_retries_per_role == 0 {
+                        return Err(DeepReviewPolicyViolation::new(
+                            "deep_review_retry_budget_exhausted",
+                            format!(
+                                "Retry budget is disabled for DeepReview reviewer '{}'",
+                                subagent_type
+                            ),
+                        ));
+                    }
+                    if !budget
+                        .reviewer_calls_by_subagent
+                        .contains_key(subagent_type.as_str())
+                    {
+                        return Err(DeepReviewPolicyViolation::new(
+                            "deep_review_retry_without_initial_attempt",
+                            format!(
+                                "Cannot retry DeepReview reviewer '{}' before an initial attempt in this turn",
+                                subagent_type
+                            ),
+                        ));
+                    }
+                    let retry_count = budget
+                        .retries_used_by_subagent
+                        .entry(subagent_type.clone())
+                        .or_insert(0);
+                    if *retry_count >= policy.max_retries_per_role {
+                        return Err(DeepReviewPolicyViolation::new(
+                            "deep_review_retry_budget_exhausted",
+                            format!(
+                                "Retry budget exhausted for DeepReview reviewer '{}' (max retries: {})",
+                                subagent_type, policy.max_retries_per_role
+                            ),
+                        ));
+                    }
+                    *retry_count += 1;
+                    budget.updated_at = now;
+                    return Ok(());
+                }
+
                 let max_reviewer_calls = policy.max_same_role_instances
                     * (reviewer_agent_type_count() + policy.extra_subagent_ids.len());
                 if budget.reviewer_calls >= max_reviewer_calls {
@@ -820,8 +887,18 @@ impl DeepReviewBudgetTracker {
                     ));
                 }
                 budget.reviewer_calls += 1;
+                *budget
+                    .reviewer_calls_by_subagent
+                    .entry(subagent_type)
+                    .or_insert(0) += 1;
             }
             DeepReviewSubagentRole::Judge => {
+                if is_retry {
+                    return Err(DeepReviewPolicyViolation::new(
+                        "deep_review_judge_retry_disallowed",
+                        "ReviewJudge retry is not covered by the reviewer retry budget",
+                    ));
+                }
                 let max_judge_calls = 1;
                 if budget.judge_calls >= max_judge_calls {
                     return Err(DeepReviewPolicyViolation::new(
@@ -904,8 +981,16 @@ pub fn record_deep_review_task_budget(
     parent_dialog_turn_id: &str,
     policy: &DeepReviewExecutionPolicy,
     role: DeepReviewSubagentRole,
+    subagent_type: &str,
+    is_retry: bool,
 ) -> Result<(), DeepReviewPolicyViolation> {
-    GLOBAL_DEEP_REVIEW_BUDGET_TRACKER.record_task(parent_dialog_turn_id, policy, role)
+    GLOBAL_DEEP_REVIEW_BUDGET_TRACKER.record_task(
+        parent_dialog_turn_id,
+        policy,
+        role,
+        subagent_type,
+        is_retry,
+    )
 }
 
 fn collect_manifest_members(raw: Option<&Value>, output: &mut HashSet<String>) {
@@ -988,6 +1073,20 @@ fn reviewer_agent_type_count() -> usize {
     CORE_REVIEWER_AGENT_TYPES.len() + CONDITIONAL_REVIEWER_AGENT_TYPES.len()
 }
 
+fn normalize_budget_subagent_type(
+    subagent_type: &str,
+) -> Result<String, DeepReviewPolicyViolation> {
+    let normalized = subagent_type.trim();
+    if normalized.is_empty() {
+        return Err(DeepReviewPolicyViolation::new(
+            "deep_review_subagent_type_missing",
+            "DeepReview task budget requires a non-empty subagent type",
+        ));
+    }
+
+    Ok(normalized.to_string())
+}
+
 fn value_to_id(value: &Value) -> Option<String> {
     match value {
         Value::String(s) => Some(s.trim().to_string()),
@@ -1028,7 +1127,7 @@ mod tests {
     use super::{
         is_missing_default_review_team_config_error, DeepReviewBudgetTracker,
         DeepReviewExecutionPolicy, DeepReviewRunManifestGate, DeepReviewStrategyLevel,
-        DeepReviewSubagentRole, REVIEW_FIXER_AGENT_TYPE,
+        DeepReviewSubagentRole, REVIEW_FIXER_AGENT_TYPE, REVIEW_JUDGE_AGENT_TYPE,
     };
     use crate::util::errors::BitFunError;
     use serde_json::json;
@@ -1281,15 +1380,33 @@ mod tests {
 
         // turn-1: one judge call allowed
         tracker
-            .record_task("turn-1", &policy, DeepReviewSubagentRole::Judge)
+            .record_task(
+                "turn-1",
+                &policy,
+                DeepReviewSubagentRole::Judge,
+                REVIEW_JUDGE_AGENT_TYPE,
+                false,
+            )
             .unwrap();
         assert!(tracker
-            .record_task("turn-1", &policy, DeepReviewSubagentRole::Judge)
+            .record_task(
+                "turn-1",
+                &policy,
+                DeepReviewSubagentRole::Judge,
+                REVIEW_JUDGE_AGENT_TYPE,
+                false,
+            )
             .is_err());
 
         // turn-2: fresh budget, should succeed
         tracker
-            .record_task("turn-2", &policy, DeepReviewSubagentRole::Judge)
+            .record_task(
+                "turn-2",
+                &policy,
+                DeepReviewSubagentRole::Judge,
+                REVIEW_JUDGE_AGENT_TYPE,
+                false,
+            )
             .unwrap();
     }
 
@@ -1437,13 +1554,100 @@ mod tests {
         // Default policy: 5 core reviewers * 2 max instances = 10 reviewer calls allowed
         for _ in 0..10 {
             tracker
-                .record_task("turn-1", &policy, DeepReviewSubagentRole::Reviewer)
+                .record_task(
+                    "turn-1",
+                    &policy,
+                    DeepReviewSubagentRole::Reviewer,
+                    "ReviewBusinessLogic",
+                    false,
+                )
                 .unwrap();
         }
         // 11th reviewer call should be rejected
         assert!(tracker
-            .record_task("turn-1", &policy, DeepReviewSubagentRole::Reviewer)
+            .record_task(
+                "turn-1",
+                &policy,
+                DeepReviewSubagentRole::Reviewer,
+                "ReviewSecurity",
+                false,
+            )
             .is_err());
+    }
+
+    #[test]
+    fn budget_tracker_allows_one_retry_after_initial_reviewer_budget() {
+        let policy = DeepReviewExecutionPolicy::from_config_value(Some(&json!({
+            "max_same_role_instances": 1,
+            "max_retries_per_role": 1
+        })));
+        let tracker = DeepReviewBudgetTracker::default();
+
+        for reviewer in [
+            "ReviewBusinessLogic",
+            "ReviewPerformance",
+            "ReviewSecurity",
+            "ReviewArchitecture",
+            "ReviewFrontend",
+        ] {
+            tracker
+                .record_task(
+                    "turn-1",
+                    &policy,
+                    DeepReviewSubagentRole::Reviewer,
+                    reviewer,
+                    false,
+                )
+                .unwrap();
+        }
+
+        assert!(tracker
+            .record_task(
+                "turn-1",
+                &policy,
+                DeepReviewSubagentRole::Reviewer,
+                "ReviewSecurity",
+                false,
+            )
+            .is_err());
+        tracker
+            .record_task(
+                "turn-1",
+                &policy,
+                DeepReviewSubagentRole::Reviewer,
+                "ReviewSecurity",
+                true,
+            )
+            .unwrap();
+
+        let violation = tracker
+            .record_task(
+                "turn-1",
+                &policy,
+                DeepReviewSubagentRole::Reviewer,
+                "ReviewSecurity",
+                true,
+            )
+            .unwrap_err();
+        assert_eq!(violation.code, "deep_review_retry_budget_exhausted");
+    }
+
+    #[test]
+    fn budget_tracker_rejects_retry_without_initial_reviewer_call() {
+        let policy = DeepReviewExecutionPolicy::default();
+        let tracker = DeepReviewBudgetTracker::default();
+
+        let violation = tracker
+            .record_task(
+                "turn-1",
+                &policy,
+                DeepReviewSubagentRole::Reviewer,
+                "ReviewSecurity",
+                true,
+            )
+            .unwrap_err();
+
+        assert_eq!(violation.code, "deep_review_retry_without_initial_attempt");
     }
 
     #[test]

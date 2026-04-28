@@ -98,12 +98,14 @@ export function buildDeepReviewContinuationPrompt(interruption: DeepReviewInterr
         manifestSkippedReviewers.join('\n'),
       ]
     : [];
+  const retryBudgetRules = formatRetryBudgetRules(interruption.runManifest);
 
   return [
     'Continue the interrupted Deep Review in this same session.',
     '',
     'Recovery rules:',
     '- Do not restart completed reviewer work unless the existing result is clearly incomplete or unusable.',
+    ...retryBudgetRules,
     ...manifestRules,
     '- Re-run only missing, failed, timed-out, or cancelled reviewers when enough context exists.',
     '- If reviewer coverage remains incomplete, say that explicitly and mark the final report as lower confidence.',
@@ -121,6 +123,35 @@ export function buildDeepReviewContinuationPrompt(interruption: DeepReviewInterr
     interruption.errorDetail.providerCode ? `- provider code: ${interruption.errorDetail.providerCode}` : '- provider code: unknown',
     interruption.errorDetail.requestId ? `- request id: ${interruption.errorDetail.requestId}` : '- request id: unknown',
   ].join('\n');
+}
+
+function formatRetryBudgetRules(
+  runManifest: Session['deepReviewRunManifest'] | undefined,
+): string[] {
+  const maxRetriesPerRole = runManifest?.executionPolicy?.maxRetriesPerRole;
+  const baseRules = [
+    '- Treat partial_timeout reviewers as preserved partial evidence. Re-run them only when useful evidence is missing or unusable.',
+  ];
+
+  if (typeof maxRetriesPerRole !== 'number') {
+    return [
+      ...baseRules,
+      '- Respect the original retry budget if it is recoverable from context; do not retry the same reviewer repeatedly.',
+    ];
+  }
+
+  if (maxRetriesPerRole <= 0) {
+    return [
+      ...baseRules,
+      '- Retry budget from manifest: max_retries_per_role = 0. Do not re-run failed, timed-out, or partial reviewers automatically; report remaining gaps instead.',
+    ];
+  }
+
+  return [
+    ...baseRules,
+    `- Retry budget from manifest: max_retries_per_role = ${maxRetriesPerRole}.`,
+    '- For each retry, use the same subagent_type with retry = true, reduce the scope to missing evidence, downgrade strategy when possible, and use a shorter timeout.',
+  ];
 }
 
 function formatManifestSkippedReviewers(

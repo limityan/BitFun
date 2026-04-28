@@ -62,6 +62,7 @@ describe('reviewTeamService', () => {
     judge_timeout_seconds: DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.judgeTimeoutSeconds,
     reviewer_file_split_threshold: DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.reviewerFileSplitThreshold,
     max_same_role_instances: DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.maxSameRoleInstances,
+    max_retries_per_role: DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.maxRetriesPerRole,
     ...overrides,
   });
 
@@ -108,6 +109,7 @@ describe('reviewTeamService', () => {
       judge_timeout_seconds: DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.judgeTimeoutSeconds,
       reviewer_file_split_threshold: DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.reviewerFileSplitThreshold,
       max_same_role_instances: DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.maxSameRoleInstances,
+      max_retries_per_role: DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.maxRetriesPerRole,
     });
   });
 
@@ -239,6 +241,7 @@ describe('reviewTeamService', () => {
             judgeTimeoutSeconds: 240,
             reviewerFileSplitThreshold: 20,
             maxSameRoleInstances: 3,
+            maxRetriesPerRole: 1,
           },
           disallowedExtraSubagentIds: [
             'ReviewBusinessLogic',
@@ -330,6 +333,7 @@ describe('reviewTeamService', () => {
         judgeTimeoutSeconds: 240,
         reviewerFileSplitThreshold: 20,
         maxSameRoleInstances: 3,
+        maxRetriesPerRole: 1,
       },
       coreRoles: [],
       strategyProfiles: {},
@@ -568,11 +572,14 @@ describe('reviewTeamService', () => {
     expect(manifest.workPackets?.map((packet) => packet.subagentId)).not.toContain(
       'ExtraDisabled',
     );
+    expect(manifest.executionPolicy.maxRetriesPerRole).toBe(1);
 
     const promptBlock = buildReviewTeamPromptBlock(team, manifest);
     expect(promptBlock).toContain('Review work packets:');
     expect(promptBlock).toContain('"packet_id": "reviewer:ReviewBusinessLogic"');
     expect(promptBlock).toContain('"allowed_tools"');
+    expect(promptBlock).toContain('- max_retries_per_role: 1');
+    expect(promptBlock).toContain('set retry to true');
     expect(promptBlock).toContain('Each reviewer Task prompt must include the matching work packet verbatim.');
     expect(promptBlock).toContain('If the reviewer omits packet_id but the Task was launched from a packet, infer the packet_id from the Task description or work packet and mark packet_status_source as inferred.');
   });
@@ -796,6 +803,69 @@ describe('reviewTeamService', () => {
     expect(promptBlock).toContain('- target_line_count_source: diff_stat');
     expect(promptBlock).toContain('- reviewer_timeout_seconds: 915');
     expect(promptBlock).toContain('- judge_timeout_seconds: 1830');
+  });
+
+  it('adds an advisory risk-based strategy recommendation to the manifest and prompt', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra(),
+    );
+    const target = classifyReviewTargetFromFiles(
+      [
+        'src/crates/core/src/service/auth/token_store.rs',
+        'src/apps/desktop/src/api/agentic_api.rs',
+        ...Array.from(
+          { length: 18 },
+          (_, index) => `src/web-ui/src/components/ReviewPanel${index}.tsx`,
+        ),
+      ],
+      'workspace_diff',
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      target,
+      changeStats: {
+        fileCount: 20,
+        totalLinesChanged: 1400,
+        lineCountSource: 'diff_stat',
+      },
+    });
+
+    expect(manifest.strategyLevel).toBe('normal');
+    expect(manifest.strategyRecommendation).toMatchObject({
+      strategyLevel: 'deep',
+      factors: {
+        fileCount: 20,
+        totalLinesChanged: 1400,
+        securityFileCount: 1,
+      },
+    });
+    expect(manifest.strategyRecommendation?.rationale).toContain('Large/high-risk change');
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
+    expect(promptBlock).toContain('- recommended_strategy: deep');
+    expect(promptBlock).toContain('- strategy_recommendation_rationale: Large/high-risk change');
+    expect(promptBlock).toContain('Risk recommendation is advisory');
+  });
+
+  it('keeps unknown targets at a conservative normal recommendation', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra(),
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      target: createUnknownReviewTargetClassification('manual_prompt'),
+    });
+
+    expect(manifest.strategyRecommendation).toMatchObject({
+      strategyLevel: 'normal',
+      score: 0,
+    });
+    expect(manifest.strategyRecommendation?.rationale).toContain('unresolved target');
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
+    expect(promptBlock).toContain('- recommended_strategy: normal');
   });
 
   it('preserves explicit zero timeout policy when predicting manifest timeouts', () => {

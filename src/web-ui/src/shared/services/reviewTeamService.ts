@@ -23,6 +23,7 @@ export const DEFAULT_REVIEW_TEAM_EXECUTION_POLICY = {
   judgeTimeoutSeconds: 600,
   reviewerFileSplitThreshold: 20,
   maxSameRoleInstances: 3,
+  maxRetriesPerRole: 1,
 } as const;
 const MAX_PREDICTIVE_TIMEOUT_SECONDS = 3600;
 const PREDICTIVE_TIMEOUT_PER_FILE_SECONDS = 15;
@@ -197,6 +198,7 @@ export interface ReviewTeamStoredConfig {
   judge_timeout_seconds: number;
   reviewer_file_split_threshold: number;
   max_same_role_instances: number;
+  max_retries_per_role: number;
 }
 
 export interface ReviewTeamExecutionPolicy {
@@ -204,6 +206,7 @@ export interface ReviewTeamExecutionPolicy {
   judgeTimeoutSeconds: number;
   reviewerFileSplitThreshold: number;
   maxSameRoleInstances: number;
+  maxRetriesPerRole: number;
 }
 
 export type ReviewTeamManifestMemberReason =
@@ -231,6 +234,22 @@ export interface ReviewTeamChangeStats {
   fileCount: number;
   totalLinesChanged?: number;
   lineCountSource: 'unknown' | 'diff_stat' | 'estimated';
+}
+
+export interface ReviewTeamRiskFactors {
+  fileCount: number;
+  totalLinesChanged?: number;
+  lineCountSource: ReviewTeamChangeStats['lineCountSource'];
+  securityFileCount: number;
+  workspaceAreaCount: number;
+  contractSurfaceChanged: boolean;
+}
+
+export interface ReviewTeamStrategyRecommendation {
+  strategyLevel: ReviewStrategyLevel;
+  score: number;
+  rationale: string;
+  factors: ReviewTeamRiskFactors;
 }
 
 export interface ReviewTeamWorkPacketScope {
@@ -323,6 +342,7 @@ export interface ReviewTeamRunManifest {
   policySource: 'default-review-team-config';
   target: ReviewTargetClassification;
   strategyLevel: ReviewStrategyLevel;
+  strategyRecommendation?: ReviewTeamStrategyRecommendation;
   executionPolicy: ReviewTeamExecutionPolicy;
   changeStats?: ReviewTeamChangeStats;
   tokenBudget: ReviewTeamTokenBudgetPlan;
@@ -608,6 +628,12 @@ function normalizeReviewTeamDefinition(raw: unknown): ReviewTeamDefinition {
           8,
           FALLBACK_REVIEW_TEAM_DEFINITION.defaultExecutionPolicy.maxSameRoleInstances,
         ),
+        maxRetriesPerRole: clampInteger(
+          source.defaultExecutionPolicy.maxRetriesPerRole,
+          0,
+          3,
+          FALLBACK_REVIEW_TEAM_DEFINITION.defaultExecutionPolicy.maxRetriesPerRole,
+        ),
       }
       : FALLBACK_REVIEW_TEAM_DEFINITION.defaultExecutionPolicy,
     coreRoles: coreRoles.length > 0 ? coreRoles : FALLBACK_REVIEW_TEAM_DEFINITION.coreRoles,
@@ -703,6 +729,7 @@ function normalizeExecutionPolicy(
   | 'judge_timeout_seconds'
   | 'reviewer_file_split_threshold'
   | 'max_same_role_instances'
+  | 'max_retries_per_role'
 > {
   const config = raw as Partial<ReviewTeamStoredConfig> | undefined;
 
@@ -731,6 +758,12 @@ function normalizeExecutionPolicy(
       8,
       DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.maxSameRoleInstances,
     ),
+    max_retries_per_role: clampInteger(
+      config?.max_retries_per_role,
+      0,
+      3,
+      DEFAULT_REVIEW_TEAM_EXECUTION_POLICY.maxRetriesPerRole,
+    ),
   };
 }
 
@@ -742,6 +775,7 @@ function executionPolicyFromStoredConfig(
     judgeTimeoutSeconds: config.judge_timeout_seconds,
     reviewerFileSplitThreshold: config.reviewer_file_split_threshold,
     maxSameRoleInstances: config.max_same_role_instances,
+    maxRetriesPerRole: config.max_retries_per_role,
   };
 }
 
@@ -800,6 +834,7 @@ export async function saveDefaultReviewTeamConfig(
     judge_timeout_seconds: normalizedConfig.judge_timeout_seconds,
     reviewer_file_split_threshold: normalizedConfig.reviewer_file_split_threshold,
     max_same_role_instances: normalizedConfig.max_same_role_instances,
+    max_retries_per_role: normalizedConfig.max_retries_per_role,
   });
 }
 
@@ -829,6 +864,7 @@ export async function saveDefaultReviewTeamExecutionPolicy(
     judge_timeout_seconds: policy.judgeTimeoutSeconds,
     reviewer_file_split_threshold: policy.reviewerFileSplitThreshold,
     max_same_role_instances: policy.maxSameRoleInstances,
+    max_retries_per_role: policy.maxRetriesPerRole,
   });
 }
 
@@ -1362,6 +1398,115 @@ function resolveChangeStats(
   };
 }
 
+const SECURITY_SENSITIVE_PATH_PATTERN =
+  /(^|[/._-])(auth|oauth|crypto|security|permission|permissions|secret|secrets|token|tokens|credential|credentials)([/._-]|$)/;
+
+function isSecuritySensitiveReviewPath(normalizedPath: string): boolean {
+  return SECURITY_SENSITIVE_PATH_PATTERN.test(normalizedPath.toLowerCase());
+}
+
+function workspaceAreaForReviewPath(normalizedPath: string): string {
+  const crateMatch = normalizedPath.match(/^src\/crates\/([^/]+)/);
+  if (crateMatch) {
+    return `crate:${crateMatch[1]}`;
+  }
+
+  const appMatch = normalizedPath.match(/^src\/apps\/([^/]+)/);
+  if (appMatch) {
+    return `app:${appMatch[1]}`;
+  }
+
+  if (normalizedPath.startsWith('src/web-ui/')) {
+    return 'web-ui';
+  }
+
+  if (normalizedPath.startsWith('BitFun-Installer/')) {
+    return 'installer';
+  }
+
+  const [root] = normalizedPath.split('/');
+  return root || 'unknown';
+}
+
+function pluralize(count: number, singular: string): string {
+  return `${count} ${singular}${count === 1 ? '' : 's'}`;
+}
+
+export function recommendReviewStrategyForTarget(
+  target: ReviewTargetClassification,
+  changeStats: ReviewTeamChangeStats,
+): ReviewTeamStrategyRecommendation {
+  const includedFiles = target.files.filter((file) => !file.excluded);
+  const securityFileCount = includedFiles.filter((file) =>
+    isSecuritySensitiveReviewPath(file.normalizedPath),
+  ).length;
+  const workspaceAreaCount = new Set(
+    includedFiles.map((file) => workspaceAreaForReviewPath(file.normalizedPath)),
+  ).size;
+  const contractSurfaceChanged = target.tags.includes('frontend_contract') ||
+    target.tags.includes('desktop_contract') ||
+    target.tags.includes('web_server_contract') ||
+    target.tags.includes('api_layer') ||
+    target.tags.includes('transport');
+  const totalLinesChanged = changeStats.totalLinesChanged;
+  const factors: ReviewTeamRiskFactors = {
+    fileCount: changeStats.fileCount,
+    ...(totalLinesChanged !== undefined ? { totalLinesChanged } : {}),
+    lineCountSource: changeStats.lineCountSource,
+    securityFileCount,
+    workspaceAreaCount,
+    contractSurfaceChanged,
+  };
+
+  if (target.resolution === 'unknown' || changeStats.fileCount === 0) {
+    return {
+      strategyLevel: 'normal',
+      score: 0,
+      rationale: 'unresolved target; keep a conservative normal review recommendation.',
+      factors,
+    };
+  }
+
+  const lineScore =
+    totalLinesChanged === undefined
+      ? 0
+      : Math.floor(totalLinesChanged / 100);
+  const crossAreaScore = Math.max(0, workspaceAreaCount - 1) * 2;
+  const score =
+    changeStats.fileCount +
+    lineScore +
+    securityFileCount * 3 +
+    crossAreaScore +
+    (contractSurfaceChanged ? 2 : 0);
+  const strategyLevel: ReviewStrategyLevel =
+    score <= 5
+      ? 'quick'
+      : score <= 20
+        ? 'normal'
+        : 'deep';
+  const sizeLabel = totalLinesChanged === undefined
+    ? `${changeStats.fileCount} files, unknown lines`
+    : `${changeStats.fileCount} files, ${totalLinesChanged} lines`;
+  const riskDetails = [
+    pluralize(securityFileCount, 'security-sensitive file'),
+    pluralize(workspaceAreaCount, 'workspace area'),
+    contractSurfaceChanged ? 'contract surface changed' : undefined,
+  ].filter(Boolean).join(', ');
+  const rationale =
+    strategyLevel === 'quick'
+      ? `Small change (${sizeLabel}). Quick scan sufficient.`
+      : strategyLevel === 'normal'
+        ? `Medium change (${sizeLabel}; ${riskDetails}). Standard review recommended.`
+        : `Large/high-risk change (${sizeLabel}; ${riskDetails}). Deep review recommended.`;
+
+  return {
+    strategyLevel,
+    score,
+    rationale,
+    factors,
+  };
+}
+
 function buildWorkPacketScopeFromFiles(
   target: ReviewTargetClassification,
   files: string[],
@@ -1613,6 +1758,7 @@ export function buildEffectiveReviewTeamManifest(
   const target = options.target ?? createUnknownReviewTargetClassification('unknown');
   const tokenBudgetMode = options.tokenBudgetMode ?? 'balanced';
   const changeStats = resolveChangeStats(target, options.changeStats);
+  const strategyRecommendation = recommendReviewStrategyForTarget(target, changeStats);
   const availableCoreMembers = team.coreMembers.filter((member) => member.available);
   const unavailableCoreMembers = team.coreMembers.filter((member) => !member.available);
   const notApplicableCoreMembers = availableCoreMembers.filter(
@@ -1689,6 +1835,7 @@ export function buildEffectiveReviewTeamManifest(
     policySource: options.policySource ?? 'default-review-team-config',
     target,
     strategyLevel: team.strategyLevel,
+    strategyRecommendation,
     executionPolicy,
     changeStats,
     tokenBudget,
@@ -1822,6 +1969,7 @@ export function buildReviewTeamPromptBlock(
     `- judge_timeout_seconds: ${manifest.executionPolicy.judgeTimeoutSeconds}`,
     `- reviewer_file_split_threshold: ${manifest.executionPolicy.reviewerFileSplitThreshold}`,
     `- max_same_role_instances: ${manifest.executionPolicy.maxSameRoleInstances}`,
+    `- max_retries_per_role: ${manifest.executionPolicy.maxRetriesPerRole}`,
   ].join('\n');
   const targetLineCount =
     manifest.changeStats?.totalLinesChanged !== undefined
@@ -1831,6 +1979,13 @@ export function buildReviewTeamPromptBlock(
     'Run manifest:',
     `- review_mode: ${manifest.reviewMode}`,
     `- team_strategy: ${manifest.strategyLevel}`,
+    ...(manifest.strategyRecommendation
+      ? [
+        `- recommended_strategy: ${manifest.strategyRecommendation.strategyLevel}`,
+        `- strategy_recommendation_score: ${manifest.strategyRecommendation.score}`,
+        `- strategy_recommendation_rationale: ${manifest.strategyRecommendation.rationale}`,
+      ]
+      : []),
     `- workspace_path: ${manifest.workspacePath || 'inherited from current session'}`,
     `- policy_source: ${manifest.policySource}`,
     `- target_source: ${manifest.target.source}`,
@@ -1904,6 +2059,7 @@ export function buildReviewTeamPromptBlock(
     '- If reviewer_timeout_seconds is greater than 0, pass timeout_seconds with that value to every reviewer Task call.',
     '- If judge_timeout_seconds is greater than 0, pass timeout_seconds with that value to the ReviewJudge Task call.',
     '- If a reviewer Task returns status partial_timeout, treat its output as partial evidence: preserve it in reviewers[].partial_output, mark the reviewer status partial_timeout, and mention the confidence impact in coverage_notes.',
+    '- If a reviewer fails or times out without useful partial output, retry that same reviewer at most max_retries_per_role times: reduce its scope, downgrade strategy by one level when possible, use a shorter timeout, and set retry to true on the retry Task call.',
     '- In the final submit_code_review payload, populate reliability_signals for context_pressure, compression_preserved, partial_reviewer, and user_decision when those conditions apply. Use severity info/warning/action, count when useful, and source runtime/manifest/report/inferred.',
     '- If reviewer_file_split_threshold is greater than 0 and the target file count exceeds it, split files across multiple same-role reviewer instances (up to max_same_role_instances per role). Launch all split instances in the same parallel message.',
     '- When file splitting is active, each same-role instance must only review its assigned file group. Label instances in the Task description with both group and packet_id (e.g. "Security review [group 1/3] [packet reviewer:ReviewSecurity:group-1-of-3]").',
@@ -1912,6 +2068,7 @@ export function buildReviewTeamPromptBlock(
     '- The Review Quality Inspector acts as a third-party arbiter: it primarily examines reviewer reports for logical consistency and evidence quality, and only uses code inspection tools for targeted spot-checks when a specific claim needs verification.',
     'Review strategy rules:',
     `- Team strategy: ${team.strategyLevel}. ${formatStrategyImpact(team.strategyLevel, strategyProfiles)}`,
+    '- Risk recommendation is advisory; follow team_strategy, member strategy fields, and work-packet strategy for this run unless the user explicitly changes strategy.',
     commonStrategyRules,
     'Review strategy profiles:',
     strategyRules,
