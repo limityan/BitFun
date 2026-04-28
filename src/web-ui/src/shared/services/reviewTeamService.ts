@@ -25,7 +25,13 @@ export const DEFAULT_REVIEW_TEAM_EXECUTION_POLICY = {
   maxSameRoleInstances: 3,
   maxRetriesPerRole: 1,
 } as const;
+export const DEFAULT_REVIEW_TEAM_CONCURRENCY_POLICY = {
+  maxParallelInstances: 4,
+  staggerSeconds: 0,
+  batchExtrasSeparately: true,
+} as const;
 const MAX_PREDICTIVE_TIMEOUT_SECONDS = 3600;
+const MAX_PARALLEL_REVIEWER_INSTANCES = 16;
 const PREDICTIVE_TIMEOUT_PER_FILE_SECONDS = 15;
 const PREDICTIVE_TIMEOUT_PER_100_LINES_SECONDS = 30;
 const PREDICTIVE_TIMEOUT_BASE_SECONDS: Record<ReviewStrategyLevel, number> = {
@@ -209,6 +215,12 @@ export interface ReviewTeamExecutionPolicy {
   maxRetriesPerRole: number;
 }
 
+export interface ReviewTeamConcurrencyPolicy {
+  maxParallelInstances: number;
+  staggerSeconds: number;
+  batchExtrasSeparately: boolean;
+}
+
 export type ReviewTeamManifestMemberReason =
   | 'disabled'
   | 'unavailable'
@@ -267,6 +279,7 @@ export interface ReviewTeamWorkPacketScope {
 export interface ReviewTeamWorkPacket {
   packetId: string;
   phase: 'reviewer' | 'judge';
+  launchBatch: number;
   subagentId: string;
   displayName: string;
   roleName: string;
@@ -344,6 +357,7 @@ export interface ReviewTeamRunManifest {
   strategyLevel: ReviewStrategyLevel;
   strategyRecommendation?: ReviewTeamStrategyRecommendation;
   executionPolicy: ReviewTeamExecutionPolicy;
+  concurrencyPolicy: ReviewTeamConcurrencyPolicy;
   changeStats?: ReviewTeamChangeStats;
   tokenBudget: ReviewTeamTokenBudgetPlan;
   coreReviewers: ReviewTeamManifestMember[];
@@ -719,6 +733,29 @@ function clampInteger(
   }
 
   return Math.min(max, Math.max(min, Math.floor(numeric)));
+}
+
+function normalizeConcurrencyPolicy(
+  raw?: Partial<ReviewTeamConcurrencyPolicy>,
+): ReviewTeamConcurrencyPolicy {
+  return {
+    maxParallelInstances: clampInteger(
+      raw?.maxParallelInstances,
+      1,
+      MAX_PARALLEL_REVIEWER_INSTANCES,
+      DEFAULT_REVIEW_TEAM_CONCURRENCY_POLICY.maxParallelInstances,
+    ),
+    staggerSeconds: clampInteger(
+      raw?.staggerSeconds,
+      0,
+      60,
+      DEFAULT_REVIEW_TEAM_CONCURRENCY_POLICY.staggerSeconds,
+    ),
+    batchExtrasSeparately:
+      typeof raw?.batchExtrasSeparately === 'boolean'
+        ? raw.batchExtrasSeparately
+        : DEFAULT_REVIEW_TEAM_CONCURRENCY_POLICY.batchExtrasSeparately,
+  };
 }
 
 function normalizeExecutionPolicy(
@@ -1528,6 +1565,7 @@ function buildWorkPacketScopeFromFiles(
 function buildWorkPacket(params: {
   member: ReviewTeamMember;
   phase: ReviewTeamWorkPacket['phase'];
+  launchBatch: number;
   scope: ReviewTeamWorkPacketScope;
   timeoutSeconds: number;
 }): ReviewTeamWorkPacket {
@@ -1542,6 +1580,7 @@ function buildWorkPacket(params: {
   return {
     packetId: `${params.phase}:${manifestMember.subagentId}${packetGroupSuffix}`,
     phase: params.phase,
+    launchBatch: params.launchBatch,
     subagentId: manifestMember.subagentId,
     displayName: manifestMember.displayName,
     roleName: manifestMember.roleName,
@@ -1575,9 +1614,27 @@ function splitFilesIntoGroups(files: string[], groupCount: number): string[][] {
   return groups;
 }
 
+function effectiveMaxSameRoleInstances(params: {
+  executionPolicy: ReviewTeamExecutionPolicy;
+  concurrencyPolicy: ReviewTeamConcurrencyPolicy;
+  reviewerMemberCount: number;
+}): number {
+  const reviewerMemberCount = Math.max(1, params.reviewerMemberCount);
+  const maxPerRole = Math.floor(
+    params.concurrencyPolicy.maxParallelInstances / reviewerMemberCount,
+  );
+
+  return Math.max(
+    1,
+    Math.min(params.executionPolicy.maxSameRoleInstances, Math.max(1, maxPerRole)),
+  );
+}
+
 function resolveReviewerPacketScopes(
   target: ReviewTargetClassification,
   executionPolicy: ReviewTeamExecutionPolicy,
+  concurrencyPolicy: ReviewTeamConcurrencyPolicy,
+  reviewerMemberCount: number,
 ): ReviewTeamWorkPacketScope[] {
   const includedFiles = target.files
     .filter((file) => !file.excluded)
@@ -1591,10 +1648,18 @@ function resolveReviewerPacketScopes(
     return [buildWorkPacketScopeFromFiles(target, includedFiles)];
   }
 
+  const maxSameRoleInstances = effectiveMaxSameRoleInstances({
+    executionPolicy,
+    concurrencyPolicy,
+    reviewerMemberCount,
+  });
   const groupCount = Math.min(
-    executionPolicy.maxSameRoleInstances,
+    maxSameRoleInstances,
     Math.ceil(includedFiles.length / executionPolicy.reviewerFileSplitThreshold),
   );
+  if (groupCount <= 1) {
+    return [buildWorkPacketScopeFromFiles(target, includedFiles)];
+  }
 
   return splitFilesIntoGroups(includedFiles, groupCount).map((files, index) =>
     buildWorkPacketScopeFromFiles(target, files, {
@@ -1609,10 +1674,13 @@ function buildWorkPackets(params: {
   judgeMember?: ReviewTeamMember;
   target: ReviewTargetClassification;
   executionPolicy: ReviewTeamExecutionPolicy;
+  concurrencyPolicy: ReviewTeamConcurrencyPolicy;
 }): ReviewTeamWorkPacket[] {
   const reviewerScopes = resolveReviewerPacketScopes(
     params.target,
     params.executionPolicy,
+    params.concurrencyPolicy,
+    params.reviewerMembers.length,
   );
   const fullScope = buildWorkPacketScopeFromFiles(
     params.target,
@@ -1620,21 +1688,35 @@ function buildWorkPackets(params: {
       .filter((file) => !file.excluded)
       .map((file) => file.normalizedPath),
   );
-  const reviewerPackets = params.reviewerMembers.flatMap((member) =>
-    reviewerScopes.map((scope) =>
-      buildWorkPacket({
-        member,
-        phase: 'reviewer',
-        scope,
-        timeoutSeconds: params.executionPolicy.reviewerTimeoutSeconds,
-      }),
-    ),
+  const reviewerSeeds = params.reviewerMembers.flatMap((member) =>
+    reviewerScopes.map((scope) => ({ member, scope })),
+  );
+  const orderedReviewerSeeds = params.concurrencyPolicy.batchExtrasSeparately
+    ? [
+      ...reviewerSeeds.filter((seed) => seed.member.source === 'core'),
+      ...reviewerSeeds.filter((seed) => seed.member.source === 'extra'),
+    ]
+    : reviewerSeeds;
+  const reviewerPackets = orderedReviewerSeeds.map((seed, index) =>
+    buildWorkPacket({
+      member: seed.member,
+      phase: 'reviewer',
+      launchBatch:
+        Math.floor(index / params.concurrencyPolicy.maxParallelInstances) + 1,
+      scope: seed.scope,
+      timeoutSeconds: params.executionPolicy.reviewerTimeoutSeconds,
+    }),
+  );
+  const finalReviewerBatch = reviewerPackets.reduce(
+    (maxBatch, packet) => Math.max(maxBatch, packet.launchBatch),
+    0,
   );
   const judgePacket = params.judgeMember
     ? [
       buildWorkPacket({
         member: params.judgeMember,
         phase: 'judge',
+        launchBatch: finalReviewerBatch + 1,
         scope: fullScope,
         timeoutSeconds: params.executionPolicy.judgeTimeoutSeconds,
       }),
@@ -1753,11 +1835,13 @@ export function buildEffectiveReviewTeamManifest(
     target?: ReviewTargetClassification;
     changeStats?: Partial<ReviewTeamChangeStats>;
     tokenBudgetMode?: ReviewTokenBudgetMode;
+    concurrencyPolicy?: Partial<ReviewTeamConcurrencyPolicy>;
   } = {},
 ): ReviewTeamRunManifest {
   const target = options.target ?? createUnknownReviewTargetClassification('unknown');
   const tokenBudgetMode = options.tokenBudgetMode ?? 'balanced';
   const changeStats = resolveChangeStats(target, options.changeStats);
+  const concurrencyPolicy = normalizeConcurrencyPolicy(options.concurrencyPolicy);
   const strategyRecommendation = recommendReviewStrategyForTarget(target, changeStats);
   const availableCoreMembers = team.coreMembers.filter((member) => member.available);
   const unavailableCoreMembers = team.coreMembers.filter((member) => !member.available);
@@ -1799,6 +1883,7 @@ export function buildEffectiveReviewTeamManifest(
     judgeMember: qualityGateReviewerMember,
     target,
     executionPolicy,
+    concurrencyPolicy,
   });
   const tokenBudget = buildTokenBudgetPlan({
     mode: tokenBudgetMode,
@@ -1837,6 +1922,7 @@ export function buildEffectiveReviewTeamManifest(
     strategyLevel: team.strategyLevel,
     strategyRecommendation,
     executionPolicy,
+    concurrencyPolicy,
     changeStats,
     tokenBudget,
     coreReviewers,
@@ -1880,6 +1966,7 @@ function workPacketToPromptPayload(packet: ReviewTeamWorkPacket) {
   return {
     packet_id: packet.packetId,
     phase: packet.phase,
+    launch_batch: packet.launchBatch,
     subagent_type: packet.subagentId,
     display_name: packet.displayName,
     role: packet.roleName,
@@ -1971,6 +2058,11 @@ export function buildReviewTeamPromptBlock(
     `- max_same_role_instances: ${manifest.executionPolicy.maxSameRoleInstances}`,
     `- max_retries_per_role: ${manifest.executionPolicy.maxRetriesPerRole}`,
   ].join('\n');
+  const concurrencyPolicy = [
+    `- max_parallel_instances: ${manifest.concurrencyPolicy.maxParallelInstances}`,
+    `- stagger_seconds: ${manifest.concurrencyPolicy.staggerSeconds}`,
+    `- batch_extras_separately: ${manifest.concurrencyPolicy.batchExtrasSeparately ? 'yes' : 'no'}`,
+  ].join('\n');
   const targetLineCount =
     manifest.changeStats?.totalLinesChanged !== undefined
       ? `${manifest.changeStats.totalLinesChanged}`
@@ -2045,6 +2137,8 @@ export function buildReviewTeamPromptBlock(
     members || '- No team members available.',
     'Execution policy:',
     executionPolicy,
+    'Concurrency policy:',
+    concurrencyPolicy,
     'Team execution rules:',
     '- Run only reviewers listed in core_reviewers and enabled_extra_reviewers.',
     '- Do not launch skipped_reviewers.',
@@ -2053,6 +2147,8 @@ export function buildReviewTeamPromptBlock(
     '- If a skipped reviewer has reason invalid_tooling, report it as a configuration issue and do not reduce confidence in the reviewers that did run.',
     '- If target_resolution is unknown, conditional reviewers may be activated conservatively; report that as coverage context.',
     `- Run the active core reviewer roles first: ${formatManifestList(manifest.coreReviewers, 'none')}.`,
+    '- Launch reviewer Tasks by launch_batch. Do not launch a later reviewer batch until every reviewer Task in the earlier batch has completed, failed, timed out, or returned partial_timeout.',
+    '- Never launch more reviewer Tasks in one batch than max_parallel_instances. If stagger_seconds is greater than 0, wait that many seconds before starting the next launch_batch.',
     '- Run ReviewJudge only after the reviewer batch finishes, as the quality-gate pass.',
     '- If other extra reviewers are configured and enabled, run them in parallel with the locked reviewers whenever possible.',
     '- When a configured member entry provides model_id, pass model_id with that value to the matching Task call.',
@@ -2061,7 +2157,7 @@ export function buildReviewTeamPromptBlock(
     '- If a reviewer Task returns status partial_timeout, treat its output as partial evidence: preserve it in reviewers[].partial_output, mark the reviewer status partial_timeout, and mention the confidence impact in coverage_notes.',
     '- If a reviewer fails or times out without useful partial output, retry that same reviewer at most max_retries_per_role times: reduce its scope, downgrade strategy by one level when possible, use a shorter timeout, and set retry to true on the retry Task call.',
     '- In the final submit_code_review payload, populate reliability_signals for context_pressure, compression_preserved, partial_reviewer, and user_decision when those conditions apply. Use severity info/warning/action, count when useful, and source runtime/manifest/report/inferred.',
-    '- If reviewer_file_split_threshold is greater than 0 and the target file count exceeds it, split files across multiple same-role reviewer instances (up to max_same_role_instances per role). Launch all split instances in the same parallel message.',
+    '- If reviewer_file_split_threshold is greater than 0 and the target file count exceeds it, split files across multiple same-role reviewer instances only up to the concurrency-capped max_same_role_instances for this run.',
     '- When file splitting is active, each same-role instance must only review its assigned file group. Label instances in the Task description with both group and packet_id (e.g. "Security review [group 1/3] [packet reviewer:ReviewSecurity:group-1-of-3]").',
     '- Do not run ReviewFixer during the review pass.',
     '- Wait for explicit user approval before starting any remediation.',

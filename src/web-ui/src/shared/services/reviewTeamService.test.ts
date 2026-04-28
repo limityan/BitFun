@@ -600,7 +600,12 @@ describe('reviewTeamService', () => {
       'session_files',
     );
 
-    const manifest = buildEffectiveReviewTeamManifest(team, { target });
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      target,
+      concurrencyPolicy: {
+        maxParallelInstances: 16,
+      },
+    });
     const logicPackets = manifest.workPackets?.filter(
       (packet) => packet.subagentId === 'ReviewBusinessLogic',
     );
@@ -645,6 +650,50 @@ describe('reviewTeamService', () => {
     expect(promptBlock).toContain('"packet_id": "reviewer:ReviewBusinessLogic:group-1-of-3"');
     expect(promptBlock).toContain('"group_index": 1');
     expect(promptBlock).toContain('"group_count": 3');
+  });
+
+  it('caps file splitting and launch batches by concurrency policy', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra([], {
+        reviewer_file_split_threshold: 10,
+        max_same_role_instances: 3,
+      }),
+    );
+    const target = classifyReviewTargetFromFiles(
+      Array.from(
+        { length: 25 },
+        (_, index) => `src/web-ui/src/components/ReviewPanel${index}.tsx`,
+      ),
+      'session_files',
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, { target });
+    const reviewerPackets = manifest.workPackets?.filter(
+      (packet) => packet.phase === 'reviewer',
+    ) ?? [];
+    const logicPackets = reviewerPackets.filter(
+      (packet) => packet.subagentId === 'ReviewBusinessLogic',
+    );
+
+    expect(manifest.concurrencyPolicy).toMatchObject({
+      maxParallelInstances: 4,
+      staggerSeconds: 0,
+      batchExtrasSeparately: true,
+    });
+    expect(logicPackets).toHaveLength(1);
+    expect(logicPackets[0].assignedScope.groupCount).toBeUndefined();
+    expect(reviewerPackets).toHaveLength(5);
+    expect(reviewerPackets.slice(0, 4).map((packet) => packet.launchBatch)).toEqual([1, 1, 1, 1]);
+    expect(reviewerPackets[4].launchBatch).toBe(2);
+    expect(manifest.qualityGateReviewer && manifest.workPackets?.find(
+      (packet) => packet.subagentId === manifest.qualityGateReviewer?.subagentId,
+    )?.launchBatch).toBe(3);
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
+    expect(promptBlock).toContain('- max_parallel_instances: 4');
+    expect(promptBlock).toContain('Launch reviewer Tasks by launch_batch');
+    expect(promptBlock).toContain('"launch_batch": 2');
   });
 
   it('skips the frontend reviewer when the resolved target has no frontend tags', () => {
