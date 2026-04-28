@@ -221,6 +221,10 @@ export interface ReviewTeamConcurrencyPolicy {
   batchExtrasSeparately: boolean;
 }
 
+export interface ReviewTeamRateLimitStatus {
+  remaining: number;
+}
+
 export type ReviewTeamManifestMemberReason =
   | 'disabled'
   | 'unavailable'
@@ -262,6 +266,63 @@ export interface ReviewTeamStrategyRecommendation {
   score: number;
   rationale: string;
   factors: ReviewTeamRiskFactors;
+}
+
+export interface ReviewTeamPreReviewSummaryArea {
+  key: string;
+  fileCount: number;
+  sampleFiles: string[];
+}
+
+export interface ReviewTeamPreReviewSummary {
+  source: 'target_manifest';
+  summary: string;
+  fileCount: number;
+  excludedFileCount: number;
+  lineCount?: number;
+  lineCountSource: ReviewTeamChangeStats['lineCountSource'];
+  targetTags: ReviewDomainTag[];
+  workspaceAreas: ReviewTeamPreReviewSummaryArea[];
+  warnings: ReviewTargetClassification['warnings'][number]['code'][];
+}
+
+export type ReviewTeamSharedContextTool = 'GetFileDiff' | 'Read';
+
+export interface ReviewTeamSharedContextCacheEntry {
+  cacheKey: string;
+  path: string;
+  workspaceArea: string;
+  recommendedTools: ReviewTeamSharedContextTool[];
+  consumerPacketIds: string[];
+}
+
+export interface ReviewTeamSharedContextCachePlan {
+  source: 'work_packets';
+  strategy: 'reuse_readonly_file_context_by_cache_key';
+  entries: ReviewTeamSharedContextCacheEntry[];
+  omittedEntryCount: number;
+}
+
+export type ReviewTeamIncrementalReviewCacheInvalidation =
+  | 'target_file_set_changed'
+  | 'target_line_count_changed'
+  | 'target_tag_changed'
+  | 'target_warning_changed'
+  | 'reviewer_roster_changed'
+  | 'strategy_changed';
+
+export interface ReviewTeamIncrementalReviewCachePlan {
+  source: 'target_manifest';
+  strategy: 'reuse_completed_packets_when_fingerprint_matches';
+  cacheKey: string;
+  fingerprint: string;
+  filePaths: string[];
+  workspaceAreas: string[];
+  targetTags: ReviewDomainTag[];
+  reviewerPacketIds: string[];
+  lineCount?: number;
+  lineCountSource: ReviewTeamChangeStats['lineCountSource'];
+  invalidatesOn: ReviewTeamIncrementalReviewCacheInvalidation[];
 }
 
 export interface ReviewTeamWorkPacketScope {
@@ -359,6 +420,9 @@ export interface ReviewTeamRunManifest {
   executionPolicy: ReviewTeamExecutionPolicy;
   concurrencyPolicy: ReviewTeamConcurrencyPolicy;
   changeStats?: ReviewTeamChangeStats;
+  preReviewSummary: ReviewTeamPreReviewSummary;
+  sharedContextCache: ReviewTeamSharedContextCachePlan;
+  incrementalReviewCache: ReviewTeamIncrementalReviewCachePlan;
   tokenBudget: ReviewTeamTokenBudgetPlan;
   coreReviewers: ReviewTeamManifestMember[];
   qualityGateReviewer?: ReviewTeamManifestMember;
@@ -755,6 +819,36 @@ function normalizeConcurrencyPolicy(
       typeof raw?.batchExtrasSeparately === 'boolean'
         ? raw.batchExtrasSeparately
         : DEFAULT_REVIEW_TEAM_CONCURRENCY_POLICY.batchExtrasSeparately,
+  };
+}
+
+function applyRateLimitToConcurrencyPolicy(
+  policy: ReviewTeamConcurrencyPolicy,
+  rateLimitStatus?: ReviewTeamRateLimitStatus | null,
+): ReviewTeamConcurrencyPolicy {
+  const remaining = Math.floor(Number(rateLimitStatus?.remaining));
+  if (!Number.isFinite(remaining)) {
+    return policy;
+  }
+
+  if (remaining > policy.maxParallelInstances * 2) {
+    return policy;
+  }
+
+  if (remaining > policy.maxParallelInstances) {
+    return {
+      ...policy,
+      staggerSeconds: Math.max(policy.staggerSeconds, 5),
+    };
+  }
+
+  return {
+    ...policy,
+    maxParallelInstances: Math.max(
+      1,
+      Math.min(policy.maxParallelInstances, Math.max(2, remaining)),
+    ),
+    staggerSeconds: Math.max(policy.staggerSeconds, 10),
   };
 }
 
@@ -1469,6 +1563,59 @@ function pluralize(count: number, singular: string): string {
   return `${count} ${singular}${count === 1 ? '' : 's'}`;
 }
 
+const PRE_REVIEW_SUMMARY_SAMPLE_FILE_LIMIT = 3;
+const PRE_REVIEW_SUMMARY_AREA_LIMIT = 8;
+
+function buildPreReviewSummary(
+  target: ReviewTargetClassification,
+  changeStats: ReviewTeamChangeStats,
+): ReviewTeamPreReviewSummary {
+  const includedFiles = target.files
+    .filter((file) => !file.excluded)
+    .map((file) => file.normalizedPath);
+  const excludedFileCount = target.files.length - includedFiles.length;
+  const allWorkspaceAreas = groupFilesByWorkspaceArea(includedFiles)
+    .sort((a, b) => b.files.length - a.files.length || a.index - b.index);
+  const workspaceAreas = allWorkspaceAreas
+    .slice(0, PRE_REVIEW_SUMMARY_AREA_LIMIT)
+    .map((area) => ({
+      key: area.key,
+      fileCount: area.files.length,
+      sampleFiles: area.files.slice(0, PRE_REVIEW_SUMMARY_SAMPLE_FILE_LIMIT),
+    }));
+  const lineCount = changeStats.totalLinesChanged;
+  const lineCountLabel =
+    lineCount === undefined
+      ? 'unknown changed lines'
+      : `${lineCount} changed lines`;
+  const areaLabel = workspaceAreas.length > 0
+    ? workspaceAreas.map((area) => `${area.key} (${area.fileCount})`).join(', ')
+    : 'no resolved workspace area';
+  const targetTags = [...target.tags];
+  const tagLabel = targetTags.filter((tag) => tag !== 'unknown').join(', ') || 'unknown';
+  const omittedAreaCount = Math.max(
+    0,
+    allWorkspaceAreas.length - workspaceAreas.length,
+  );
+  const summaryParts = [
+    `${pluralize(changeStats.fileCount, 'file')}, ${lineCountLabel} across ${pluralize(allWorkspaceAreas.length, 'workspace area')}: ${areaLabel}`,
+    `tags: ${tagLabel}`,
+    omittedAreaCount > 0 ? `${pluralize(omittedAreaCount, 'workspace area')} omitted from summary` : undefined,
+  ].filter(Boolean);
+
+  return {
+    source: 'target_manifest',
+    summary: summaryParts.join('; '),
+    fileCount: changeStats.fileCount,
+    excludedFileCount,
+    ...(lineCount !== undefined ? { lineCount } : {}),
+    lineCountSource: changeStats.lineCountSource,
+    targetTags,
+    workspaceAreas,
+    warnings: target.warnings.map((warning) => warning.code),
+  };
+}
+
 export function recommendReviewStrategyForTarget(
   target: ReviewTargetClassification,
   changeStats: ReviewTeamChangeStats,
@@ -1614,6 +1761,96 @@ function splitFilesIntoGroups(files: string[], groupCount: number): string[][] {
   return groups;
 }
 
+interface WorkspaceAreaFileBucket {
+  key: string;
+  index: number;
+  files: string[];
+}
+
+function groupFilesByWorkspaceArea(files: string[]): WorkspaceAreaFileBucket[] {
+  const buckets: WorkspaceAreaFileBucket[] = [];
+  const bucketByKey = new Map<string, WorkspaceAreaFileBucket>();
+
+  for (const file of files) {
+    const key = workspaceAreaForReviewPath(file);
+    let bucket = bucketByKey.get(key);
+    if (!bucket) {
+      bucket = {
+        key,
+        index: buckets.length,
+        files: [],
+      };
+      buckets.push(bucket);
+      bucketByKey.set(key, bucket);
+    }
+    bucket.files.push(file);
+  }
+
+  return buckets;
+}
+
+function splitFilesIntoModuleAwareGroups(
+  files: string[],
+  groupCount: number,
+): string[][] {
+  if (groupCount <= 1) {
+    return [files];
+  }
+
+  const buckets = groupFilesByWorkspaceArea(files);
+  if (buckets.length <= 1) {
+    return splitFilesIntoGroups(files, groupCount);
+  }
+
+  if (buckets.length >= groupCount) {
+    const groups = Array.from({ length: groupCount }, () => [] as string[]);
+    const sortedBuckets = [...buckets].sort(
+      (a, b) => b.files.length - a.files.length || a.index - b.index,
+    );
+
+    for (const bucket of sortedBuckets) {
+      let targetIndex = 0;
+      for (let index = 1; index < groups.length; index += 1) {
+        if (groups[index].length < groups[targetIndex].length) {
+          targetIndex = index;
+        }
+      }
+      groups[targetIndex].push(...bucket.files);
+    }
+
+    return groups.filter((group) => group.length > 0);
+  }
+
+  const chunkCounts = buckets.map(() => 1);
+  let remainingChunks = groupCount - buckets.length;
+  while (remainingChunks > 0) {
+    let targetBucketIndex = -1;
+    let largestAverageChunkSize = 0;
+
+    for (let index = 0; index < buckets.length; index += 1) {
+      if (chunkCounts[index] >= buckets[index].files.length) {
+        continue;
+      }
+      const averageChunkSize = buckets[index].files.length / chunkCounts[index];
+      if (averageChunkSize > largestAverageChunkSize) {
+        largestAverageChunkSize = averageChunkSize;
+        targetBucketIndex = index;
+      }
+    }
+
+    if (targetBucketIndex === -1) {
+      break;
+    }
+
+    chunkCounts[targetBucketIndex] += 1;
+    remainingChunks -= 1;
+  }
+
+  return buckets.flatMap((bucket, index) =>
+    splitFilesIntoGroups(bucket.files, chunkCounts[index]),
+  );
+}
+
 function effectiveMaxSameRoleInstances(params: {
   executionPolicy: ReviewTeamExecutionPolicy;
   concurrencyPolicy: ReviewTeamConcurrencyPolicy;
@@ -1661,10 +1898,11 @@ function resolveReviewerPacketScopes(
     return [buildWorkPacketScopeFromFiles(target, includedFiles)];
   }
 
-  return splitFilesIntoGroups(includedFiles, groupCount).map((files, index) =>
+  const fileGroups = splitFilesIntoModuleAwareGroups(includedFiles, groupCount);
+  return fileGroups.map((files, index) =>
     buildWorkPacketScopeFromFiles(target, files, {
       index: index + 1,
-      count: groupCount,
+      count: fileGroups.length,
     }),
   );
 }
@@ -1724,6 +1962,143 @@ function buildWorkPackets(params: {
     : [];
 
   return [...reviewerPackets, ...judgePacket];
+}
+
+const SHARED_CONTEXT_CACHE_ENTRY_LIMIT = 80;
+const SHARED_CONTEXT_CACHE_RECOMMENDED_TOOLS: ReviewTeamSharedContextTool[] = [
+  'GetFileDiff',
+  'Read',
+];
+
+function buildSharedContextCachePlan(
+  workPackets: ReviewTeamWorkPacket[] = [],
+): ReviewTeamSharedContextCachePlan {
+  const fileContextByPath = new Map<
+    string,
+    {
+      path: string;
+      workspaceArea: string;
+      consumerPacketIds: string[];
+      firstSeenIndex: number;
+    }
+  >();
+  let nextSeenIndex = 0;
+
+  for (const packet of workPackets) {
+    if (packet.phase !== 'reviewer') {
+      continue;
+    }
+
+    for (const path of packet.assignedScope.files) {
+      let entry = fileContextByPath.get(path);
+      if (!entry) {
+        entry = {
+          path,
+          workspaceArea: workspaceAreaForReviewPath(path),
+          consumerPacketIds: [],
+          firstSeenIndex: nextSeenIndex,
+        };
+        nextSeenIndex += 1;
+        fileContextByPath.set(path, entry);
+      }
+      if (!entry.consumerPacketIds.includes(packet.packetId)) {
+        entry.consumerPacketIds.push(packet.packetId);
+      }
+    }
+  }
+
+  const repeatedFileContexts = Array.from(fileContextByPath.values())
+    .filter((entry) => entry.consumerPacketIds.length > 1)
+    .sort((a, b) => a.firstSeenIndex - b.firstSeenIndex);
+  const entries = repeatedFileContexts
+    .slice(0, SHARED_CONTEXT_CACHE_ENTRY_LIMIT)
+    .map((entry, index) => ({
+      cacheKey: `shared-context:${index + 1}`,
+      path: entry.path,
+      workspaceArea: entry.workspaceArea,
+      recommendedTools: [...SHARED_CONTEXT_CACHE_RECOMMENDED_TOOLS],
+      consumerPacketIds: entry.consumerPacketIds,
+    }));
+
+  return {
+    source: 'work_packets',
+    strategy: 'reuse_readonly_file_context_by_cache_key',
+    entries,
+    omittedEntryCount: Math.max(
+      0,
+      repeatedFileContexts.length - SHARED_CONTEXT_CACHE_ENTRY_LIMIT,
+    ),
+  };
+}
+
+const INCREMENTAL_REVIEW_CACHE_INVALIDATIONS: ReviewTeamIncrementalReviewCacheInvalidation[] = [
+  'target_file_set_changed',
+  'target_line_count_changed',
+  'target_tag_changed',
+  'target_warning_changed',
+  'reviewer_roster_changed',
+  'strategy_changed',
+];
+
+function stableFingerprint(input: unknown): string {
+  const serialized = JSON.stringify(input);
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < serialized.length; index += 1) {
+    hash ^= serialized.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
+}
+
+function buildIncrementalReviewCachePlan(params: {
+  target: ReviewTargetClassification;
+  changeStats: ReviewTeamChangeStats;
+  strategyLevel: ReviewStrategyLevel;
+  workPackets: ReviewTeamWorkPacket[];
+}): ReviewTeamIncrementalReviewCachePlan {
+  const filePaths = params.target.files
+    .filter((file) => !file.excluded)
+    .map((file) => file.normalizedPath)
+    .sort((a, b) => a.localeCompare(b));
+  const workspaceAreas = Array.from(
+    new Set(filePaths.map((file) => workspaceAreaForReviewPath(file))),
+  ).sort((a, b) => a.localeCompare(b));
+  const targetTags = [...params.target.tags].sort((a, b) => a.localeCompare(b));
+  const targetWarnings = params.target.warnings
+    .map((warning) => warning.code)
+    .sort((a, b) => a.localeCompare(b));
+  const reviewerPacketIds = params.workPackets
+    .filter((packet) => packet.phase === 'reviewer')
+    .map((packet) => packet.packetId)
+    .sort((a, b) => a.localeCompare(b));
+  const fingerprint = stableFingerprint({
+    source: params.target.source,
+    resolution: params.target.resolution,
+    filePaths,
+    workspaceAreas,
+    targetTags,
+    targetWarnings,
+    lineCount: params.changeStats.totalLinesChanged ?? null,
+    lineCountSource: params.changeStats.lineCountSource,
+    reviewerPacketIds,
+    strategyLevel: params.strategyLevel,
+  });
+
+  return {
+    source: 'target_manifest',
+    strategy: 'reuse_completed_packets_when_fingerprint_matches',
+    cacheKey: `incremental-review:${fingerprint}`,
+    fingerprint,
+    filePaths,
+    workspaceAreas,
+    targetTags,
+    reviewerPacketIds,
+    ...(params.changeStats.totalLinesChanged !== undefined
+      ? { lineCount: params.changeStats.totalLinesChanged }
+      : {}),
+    lineCountSource: params.changeStats.lineCountSource,
+    invalidatesOn: [...INCREMENTAL_REVIEW_CACHE_INVALIDATIONS],
+  };
 }
 
 function predictTimeoutSeconds(params: {
@@ -1836,13 +2211,18 @@ export function buildEffectiveReviewTeamManifest(
     changeStats?: Partial<ReviewTeamChangeStats>;
     tokenBudgetMode?: ReviewTokenBudgetMode;
     concurrencyPolicy?: Partial<ReviewTeamConcurrencyPolicy>;
+    rateLimitStatus?: ReviewTeamRateLimitStatus | null;
   } = {},
 ): ReviewTeamRunManifest {
   const target = options.target ?? createUnknownReviewTargetClassification('unknown');
   const tokenBudgetMode = options.tokenBudgetMode ?? 'balanced';
   const changeStats = resolveChangeStats(target, options.changeStats);
-  const concurrencyPolicy = normalizeConcurrencyPolicy(options.concurrencyPolicy);
+  const concurrencyPolicy = applyRateLimitToConcurrencyPolicy(
+    normalizeConcurrencyPolicy(options.concurrencyPolicy),
+    options.rateLimitStatus,
+  );
   const strategyRecommendation = recommendReviewStrategyForTarget(target, changeStats);
+  const preReviewSummary = buildPreReviewSummary(target, changeStats);
   const availableCoreMembers = team.coreMembers.filter((member) => member.available);
   const unavailableCoreMembers = team.coreMembers.filter((member) => !member.available);
   const notApplicableCoreMembers = availableCoreMembers.filter(
@@ -1885,6 +2265,13 @@ export function buildEffectiveReviewTeamManifest(
     executionPolicy,
     concurrencyPolicy,
   });
+  const sharedContextCache = buildSharedContextCachePlan(workPackets);
+  const incrementalReviewCache = buildIncrementalReviewCachePlan({
+    target,
+    changeStats,
+    strategyLevel: team.strategyLevel,
+    workPackets,
+  });
   const tokenBudget = buildTokenBudgetPlan({
     mode: tokenBudgetMode,
     activeReviewerCalls: workPackets.length,
@@ -1924,6 +2311,9 @@ export function buildEffectiveReviewTeamManifest(
     executionPolicy,
     concurrencyPolicy,
     changeStats,
+    preReviewSummary,
+    sharedContextCache,
+    incrementalReviewCache,
     tokenBudget,
     coreReviewers,
     ...(qualityGateReviewer ? { qualityGateReviewer } : {}),
@@ -2002,6 +2392,64 @@ function formatWorkPacketBlock(workPackets: ReviewTeamWorkPacket[] = []): string
   return [
     '```json',
     JSON.stringify(workPackets.map(workPacketToPromptPayload), null, 2),
+    '```',
+  ].join('\n');
+}
+
+function formatPreReviewSummaryBlock(summary: ReviewTeamPreReviewSummary): string {
+  return [
+    'Pre-generated diff summary:',
+    '```json',
+    JSON.stringify(summary, null, 2),
+    '```',
+  ].join('\n');
+}
+
+function sharedContextCacheToPromptPayload(plan: ReviewTeamSharedContextCachePlan) {
+  return {
+    source: plan.source,
+    strategy: plan.strategy,
+    omitted_entry_count: plan.omittedEntryCount,
+    entries: plan.entries.map((entry) => ({
+      cache_key: entry.cacheKey,
+      path: entry.path,
+      workspace_area: entry.workspaceArea,
+      recommended_tools: entry.recommendedTools,
+      consumer_packet_ids: entry.consumerPacketIds,
+    })),
+  };
+}
+
+function formatSharedContextCacheBlock(plan: ReviewTeamSharedContextCachePlan): string {
+  return [
+    'Shared context cache plan:',
+    '```json',
+    JSON.stringify(sharedContextCacheToPromptPayload(plan), null, 2),
+    '```',
+  ].join('\n');
+}
+
+function incrementalReviewCacheToPromptPayload(plan: ReviewTeamIncrementalReviewCachePlan) {
+  return {
+    source: plan.source,
+    strategy: plan.strategy,
+    cache_key: plan.cacheKey,
+    fingerprint: plan.fingerprint,
+    file_paths: plan.filePaths,
+    workspace_areas: plan.workspaceAreas,
+    target_tags: plan.targetTags,
+    reviewer_packet_ids: plan.reviewerPacketIds,
+    ...(plan.lineCount !== undefined ? { line_count: plan.lineCount } : {}),
+    line_count_source: plan.lineCountSource,
+    invalidates_on: plan.invalidatesOn,
+  };
+}
+
+function formatIncrementalReviewCacheBlock(plan: ReviewTeamIncrementalReviewCachePlan): string {
+  return [
+    'Incremental review cache plan:',
+    '```json',
+    JSON.stringify(incrementalReviewCacheToPromptPayload(plan), null, 2),
     '```',
   ].join('\n');
 }
@@ -2122,6 +2570,9 @@ export function buildReviewTeamPromptBlock(
 
   return [
     manifestBlock,
+    formatPreReviewSummaryBlock(manifest.preReviewSummary),
+    formatSharedContextCacheBlock(manifest.sharedContextCache),
+    formatIncrementalReviewCacheBlock(manifest.incrementalReviewCache),
     'Review work packets:',
     formatWorkPacketBlock(manifest.workPackets),
     'Work packet rules:',
@@ -2132,6 +2583,9 @@ export function buildReviewTeamPromptBlock(
     '- If the reviewer omits packet_id but the Task was launched from a packet, infer the packet_id from the Task description or work packet and mark packet_status_source as inferred.',
     '- If packet_id cannot be reported or inferred, mark packet_status_source as missing and explain the confidence impact in coverage_notes.',
     '- If a reviewer response is missing packet_id or status, the judge must treat that reviewer output as lower confidence instead of discarding the whole review.',
+    '- Use the pre-generated diff summary for initial orientation and token discipline, but verify claims against assigned files or diffs before reporting findings.',
+    '- Use shared_context_cache entries to reuse read-only GetFileDiff/Read context by cache_key across reviewer packets. Do not duplicate full-file reads when a reusable cached diff or file summary already covers the same path.',
+    '- Use incremental_review_cache only when the target fingerprint matches a prior run; preserve completed reviewer outputs by packet_id and rerun only missing, failed, timed-out, or stale packets. If any invalidates_on condition changed, ignore the cache and explain the fresh review boundary.',
     '- The assigned_scope is the default scope for that packet; only widen it when a critical cross-file dependency requires it and note the reason in coverage_notes.',
     'Configured code review team:',
     members || '- No team members available.',
@@ -2158,6 +2612,7 @@ export function buildReviewTeamPromptBlock(
     '- If a reviewer fails or times out without useful partial output, retry that same reviewer at most max_retries_per_role times: reduce its scope, downgrade strategy by one level when possible, use a shorter timeout, and set retry to true on the retry Task call.',
     '- In the final submit_code_review payload, populate reliability_signals for context_pressure, compression_preserved, partial_reviewer, and user_decision when those conditions apply. Use severity info/warning/action, count when useful, and source runtime/manifest/report/inferred.',
     '- If reviewer_file_split_threshold is greater than 0 and the target file count exceeds it, split files across multiple same-role reviewer instances only up to the concurrency-capped max_same_role_instances for this run.',
+    '- Prefer module/workspace-area coherent file groups when splitting reviewer work; avoid mixing unrelated workspace areas in the same packet when the group budget allows it.',
     '- When file splitting is active, each same-role instance must only review its assigned file group. Label instances in the Task description with both group and packet_id (e.g. "Security review [group 1/3] [packet reviewer:ReviewSecurity:group-1-of-3]").',
     '- Do not run ReviewFixer during the review pass.',
     '- Wait for explicit user approval before starting any remediation.',

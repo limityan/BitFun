@@ -684,7 +684,28 @@ export const CodeReviewToolCard: React.FC<ToolCardProps> = React.memo(({
                   <span>{t('toolCards.codeReview.runManifest.estimatedCalls', { defaultValue: 'Estimated calls' })}</span>
                   <strong>{runManifest.tokenBudget.estimatedReviewerCalls}</strong>
                 </div>
+                {runManifest.strategyRecommendation && (
+                  <div className="run-manifest__fact">
+                    <span>
+                      {t('toolCards.codeReview.runManifest.recommendedStrategy', {
+                        defaultValue: 'Recommended strategy',
+                      })}
+                    </span>
+                    <strong>{runManifest.strategyRecommendation.strategyLevel}</strong>
+                  </div>
+                )}
               </div>
+
+              {runManifest.strategyRecommendation && (
+                <div className="run-manifest__group">
+                  <div className="run-manifest__group-title">
+                    {t('toolCards.codeReview.runManifest.riskRecommendationTitle', {
+                      defaultValue: 'Risk recommendation',
+                    })}
+                  </div>
+                  <p>{runManifest.strategyRecommendation.rationale}</p>
+                </div>
+              )}
 
               {activeRunManifestReviewers.length > 0 && (
                 <div className="run-manifest__group">

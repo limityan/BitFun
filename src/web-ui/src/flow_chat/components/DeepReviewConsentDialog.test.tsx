@@ -98,6 +98,19 @@ function buildPreview(): ReviewTeamRunManifest {
       warnings: [],
     },
     strategyLevel: 'normal',
+    strategyRecommendation: {
+      strategyLevel: 'deep',
+      score: 24,
+      rationale: 'Large/high-risk change (8 files, 900 lines; 2 security-sensitive files, 3 workspace areas). Deep review recommended.',
+      factors: {
+        fileCount: 8,
+        totalLinesChanged: 900,
+        lineCountSource: 'diff_stat',
+        securityFileCount: 2,
+        workspaceAreaCount: 3,
+        contractSurfaceChanged: true,
+      },
+    },
     executionPolicy: {
       reviewerTimeoutSeconds: 300,
       judgeTimeoutSeconds: 240,
@@ -240,6 +253,8 @@ describeWithJsdom('DeepReviewConsentDialog', () => {
 
     expect(container.textContent).toContain('Review lineup');
     expect(container.textContent).toContain('3 reviewer calls');
+    expect(container.textContent).toContain('Recommended strategy: deep');
+    expect(container.textContent).toContain('Large/high-risk change');
     expect(container.textContent).toContain('Logic reviewer');
     expect(container.textContent).toContain('Custom security reviewer');
     expect(container.textContent).toContain('Frontend reviewer');

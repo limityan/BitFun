@@ -594,6 +594,81 @@ function manifestMemberLine(member: ReviewTeamManifestMember): string {
   return `${manifestMemberLabel(member)} (${member.subagentId})`;
 }
 
+function pluralize(count: number, singular: string): string {
+  return `${count} ${singular}${count === 1 ? '' : 's'}`;
+}
+
+function pushPreReviewSummarySection(
+  lines: string[],
+  manifest: ReviewTeamRunManifest,
+): void {
+  const summary = manifest.preReviewSummary;
+  if (!summary) {
+    return;
+  }
+
+  lines.push(`### Pre-review summary`);
+  lines.push(`- ${summary.summary}`);
+  lines.push(`- Files: ${summary.fileCount}`);
+  if (summary.lineCount !== undefined) {
+    lines.push(`- Lines changed: ${summary.lineCount} (${summary.lineCountSource})`);
+  } else {
+    lines.push(`- Lines changed: unknown (${summary.lineCountSource})`);
+  }
+  if (summary.workspaceAreas.length > 0) {
+    for (const area of summary.workspaceAreas) {
+      const sampleFiles = area.sampleFiles.length > 0
+        ? ` (${area.sampleFiles.join(', ')})`
+        : '';
+      lines.push(`- ${area.key}: ${pluralize(area.fileCount, 'file')}${sampleFiles}`);
+    }
+  }
+  lines.push('');
+}
+
+function pushSharedContextCacheSection(
+  lines: string[],
+  manifest: ReviewTeamRunManifest,
+): void {
+  const cachePlan = manifest.sharedContextCache;
+  if (!cachePlan) {
+    return;
+  }
+
+  lines.push(`### Shared context cache`);
+  if (cachePlan.entries.length === 0) {
+    lines.push('- None.');
+  } else {
+    for (const entry of cachePlan.entries) {
+      lines.push(
+        `- ${entry.cacheKey}: ${entry.path} -> ${entry.consumerPacketIds.join(', ')}`,
+      );
+    }
+  }
+  if (cachePlan.omittedEntryCount > 0) {
+    lines.push(`- Omitted entries: ${cachePlan.omittedEntryCount}`);
+  }
+  lines.push('');
+}
+
+function pushIncrementalReviewCacheSection(
+  lines: string[],
+  manifest: ReviewTeamRunManifest,
+): void {
+  const cachePlan = manifest.incrementalReviewCache;
+  if (!cachePlan) {
+    return;
+  }
+
+  lines.push(`### Incremental review cache`);
+  lines.push(`- Cache key: ${cachePlan.cacheKey}`);
+  lines.push(`- Fingerprint: ${cachePlan.fingerprint}`);
+  lines.push(`- Strategy: ${cachePlan.strategy}`);
+  lines.push(`- Reviewer packets: ${cachePlan.reviewerPacketIds.join(', ') || 'none'}`);
+  lines.push(`- Invalidates on: ${cachePlan.invalidatesOn.join(', ') || 'none'}`);
+  lines.push('');
+}
+
 function pushRunManifestSection(
   lines: string[],
   manifest: ReviewTeamRunManifest,
@@ -605,6 +680,11 @@ function pushRunManifestSection(
   lines.push(`- ${labels.target}: ${manifestTarget(manifest)}`);
   lines.push(`- ${labels.budget}: ${manifest.tokenBudget.mode}`);
   lines.push(`- ${labels.estimatedCalls}: ${manifest.tokenBudget.estimatedReviewerCalls}`);
+  if (manifest.strategyRecommendation) {
+    lines.push(`- Recommended strategy: ${manifest.strategyRecommendation.strategyLevel}`);
+    lines.push(`- Recommendation score: ${manifest.strategyRecommendation.score}`);
+    lines.push(`- Recommendation rationale: ${manifest.strategyRecommendation.rationale}`);
+  }
   lines.push('');
   lines.push(`### ${labels.activeReviewers}`);
   pushList(
@@ -622,6 +702,9 @@ function pushRunManifestSection(
     labels.noItems,
   );
   lines.push('');
+  pushPreReviewSummarySection(lines, manifest);
+  pushSharedContextCacheSection(lines, manifest);
+  pushIncrementalReviewCacheSection(lines, manifest);
 }
 
 export function formatCodeReviewReportMarkdown(

@@ -93,6 +93,19 @@ function buildManifest(): ReviewTeamRunManifest {
       warnings: [],
     },
     strategyLevel: 'normal',
+    strategyRecommendation: {
+      strategyLevel: 'deep',
+      score: 24,
+      rationale: 'Large/high-risk change (8 files, 900 lines; 2 security-sensitive files, 3 workspace areas). Deep review recommended.',
+      factors: {
+        fileCount: 8,
+        totalLinesChanged: 900,
+        lineCountSource: 'diff_stat',
+        securityFileCount: 2,
+        workspaceAreaCount: 3,
+        contractSurfaceChanged: true,
+      },
+    },
     executionPolicy: {
       reviewerTimeoutSeconds: 300,
       judgeTimeoutSeconds: 240,
@@ -229,6 +242,9 @@ describe('CodeReviewToolCard', () => {
     expect(container.textContent).toContain('Not applicable to this target');
     expect(container.textContent).toContain('Custom invalid reviewer');
     expect(container.textContent).toContain('Configuration issue');
+    expect(container.textContent).toContain('Recommended strategy');
+    expect(container.textContent).toContain('deep');
+    expect(container.textContent).toContain('Large/high-risk change');
   });
 
   it('updates the manifest echo when session metadata arrives after render', () => {

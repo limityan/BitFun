@@ -8,7 +8,17 @@ const REVIEW_TEAM_LOCALES = ['en-US', 'zh-CN', 'zh-TW'] as const;
 type Locale = (typeof REVIEW_TEAM_LOCALES)[number];
 type JsonObject = Record<string, unknown>;
 
-function readLocaleJson(locale: Locale, namespace: 'scenes/agents.json' | 'settings/review.json') {
+const REVIEW_TEAM_FLOW_CHAT_KEYS = [
+  'deepReviewConsent.recommendedStrategy',
+  'deepReviewConsent.recommendationTitle',
+  'toolCards.codeReview.runManifest.recommendedStrategy',
+  'toolCards.codeReview.runManifest.riskRecommendationTitle',
+] as const;
+
+function readLocaleJson(
+  locale: Locale,
+  namespace: 'flow-chat.json' | 'scenes/agents.json' | 'settings/review.json',
+) {
   const filePath = fileURLToPath(new URL(`../../locales/${locale}/${namespace}`, import.meta.url));
   return JSON.parse(readFileSync(filePath, 'utf8')) as JsonObject;
 }
@@ -49,6 +59,17 @@ describe('review team locale completeness', () => {
             `reviewTeams.members.${role.key}.responsibilities.${index}`,
           );
         });
+      }
+    },
+  );
+
+  it.each(REVIEW_TEAM_LOCALES)(
+    'keeps Deep Review strategy recommendation UI translated in %s flow chat namespace',
+    (locale) => {
+      const flowChat = readLocaleJson(locale, 'flow-chat.json');
+
+      for (const path of REVIEW_TEAM_FLOW_CHAT_KEYS) {
+        expectNonEmptyLocaleString(flowChat, path);
       }
     },
   );

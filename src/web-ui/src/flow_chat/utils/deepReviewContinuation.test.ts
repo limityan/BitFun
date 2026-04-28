@@ -333,4 +333,60 @@ describe('deepReviewContinuation', () => {
     expect(prompt).toContain('Do not run reviewers skipped as not_applicable.');
     expect(prompt).toContain('ReviewFrontend: skipped (not_applicable)');
   });
+
+  it('includes incremental cache guidance from the persisted run manifest', () => {
+    const session = createDeepReviewSession({
+      error: 'Timeout',
+      deepReviewRunManifest: {
+        incrementalReviewCache: {
+          source: 'target_manifest',
+          strategy: 'reuse_completed_packets_when_fingerprint_matches',
+          cacheKey: 'incremental-review:abc12345',
+          fingerprint: 'abc12345',
+          filePaths: [
+            'src/web-ui/src/shared/services/reviewTeamService.ts',
+          ],
+          workspaceAreas: ['web-ui'],
+          reviewerPacketIds: [
+            'reviewer:ReviewBusinessLogic',
+            'reviewer:ReviewSecurity',
+          ],
+          lineCount: 128,
+          lineCountSource: 'diff_stat',
+          invalidatesOn: [
+            'target_file_set_changed',
+            'target_line_count_changed',
+            'reviewer_roster_changed',
+          ],
+        },
+        skippedReviewers: [],
+      },
+      dialogTurns: [
+        {
+          id: 'turn-1',
+          sessionId: 'deep-review-session',
+          timestamp: 1,
+          status: 'error',
+          userMessage: {
+            id: 'user-1',
+            content: 'Original command:\n/DeepReview review latest commit',
+            timestamp: 1,
+          },
+          startTime: 1,
+          modelRounds: [],
+          error: 'Timeout',
+        },
+      ],
+    } as Partial<Session>);
+
+    const interruption = deriveDeepReviewInterruption(session, { category: 'timeout' });
+    const prompt = buildDeepReviewContinuationPrompt(interruption!);
+
+    expect(prompt).toContain('Incremental review cache guidance:');
+    expect(prompt).toContain('cache_key: incremental-review:abc12345');
+    expect(prompt).toContain('fingerprint: abc12345');
+    expect(prompt).toContain('Only reuse completed reviewer outputs when the current review target fingerprint still matches.');
+    expect(prompt).toContain('reviewer:ReviewBusinessLogic');
+    expect(prompt).toContain('target_file_set_changed');
+  });
 });

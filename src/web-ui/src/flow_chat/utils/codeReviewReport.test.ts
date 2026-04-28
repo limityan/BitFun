@@ -42,11 +42,84 @@ function buildRunManifest(): ReviewTeamRunManifest {
       warnings: [],
     },
     strategyLevel: 'normal',
+    strategyRecommendation: {
+      strategyLevel: 'deep',
+      score: 24,
+      rationale: 'Large/high-risk change (8 files, 900 lines; 2 security-sensitive files, 3 workspace areas). Deep review recommended.',
+      factors: {
+        fileCount: 8,
+        totalLinesChanged: 900,
+        lineCountSource: 'diff_stat',
+        securityFileCount: 2,
+        workspaceAreaCount: 3,
+        contractSurfaceChanged: true,
+      },
+    },
     executionPolicy: {
       reviewerTimeoutSeconds: 300,
       judgeTimeoutSeconds: 240,
       reviewerFileSplitThreshold: 20,
       maxSameRoleInstances: 3,
+      maxRetriesPerRole: 1,
+    },
+    concurrencyPolicy: {
+      maxParallelInstances: 4,
+      staggerSeconds: 0,
+      batchExtrasSeparately: true,
+    },
+    preReviewSummary: {
+      source: 'target_manifest',
+      summary: '1 file, 12 changed lines across 1 workspace area: web-ui (1)',
+      fileCount: 1,
+      excludedFileCount: 0,
+      lineCount: 12,
+      lineCountSource: 'diff_stat',
+      targetTags: ['frontend'],
+      workspaceAreas: [
+        {
+          key: 'web-ui',
+          fileCount: 1,
+          sampleFiles: ['src/App.tsx'],
+        },
+      ],
+      warnings: [],
+    },
+    sharedContextCache: {
+      source: 'work_packets',
+      strategy: 'reuse_readonly_file_context_by_cache_key',
+      entries: [
+        {
+          cacheKey: 'shared-context:1',
+          path: 'src/App.tsx',
+          workspaceArea: 'web-ui',
+          recommendedTools: ['GetFileDiff', 'Read'],
+          consumerPacketIds: [
+            'reviewer:ReviewBusinessLogic',
+            'reviewer:CustomSecurity',
+          ],
+        },
+      ],
+      omittedEntryCount: 0,
+    },
+    incrementalReviewCache: {
+      source: 'target_manifest',
+      strategy: 'reuse_completed_packets_when_fingerprint_matches',
+      cacheKey: 'incremental-review:abc12345',
+      fingerprint: 'abc12345',
+      filePaths: ['src/App.tsx'],
+      workspaceAreas: ['web-ui'],
+      targetTags: ['frontend'],
+      reviewerPacketIds: [
+        'reviewer:ReviewBusinessLogic',
+        'reviewer:CustomSecurity',
+      ],
+      lineCount: 12,
+      lineCountSource: 'diff_stat',
+      invalidatesOn: [
+        'target_file_set_changed',
+        'target_line_count_changed',
+        'reviewer_roster_changed',
+      ],
     },
     tokenBudget: {
       mode: 'balanced',
@@ -426,10 +499,22 @@ describe('codeReviewReport', () => {
     expect(markdown).toContain('- Target: frontend');
     expect(markdown).toContain('- Budget: balanced');
     expect(markdown).toContain('- Estimated calls: 3');
+    expect(markdown).toContain('- Recommended strategy: deep');
+    expect(markdown).toContain('- Recommendation score: 24');
+    expect(markdown).toContain('- Recommendation rationale: Large/high-risk change');
     expect(markdown).toContain('- Logic reviewer (ReviewBusinessLogic)');
     expect(markdown).toContain('- Custom security reviewer (CustomSecurity)');
     expect(markdown).toContain('- Quality inspector (ReviewJudge)');
     expect(markdown).toContain('- Frontend reviewer (ReviewFrontend): not_applicable');
     expect(markdown).toContain('- Custom invalid reviewer (CustomInvalid): invalid_tooling');
+    expect(markdown).toContain('### Pre-review summary');
+    expect(markdown).toContain('- 1 file, 12 changed lines across 1 workspace area: web-ui (1)');
+    expect(markdown).toContain('- web-ui: 1 file (src/App.tsx)');
+    expect(markdown).toContain('### Shared context cache');
+    expect(markdown).toContain('- shared-context:1: src/App.tsx -> reviewer:ReviewBusinessLogic, reviewer:CustomSecurity');
+    expect(markdown).toContain('### Incremental review cache');
+    expect(markdown).toContain('- Cache key: incremental-review:abc12345');
+    expect(markdown).toContain('- Fingerprint: abc12345');
+    expect(markdown).toContain('- Invalidates on: target_file_set_changed, target_line_count_changed, reviewer_roster_changed');
   });
 });

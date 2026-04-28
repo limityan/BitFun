@@ -99,6 +99,9 @@ export function buildDeepReviewContinuationPrompt(interruption: DeepReviewInterr
       ]
     : [];
   const retryBudgetRules = formatRetryBudgetRules(interruption.runManifest);
+  const incrementalCacheBlock = formatIncrementalReviewCacheGuidance(
+    interruption.runManifest,
+  );
 
   return [
     'Continue the interrupted Deep Review in this same session.',
@@ -117,12 +120,34 @@ export function buildDeepReviewContinuationPrompt(interruption: DeepReviewInterr
     'Known reviewer progress:',
     reviewerLines,
     ...manifestBlock,
+    ...incrementalCacheBlock,
     '',
     'Last error:',
     `- category: ${interruption.errorDetail.category ?? 'unknown'}`,
     interruption.errorDetail.providerCode ? `- provider code: ${interruption.errorDetail.providerCode}` : '- provider code: unknown',
     interruption.errorDetail.requestId ? `- request id: ${interruption.errorDetail.requestId}` : '- request id: unknown',
   ].join('\n');
+}
+
+function formatIncrementalReviewCacheGuidance(
+  runManifest: Session['deepReviewRunManifest'] | undefined,
+): string[] {
+  const cachePlan = runManifest?.incrementalReviewCache;
+  if (!cachePlan) {
+    return [];
+  }
+
+  return [
+    '',
+    'Incremental review cache guidance:',
+    `- cache_key: ${cachePlan.cacheKey}`,
+    `- fingerprint: ${cachePlan.fingerprint}`,
+    `- strategy: ${cachePlan.strategy}`,
+    `- reviewer_packet_ids: ${cachePlan.reviewerPacketIds.join(', ') || 'none'}`,
+    `- invalidates_on: ${cachePlan.invalidatesOn.join(', ') || 'none'}`,
+    '- Only reuse completed reviewer outputs when the current review target fingerprint still matches.',
+    '- If any invalidates_on condition changed, rerun affected reviewer packets and explain the fresh review boundary.',
+  ];
 }
 
 function formatRetryBudgetRules(

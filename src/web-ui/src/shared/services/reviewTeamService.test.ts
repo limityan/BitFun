@@ -584,6 +584,160 @@ describe('reviewTeamService', () => {
     expect(promptBlock).toContain('If the reviewer omits packet_id but the Task was launched from a packet, infer the packet_id from the Task description or work packet and mark packet_status_source as inferred.');
   });
 
+  it('pre-generates a compact diff summary for reviewer orientation', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra(),
+    );
+    const target = classifyReviewTargetFromFiles(
+      [
+        'src/web-ui/src/shared/services/reviewTeamService.ts',
+        'src/web-ui/src/app/scenes/agents/components/ReviewTeamPage.tsx',
+        'src/web-ui/src/locales/en-US/scenes/agents.json',
+        'src/crates/core/src/agentic/deep_review_policy.rs',
+        'src/crates/core/src/agentic/tools/implementations/task_tool.rs',
+      ],
+      'session_files',
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      target,
+      changeStats: {
+        totalLinesChanged: 420,
+        lineCountSource: 'diff_stat',
+      },
+    });
+
+    expect(manifest.preReviewSummary).toMatchObject({
+      source: 'target_manifest',
+      fileCount: 5,
+      lineCount: 420,
+      lineCountSource: 'diff_stat',
+      workspaceAreas: [
+        {
+          key: 'web-ui',
+          fileCount: 3,
+          sampleFiles: [
+            'src/web-ui/src/shared/services/reviewTeamService.ts',
+            'src/web-ui/src/app/scenes/agents/components/ReviewTeamPage.tsx',
+            'src/web-ui/src/locales/en-US/scenes/agents.json',
+          ],
+        },
+        {
+          key: 'crate:core',
+          fileCount: 2,
+          sampleFiles: [
+            'src/crates/core/src/agentic/deep_review_policy.rs',
+            'src/crates/core/src/agentic/tools/implementations/task_tool.rs',
+          ],
+        },
+      ],
+    });
+    expect(manifest.preReviewSummary.summary).toContain(
+      '5 files, 420 changed lines across 2 workspace areas',
+    );
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
+    expect(promptBlock).toContain('Pre-generated diff summary:');
+    expect(promptBlock).toContain('"key": "web-ui"');
+    expect(promptBlock).toContain('Use the pre-generated diff summary');
+  });
+
+  it('builds a shared context cache plan for files consumed by multiple reviewers', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra(),
+    );
+    const target = classifyReviewTargetFromFiles(
+      [
+        'src/web-ui/src/shared/services/reviewTeamService.ts',
+        'src/crates/core/src/agentic/deep_review_policy.rs',
+      ],
+      'session_files',
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, { target });
+    const webUiCacheEntry = manifest.sharedContextCache.entries.find(
+      (entry) => entry.path === 'src/web-ui/src/shared/services/reviewTeamService.ts',
+    );
+
+    expect(manifest.sharedContextCache).toMatchObject({
+      source: 'work_packets',
+      strategy: 'reuse_readonly_file_context_by_cache_key',
+      omittedEntryCount: 0,
+    });
+    expect(webUiCacheEntry).toMatchObject({
+      cacheKey: 'shared-context:1',
+      workspaceArea: 'web-ui',
+      recommendedTools: ['GetFileDiff', 'Read'],
+      consumerPacketIds: expect.arrayContaining([
+        'reviewer:ReviewBusinessLogic',
+        'reviewer:ReviewPerformance',
+        'reviewer:ReviewSecurity',
+        'reviewer:ReviewArchitecture',
+        'reviewer:ReviewFrontend',
+      ]),
+    });
+    expect(webUiCacheEntry?.consumerPacketIds).not.toContain('judge:ReviewJudge');
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
+    expect(promptBlock).toContain('Shared context cache plan:');
+    expect(promptBlock).toContain('"cache_key": "shared-context:1"');
+    expect(promptBlock).toContain('Use shared_context_cache entries');
+  });
+
+  it('builds an incremental review cache plan for follow-up reviews', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra(),
+    );
+    const target = classifyReviewTargetFromFiles(
+      [
+        'src/web-ui/src/shared/services/reviewTeamService.ts',
+        'src/crates/core/src/agentic/deep_review_policy.rs',
+      ],
+      'session_files',
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      target,
+      changeStats: {
+        totalLinesChanged: 128,
+        lineCountSource: 'diff_stat',
+      },
+    });
+
+    expect(manifest.incrementalReviewCache).toMatchObject({
+      source: 'target_manifest',
+      strategy: 'reuse_completed_packets_when_fingerprint_matches',
+      filePaths: [
+        'src/crates/core/src/agentic/deep_review_policy.rs',
+        'src/web-ui/src/shared/services/reviewTeamService.ts',
+      ],
+      workspaceAreas: ['crate:core', 'web-ui'],
+      lineCount: 128,
+      lineCountSource: 'diff_stat',
+      reviewerPacketIds: expect.arrayContaining([
+        'reviewer:ReviewBusinessLogic',
+        'reviewer:ReviewSecurity',
+        'reviewer:ReviewFrontend',
+      ]),
+      invalidatesOn: expect.arrayContaining([
+        'target_file_set_changed',
+        'target_line_count_changed',
+        'reviewer_roster_changed',
+      ]),
+    });
+    expect(manifest.incrementalReviewCache.cacheKey).toMatch(/^incremental-review:/);
+    expect(manifest.incrementalReviewCache.fingerprint).toHaveLength(8);
+    expect(manifest.incrementalReviewCache.reviewerPacketIds).not.toContain('judge:ReviewJudge');
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
+    expect(promptBlock).toContain('Incremental review cache plan:');
+    expect(promptBlock).toContain('"strategy": "reuse_completed_packets_when_fingerprint_matches"');
+    expect(promptBlock).toContain('Use incremental_review_cache only when the target fingerprint matches');
+  });
+
   it('splits reviewer work packets across file groups for large targets', () => {
     const team = resolveDefaultReviewTeam(
       coreSubagents(),
@@ -652,6 +806,68 @@ describe('reviewTeamService', () => {
     expect(promptBlock).toContain('"group_count": 3');
   });
 
+  it('keeps split reviewer work packets grouped by workspace area when possible', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra([], {
+        reviewer_file_split_threshold: 4,
+        max_same_role_instances: 3,
+      }),
+    );
+    const target = classifyReviewTargetFromFiles(
+      [
+        'src/web-ui/src/components/ReviewPanel.tsx',
+        'src/crates/core/src/agentic/deep_review_policy.rs',
+        'src/apps/desktop/src/api/review.rs',
+        'src/web-ui/src/shared/services/reviewTeamService.ts',
+        'src/crates/core/src/agentic/tools/implementations/task_tool.rs',
+        'src/apps/desktop/src/api/agent.rs',
+        'src/web-ui/src/app/scenes/agents/components/ReviewTeamPage.tsx',
+        'src/crates/core/src/agentic/agents/deep_review_agent.rs',
+        'src/apps/desktop/src/api/config.rs',
+        'src/web-ui/src/locales/en-US/scenes/agents.json',
+        'src/crates/core/src/agentic/agents/prompts/deep_review_agent.md',
+        'src/apps/desktop/src/api/subagent.rs',
+      ],
+      'session_files',
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      target,
+      concurrencyPolicy: {
+        maxParallelInstances: 16,
+      },
+    });
+    const logicPackets = manifest.workPackets?.filter(
+      (packet) => packet.subagentId === 'ReviewBusinessLogic',
+    );
+
+    expect(logicPackets).toHaveLength(3);
+    expect(logicPackets?.map((packet) => packet.assignedScope.files)).toEqual([
+      [
+        'src/web-ui/src/components/ReviewPanel.tsx',
+        'src/web-ui/src/shared/services/reviewTeamService.ts',
+        'src/web-ui/src/app/scenes/agents/components/ReviewTeamPage.tsx',
+        'src/web-ui/src/locales/en-US/scenes/agents.json',
+      ],
+      [
+        'src/crates/core/src/agentic/deep_review_policy.rs',
+        'src/crates/core/src/agentic/tools/implementations/task_tool.rs',
+        'src/crates/core/src/agentic/agents/deep_review_agent.rs',
+        'src/crates/core/src/agentic/agents/prompts/deep_review_agent.md',
+      ],
+      [
+        'src/apps/desktop/src/api/review.rs',
+        'src/apps/desktop/src/api/agent.rs',
+        'src/apps/desktop/src/api/config.rs',
+        'src/apps/desktop/src/api/subagent.rs',
+      ],
+    ]);
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
+    expect(promptBlock).toContain('Prefer module/workspace-area coherent file groups');
+  });
+
   it('caps file splitting and launch batches by concurrency policy', () => {
     const team = resolveDefaultReviewTeam(
       coreSubagents(),
@@ -694,6 +910,45 @@ describe('reviewTeamService', () => {
     expect(promptBlock).toContain('- max_parallel_instances: 4');
     expect(promptBlock).toContain('Launch reviewer Tasks by launch_batch');
     expect(promptBlock).toContain('"launch_batch": 2');
+  });
+
+  it('reduces reviewer concurrency when rate limit remaining is tight', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra([], {
+        reviewer_file_split_threshold: 10,
+        max_same_role_instances: 3,
+      }),
+    );
+    const target = classifyReviewTargetFromFiles(
+      Array.from(
+        { length: 25 },
+        (_, index) => `src/web-ui/src/components/ReviewPanel${index}.tsx`,
+      ),
+      'session_files',
+    );
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      target,
+      rateLimitStatus: { remaining: 2 },
+    });
+    const reviewerPackets = manifest.workPackets?.filter(
+      (packet) => packet.phase === 'reviewer',
+    ) ?? [];
+
+    expect(manifest.concurrencyPolicy).toMatchObject({
+      maxParallelInstances: 2,
+      staggerSeconds: 10,
+      batchExtrasSeparately: true,
+    });
+    expect(reviewerPackets.map((packet) => packet.launchBatch)).toEqual([1, 1, 2, 2, 3]);
+    expect(manifest.qualityGateReviewer && manifest.workPackets?.find(
+      (packet) => packet.subagentId === manifest.qualityGateReviewer?.subagentId,
+    )?.launchBatch).toBe(4);
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
+    expect(promptBlock).toContain('- max_parallel_instances: 2');
+    expect(promptBlock).toContain('- stagger_seconds: 10');
   });
 
   it('skips the frontend reviewer when the resolved target has no frontend tags', () => {

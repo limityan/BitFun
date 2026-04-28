@@ -146,7 +146,26 @@ export function useDeepReviewConsent(): DeepReviewConsentControls {
               defaultValue: '{{count}} skipped',
             })}
           </span>
+          {preview.strategyRecommendation && (
+            <span>
+              {t('deepReviewConsent.recommendedStrategy', {
+                strategy: preview.strategyRecommendation.strategyLevel,
+                defaultValue: 'Recommended strategy: {{strategy}}',
+              })}
+            </span>
+          )}
         </div>
+
+        {preview.strategyRecommendation && (
+          <div className="deep-review-consent__reviewer-group">
+            <div className="deep-review-consent__reviewer-group-title">
+              {t('deepReviewConsent.recommendationTitle', {
+                defaultValue: 'Risk recommendation',
+              })}
+            </div>
+            <p>{preview.strategyRecommendation.rationale}</p>
+          </div>
+        )}
 
         {activeReviewers.length > 0 && (
           <div className="deep-review-consent__reviewer-group">

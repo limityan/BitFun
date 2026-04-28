@@ -482,7 +482,9 @@
     "dontShowAgain": "Do not show this again",
     "cancel": "Cancel",
     "confirm": "Start Deep Review",
-    "estimatedTokens": "Estimated: {{min}} - {{max}} tokens"
+    "estimatedTokens": "Estimated: {{min}} - {{max}} tokens",
+    "recommendedStrategy": "Recommended strategy: {{strategy}}",
+    "recommendationTitle": "Risk recommendation"
   },
   "flowChatHeader": {
     "turnList": "Turn list",
@@ -1164,6 +1166,10 @@
         "running": "running",
         "partial": "partial",
         "unknown": "unknown"
+      },
+      "runManifest": {
+        "recommendedStrategy": "Recommended strategy",
+        "riskRecommendationTitle": "Risk recommendation"
       },
       "sectionItemCount": "{{count}} items",
       "remediationPlan": "Remediation Plan",
