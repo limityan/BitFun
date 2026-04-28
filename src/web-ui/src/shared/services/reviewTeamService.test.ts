@@ -3,15 +3,18 @@ import { configAPI } from '@/infrastructure/api/service-api/ConfigAPI';
 import {
   DEFAULT_REVIEW_TEAM_EXECUTION_POLICY,
   DEFAULT_REVIEW_TEAM_STRATEGY_LEVEL,
+  FALLBACK_REVIEW_TEAM_DEFINITION,
   REVIEW_STRATEGY_DEFINITIONS,
   buildEffectiveReviewTeamManifest,
   buildReviewTeamPromptBlock,
   canUseSubagentAsReviewTeamMember,
+  loadDefaultReviewTeamDefinition,
   loadDefaultReviewTeamConfig,
   prepareDefaultReviewTeamForLaunch,
   resolveDefaultReviewTeam,
   type ReviewTeamStoredConfig,
 } from './reviewTeamService';
+import { agentAPI } from '@/infrastructure/api/service-api/AgentAPI';
 import {
   SubagentAPI,
   type SubagentInfo,
@@ -32,6 +35,12 @@ vi.mock('@/infrastructure/api/service-api/SubagentAPI', () => ({
   SubagentAPI: {
     listSubagents: vi.fn(),
     updateSubagentConfig: vi.fn(),
+  },
+}));
+
+vi.mock('@/infrastructure/api/service-api/AgentAPI', () => ({
+  agentAPI: {
+    getDefaultReviewTeamDefinition: vi.fn(),
   },
 }));
 
@@ -206,8 +215,137 @@ describe('reviewTeamService', () => {
 
     expect(promptBlock).toContain('subagent_type: ExtraEnabled');
     expect(promptBlock).not.toContain('subagent_type: ExtraDisabled');
-    expect(promptBlock).toContain('Always run the four locked core reviewer roles');
+    expect(promptBlock).toContain('Run the active core reviewer roles first');
     expect(promptBlock).not.toContain('Always run the three locked reviewer roles');
+  });
+
+  it('can resolve the team from a backend-provided reviewer definition', () => {
+    const team = resolveDefaultReviewTeam(
+      [
+        ...coreSubagents(),
+        subagent('ReviewDocs'),
+      ],
+      storedConfigWithExtra(['ReviewDocs']),
+      {
+        definition: {
+          id: 'default-review-team',
+          name: 'Code Review Team',
+          description: 'Backend-defined team',
+          warning: 'Review may take longer.',
+          defaultModel: 'fast',
+          defaultStrategyLevel: 'normal',
+          defaultExecutionPolicy: {
+            reviewerTimeoutSeconds: 300,
+            judgeTimeoutSeconds: 240,
+            reviewerFileSplitThreshold: 20,
+            maxSameRoleInstances: 3,
+          },
+          disallowedExtraSubagentIds: [
+            'ReviewBusinessLogic',
+            'ReviewPerformance',
+            'ReviewSecurity',
+            'ReviewArchitecture',
+            'ReviewFrontend',
+            'ReviewDocs',
+            'ReviewJudge',
+            'DeepReview',
+            'ReviewFixer',
+          ],
+          hiddenAgentIds: [
+            'DeepReview',
+            'ReviewBusinessLogic',
+            'ReviewPerformance',
+            'ReviewSecurity',
+            'ReviewArchitecture',
+            'ReviewFrontend',
+            'ReviewDocs',
+            'ReviewJudge',
+          ],
+          coreRoles: [
+            ...[
+              'ReviewBusinessLogic',
+              'ReviewPerformance',
+              'ReviewSecurity',
+              'ReviewArchitecture',
+              'ReviewFrontend',
+              'ReviewJudge',
+            ].map((id) => ({
+              key: id === 'ReviewJudge' ? 'judge' : id.replace(/^Review/, '').replace(/^BusinessLogic$/, 'businessLogic').toLowerCase(),
+              subagentId: id,
+              funName: id,
+              roleName: id,
+              description: `${id} description`,
+              responsibilities: [`${id} responsibility`],
+              accentColor: '#64748b',
+              conditional: id === 'ReviewFrontend',
+            })),
+            {
+              key: 'docs',
+              subagentId: 'ReviewDocs',
+              funName: 'Docs Reviewer',
+              roleName: 'Documentation Reviewer',
+              description: 'Checks docs and release notes.',
+              responsibilities: ['Verify documentation stays aligned.'],
+              accentColor: '#0f766e',
+            },
+          ],
+          strategyProfiles: {
+            ...REVIEW_STRATEGY_DEFINITIONS,
+            quick: {
+              ...REVIEW_STRATEGY_DEFINITIONS.quick,
+              roleDirectives: {
+                ...REVIEW_STRATEGY_DEFINITIONS.quick.roleDirectives,
+                ReviewDocs: 'Only check changed docs.',
+              },
+            },
+          },
+        },
+      },
+    );
+
+    expect(team.coreMembers.map((member) => member.subagentId)).toContain('ReviewDocs');
+    expect(team.extraMembers.map((member) => member.subagentId)).not.toContain('ReviewDocs');
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      tokenBudgetMode: 'balanced',
+    });
+    expect(manifest.coreReviewers).toContainEqual(
+      expect.objectContaining({
+        subagentId: 'ReviewDocs',
+        strategyDirective: REVIEW_STRATEGY_DEFINITIONS.normal.promptDirective,
+      }),
+    );
+  });
+
+  it('falls back safely when backend reviewer definition fields are malformed', async () => {
+    vi.mocked(agentAPI.getDefaultReviewTeamDefinition).mockResolvedValue({
+      id: 42,
+      name: null,
+      description: ['bad'],
+      warning: {},
+      defaultModel: 99,
+      defaultStrategyLevel: 'normal',
+      defaultExecutionPolicy: {
+        reviewerTimeoutSeconds: 300,
+        judgeTimeoutSeconds: 240,
+        reviewerFileSplitThreshold: 20,
+        maxSameRoleInstances: 3,
+      },
+      coreRoles: [],
+      strategyProfiles: {},
+      disallowedExtraSubagentIds: ['ReviewDocs', 42],
+      hiddenAgentIds: ['ReviewDocs', null],
+    });
+
+    await expect(loadDefaultReviewTeamDefinition()).resolves.toMatchObject({
+      id: FALLBACK_REVIEW_TEAM_DEFINITION.id,
+      name: FALLBACK_REVIEW_TEAM_DEFINITION.name,
+      description: FALLBACK_REVIEW_TEAM_DEFINITION.description,
+      warning: FALLBACK_REVIEW_TEAM_DEFINITION.warning,
+      defaultModel: FALLBACK_REVIEW_TEAM_DEFINITION.defaultModel,
+      disallowedExtraSubagentIds: ['ReviewDocs'],
+      hiddenAgentIds: ['ReviewDocs'],
+    });
   });
 
   it('keeps invalid configured extra members explainable in the run manifest', () => {

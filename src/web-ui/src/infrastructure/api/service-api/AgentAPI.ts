@@ -442,7 +442,14 @@ export class AgentAPI {
     }
   }
 
-   
+  async getDefaultReviewTeamDefinition(): Promise<unknown> {
+    try {
+      return await api.invoke<unknown>('get_default_review_team_definition');
+    } catch (error) {
+      throw createTauriCommandError('get_default_review_team_definition', error);
+    }
+  }
+
   async generateSessionTitle(
     sessionId: string,
     userMessage: string,

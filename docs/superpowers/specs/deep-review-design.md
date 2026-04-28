@@ -25,14 +25,13 @@ The proposal has three parts:
 - Updated review team service, tests, and UI metadata for the new roles.
 - Updated Settings > Review i18n so Architecture and Frontend reviewer names render in the active language.
 - Updated the Agents page Code Review Team card to avoid clipped reviewer tags and present a compact role-summary layout.
-- Added the initial predictive-timeout loop: the launch manifest records target file stats, derives effective reviewer/judge timeouts from strategy and target size, and the core Task tool honors that manifest policy when launching DeepReview subagents.
+- Added the initial predictive-timeout loop: the launch manifest records target file and diff line stats, derives effective reviewer/judge timeouts from strategy and target size, and the core Task tool honors that manifest policy when launching DeepReview subagents.
+- Converted Frontend Reviewer dispatch from always-present execution to conditional execution based on changed frontend or frontend-backend contract files.
+- Made backend-provided reviewer definitions the runtime source for frontend team resolution and review-agent visibility, with frontend fallback metadata only as a degraded-mode safety net.
 
 ### Remaining / Future Work
 
-- Convert Frontend Reviewer from always-present metadata to truly conditional dispatch based on changed frontend files.
-- Make hidden review-agent IDs derive from review team role definitions instead of manual lists.
-- Move core reviewer definitions and strategy directives toward a backend-provided manifest to reduce duplicated frontend/backend role configuration.
-- Extend predictive timeout with diff line-count stats, then add partial result capture, risk classification, dynamic concurrency control, and retry budget from the Strategy Engine plan.
+- Continue the Strategy Engine beyond predictive timeout: partial result capture, risk classification, dynamic concurrency control, and retry budget.
 - Add automated coverage tests for new role i18n and card layout constraints.
 
 ## Current State Analysis
@@ -840,6 +839,8 @@ ReviewFrontend: {
 3. **Existing reviewer prompt adjustments** — implemented to clarify ownership boundaries and reduce cross-role duplication.
 4. **Judge overlap handling** — implemented for Architecture/Business Logic, Architecture/Security, Frontend/Performance, and Frontend/Business Logic overlap cases.
 5. **UI support** — implemented for Review Team page, Settings > Review member names, Agents overview Code Review Team card, continuation/report/remediation flows, and hidden-agent filtering.
+6. **Backend-provided reviewer definition** — implemented as a core `default_review_team_definition()` manifest surfaced through the desktop API and consumed by the frontend review team resolver.
+7. **Dynamic hidden-agent derivation** — implemented for Agents overview by combining static non-review hidden IDs with backend-provided review-agent hidden IDs.
 
 ### Next Phase: Strategy Engine Foundation (Highest Priority)
 
@@ -855,10 +856,8 @@ ReviewFrontend: {
 
 ### Future Role Extensibility Improvements
 
-7. **Backend-provided reviewer manifest** — Generate role IDs, display metadata, model defaults, conditional activation rules, and strategy directives from one source of truth instead of duplicating them in Rust prompts and frontend TypeScript.
-8. **Dynamic hidden-agent derivation** — Derive hidden review-agent IDs from role definitions so newly added reviewers do not appear as normal agents by accident.
-9. **Locale completeness checks** — Add tests that fail when a core role is missing translations in `scenes/agents.json` or `settings/review.json`.
-10. **Card layout resilience tests** — Add visual or DOM-level tests ensuring role summary cards do not clip content when role count grows.
+7. **Locale completeness checks** — Add tests that fail when a core role is missing translations in `scenes/agents.json` or `settings/review.json`.
+8. **Card layout resilience tests** — Add visual or DOM-level tests ensuring role summary cards do not clip content when role count grows.
 
 ### Advanced (Lower Priority)
 

@@ -1,4 +1,5 @@
 import { configAPI } from '@/infrastructure/api/service-api/ConfigAPI';
+import { agentAPI } from '@/infrastructure/api/service-api/AgentAPI';
 import {
   SubagentAPI,
   type SubagentInfo,
@@ -41,13 +42,7 @@ export interface ReviewStrategyCommonRules {
   reviewerPromptRules: string[];
 }
 
-export type ReviewRoleDirectiveKey =
-  | 'ReviewBusinessLogic'
-  | 'ReviewPerformance'
-  | 'ReviewSecurity'
-  | 'ReviewArchitecture'
-  | 'ReviewFrontend'
-  | 'ReviewJudge';
+export type ReviewRoleDirectiveKey = string;
 
 export interface ReviewStrategyProfile {
   level: ReviewStrategyLevel;
@@ -59,7 +54,7 @@ export interface ReviewStrategyProfile {
   promptDirective: string;
   /** Per-role strategy directives. When a role key is present, its directive
    *  overrides `promptDirective` for that reviewer or the judge. */
-  roleDirectives: Partial<Record<ReviewRoleDirectiveKey, string>>;
+  roleDirectives: Record<ReviewRoleDirectiveKey, string>;
 }
 
 export const REVIEW_STRATEGY_LEVELS: ReviewStrategyLevel[] = [
@@ -166,13 +161,7 @@ export function getReviewStrategyProfile(
   return REVIEW_STRATEGY_PROFILES[strategyLevel];
 }
 
-export type ReviewTeamCoreRoleKey =
-  | 'businessLogic'
-  | 'performance'
-  | 'security'
-  | 'architecture'
-  | 'frontend'
-  | 'judge';
+export type ReviewTeamCoreRoleKey = string;
 
 export interface ReviewTeamCoreRoleDefinition {
   key: ReviewTeamCoreRoleKey;
@@ -184,6 +173,20 @@ export interface ReviewTeamCoreRoleDefinition {
   accentColor: string;
   /** If true, this reviewer is only included when the change contains relevant files. */
   conditional?: boolean;
+}
+
+export interface ReviewTeamDefinition {
+  id: string;
+  name: string;
+  description: string;
+  warning: string;
+  defaultModel: string;
+  defaultStrategyLevel: ReviewStrategyLevel;
+  defaultExecutionPolicy: ReviewTeamExecutionPolicy;
+  coreRoles: ReviewTeamCoreRoleDefinition[];
+  strategyProfiles: Record<ReviewStrategyLevel, ReviewStrategyProfile>;
+  disallowedExtraSubagentIds: string[];
+  hiddenAgentIds: string[];
 }
 
 export interface ReviewTeamStoredConfig {
@@ -278,6 +281,8 @@ export interface ReviewTeamMember {
   subagentSource: SubagentSource;
   accentColor: string;
   allowedTools: string[];
+  defaultModelSlot?: ReviewStrategyProfile['defaultModelSlot'];
+  strategyDirective?: string;
   skipReason?: ReviewTeamManifestMemberReason;
 }
 
@@ -289,6 +294,7 @@ export interface ReviewTeam {
   strategyLevel: ReviewStrategyLevel;
   memberStrategyOverrides: Record<string, ReviewStrategyLevel>;
   executionPolicy: ReviewTeamExecutionPolicy;
+  definition: ReviewTeamDefinition;
   members: ReviewTeamMember[];
   coreMembers: ReviewTeamMember[];
   extraMembers: ReviewTeamMember[];
@@ -472,6 +478,160 @@ const DISALLOWED_REVIEW_TEAM_MEMBER_IDS = new Set<string>([
   'DeepReview',
   'ReviewFixer',
 ]);
+
+export const FALLBACK_REVIEW_TEAM_DEFINITION: ReviewTeamDefinition = {
+  id: DEFAULT_REVIEW_TEAM_ID,
+  name: 'Code Review Team',
+  description:
+    'A multi-reviewer team for deep code review with mandatory logic, performance, security, architecture, conditional frontend, and quality-gate roles.',
+  warning:
+    'Deep review may take longer and usually consumes more tokens than a standard review.',
+  defaultModel: DEFAULT_REVIEW_TEAM_MODEL,
+  defaultStrategyLevel: DEFAULT_REVIEW_TEAM_STRATEGY_LEVEL,
+  defaultExecutionPolicy: {
+    ...DEFAULT_REVIEW_TEAM_EXECUTION_POLICY,
+  },
+  coreRoles: DEFAULT_REVIEW_TEAM_CORE_ROLES,
+  strategyProfiles: REVIEW_STRATEGY_PROFILES,
+  disallowedExtraSubagentIds: [...DISALLOWED_REVIEW_TEAM_MEMBER_IDS],
+  hiddenAgentIds: [
+    'DeepReview',
+    ...DEFAULT_REVIEW_TEAM_CORE_ROLES.map((role) => role.subagentId),
+  ],
+};
+
+function isReviewTeamCoreRoleDefinition(value: unknown): value is ReviewTeamCoreRoleDefinition {
+  if (!value || typeof value !== 'object') return false;
+  const role = value as Partial<ReviewTeamCoreRoleDefinition>;
+  return (
+    typeof role.key === 'string' &&
+    typeof role.subagentId === 'string' &&
+    typeof role.funName === 'string' &&
+    typeof role.roleName === 'string' &&
+    typeof role.description === 'string' &&
+    Array.isArray(role.responsibilities) &&
+    role.responsibilities.every((item) => typeof item === 'string') &&
+    typeof role.accentColor === 'string'
+  );
+}
+
+function isReviewStrategyProfile(value: unknown): value is ReviewStrategyProfile {
+  if (!value || typeof value !== 'object') return false;
+  const profile = value as Partial<ReviewStrategyProfile>;
+  return (
+    isReviewStrategyLevel(profile.level) &&
+    typeof profile.label === 'string' &&
+    typeof profile.summary === 'string' &&
+    typeof profile.tokenImpact === 'string' &&
+    typeof profile.runtimeImpact === 'string' &&
+    (profile.defaultModelSlot === 'fast' || profile.defaultModelSlot === 'primary') &&
+    typeof profile.promptDirective === 'string' &&
+    Boolean(profile.roleDirectives) &&
+    typeof profile.roleDirectives === 'object'
+  );
+}
+
+function nonEmptyStringOrFallback(value: unknown, fallback: string): string {
+  if (typeof value !== 'string') {
+    return fallback;
+  }
+
+  return value.trim() || fallback;
+}
+
+function normalizeReviewTeamDefinition(raw: unknown): ReviewTeamDefinition {
+  if (!raw || typeof raw !== 'object') {
+    return FALLBACK_REVIEW_TEAM_DEFINITION;
+  }
+
+  const source = raw as Partial<ReviewTeamDefinition>;
+  const coreRoles = Array.isArray(source.coreRoles)
+    ? source.coreRoles.filter(isReviewTeamCoreRoleDefinition)
+    : [];
+  const strategyProfiles = REVIEW_STRATEGY_LEVELS.reduce<
+    Partial<Record<ReviewStrategyLevel, ReviewStrategyProfile>>
+  >((profiles, level) => {
+    const profile = source.strategyProfiles?.[level];
+    profiles[level] = isReviewStrategyProfile(profile)
+      ? profile
+      : FALLBACK_REVIEW_TEAM_DEFINITION.strategyProfiles[level];
+    return profiles;
+  }, {}) as Record<ReviewStrategyLevel, ReviewStrategyProfile>;
+  const disallowedExtraSubagentIds = Array.isArray(source.disallowedExtraSubagentIds)
+    ? dedupeIds(source.disallowedExtraSubagentIds.filter((id): id is string => typeof id === 'string'))
+    : [];
+  const hiddenAgentIds = Array.isArray(source.hiddenAgentIds)
+    ? dedupeIds(source.hiddenAgentIds.filter((id): id is string => typeof id === 'string'))
+    : [];
+
+  return {
+    id: nonEmptyStringOrFallback(source.id, FALLBACK_REVIEW_TEAM_DEFINITION.id),
+    name: nonEmptyStringOrFallback(source.name, FALLBACK_REVIEW_TEAM_DEFINITION.name),
+    description: nonEmptyStringOrFallback(
+      source.description,
+      FALLBACK_REVIEW_TEAM_DEFINITION.description,
+    ),
+    warning: nonEmptyStringOrFallback(
+      source.warning,
+      FALLBACK_REVIEW_TEAM_DEFINITION.warning,
+    ),
+    defaultModel: nonEmptyStringOrFallback(
+      source.defaultModel,
+      FALLBACK_REVIEW_TEAM_DEFINITION.defaultModel,
+    ),
+    defaultStrategyLevel: isReviewStrategyLevel(source.defaultStrategyLevel)
+      ? source.defaultStrategyLevel
+      : FALLBACK_REVIEW_TEAM_DEFINITION.defaultStrategyLevel,
+    defaultExecutionPolicy: source.defaultExecutionPolicy
+      ? {
+        reviewerTimeoutSeconds: clampInteger(
+          source.defaultExecutionPolicy.reviewerTimeoutSeconds,
+          0,
+          3600,
+          FALLBACK_REVIEW_TEAM_DEFINITION.defaultExecutionPolicy.reviewerTimeoutSeconds,
+        ),
+        judgeTimeoutSeconds: clampInteger(
+          source.defaultExecutionPolicy.judgeTimeoutSeconds,
+          0,
+          3600,
+          FALLBACK_REVIEW_TEAM_DEFINITION.defaultExecutionPolicy.judgeTimeoutSeconds,
+        ),
+        reviewerFileSplitThreshold: clampInteger(
+          source.defaultExecutionPolicy.reviewerFileSplitThreshold,
+          0,
+          9999,
+          FALLBACK_REVIEW_TEAM_DEFINITION.defaultExecutionPolicy.reviewerFileSplitThreshold,
+        ),
+        maxSameRoleInstances: clampInteger(
+          source.defaultExecutionPolicy.maxSameRoleInstances,
+          1,
+          8,
+          FALLBACK_REVIEW_TEAM_DEFINITION.defaultExecutionPolicy.maxSameRoleInstances,
+        ),
+      }
+      : FALLBACK_REVIEW_TEAM_DEFINITION.defaultExecutionPolicy,
+    coreRoles: coreRoles.length > 0 ? coreRoles : FALLBACK_REVIEW_TEAM_DEFINITION.coreRoles,
+    strategyProfiles,
+    disallowedExtraSubagentIds:
+      disallowedExtraSubagentIds.length > 0
+        ? disallowedExtraSubagentIds
+        : FALLBACK_REVIEW_TEAM_DEFINITION.disallowedExtraSubagentIds,
+    hiddenAgentIds:
+      hiddenAgentIds.length > 0
+        ? hiddenAgentIds
+        : FALLBACK_REVIEW_TEAM_DEFINITION.hiddenAgentIds,
+  };
+}
+
+export async function loadDefaultReviewTeamDefinition(): Promise<ReviewTeamDefinition> {
+  try {
+    return normalizeReviewTeamDefinition(
+      await agentAPI.getDefaultReviewTeamDefinition(),
+    );
+  } catch {
+    return FALLBACK_REVIEW_TEAM_DEFINITION;
+  }
+}
 
 function dedupeIds(ids: string[]): string[] {
   return Array.from(
@@ -707,6 +867,7 @@ export async function saveDefaultReviewTeamMemberStrategyOverride(
 
 export interface ResolveDefaultReviewTeamOptions {
   availableModelIds?: string[];
+  definition?: ReviewTeamDefinition;
 }
 
 function extractAvailableModelIds(rawModels: unknown): string[] | undefined {
@@ -756,13 +917,14 @@ function resolveMemberModel(
   configuredModel: string | undefined,
   strategyLevel: ReviewStrategyLevel,
   availableModelIds?: Set<string>,
+  strategyProfiles: Record<ReviewStrategyLevel, ReviewStrategyProfile> = REVIEW_STRATEGY_PROFILES,
 ): {
   model: string;
   configuredModel: string;
   modelFallbackReason?: ReviewModelFallbackReason;
 } {
   const normalizedConfiguredModel = configuredModel?.trim() || '';
-  const defaultModelSlot = getReviewStrategyProfile(strategyLevel).defaultModelSlot;
+  const defaultModelSlot = strategyProfiles[strategyLevel].defaultModelSlot;
 
   if (
     !normalizedConfiguredModel ||
@@ -794,13 +956,16 @@ function buildCoreMember(
   info: SubagentInfo | undefined,
   storedConfig: ReviewTeamStoredConfig,
   availableModelIds?: Set<string>,
+  strategyProfiles: Record<ReviewStrategyLevel, ReviewStrategyProfile> = REVIEW_STRATEGY_PROFILES,
 ): ReviewTeamMember {
   const strategy = resolveMemberStrategy(storedConfig, definition.subagentId);
   const model = resolveMemberModel(
     info?.model || DEFAULT_REVIEW_TEAM_MODEL,
     strategy.strategyLevel,
     availableModelIds,
+    strategyProfiles,
   );
+  const strategyProfile = strategyProfiles[strategy.strategyLevel];
 
   return {
     id: `core:${definition.subagentId}`,
@@ -823,6 +988,10 @@ function buildCoreMember(
     subagentSource: info?.subagentSource ?? 'builtin',
     accentColor: definition.accentColor,
     allowedTools: [...REVIEW_WORK_PACKET_ALLOWED_TOOLS],
+    defaultModelSlot: strategyProfile.defaultModelSlot,
+    strategyDirective:
+      strategyProfile.roleDirectives[definition.subagentId] ||
+      strategyProfile.promptDirective,
   };
 }
 
@@ -833,14 +1002,18 @@ function buildExtraMember(
   options: {
     available?: boolean;
     skipReason?: ReviewTeamManifestMemberReason;
+    strategyProfiles?: Record<ReviewStrategyLevel, ReviewStrategyProfile>;
   } = {},
 ): ReviewTeamMember {
   const strategy = resolveMemberStrategy(storedConfig, info.id);
+  const strategyProfiles = options.strategyProfiles ?? REVIEW_STRATEGY_PROFILES;
   const model = resolveMemberModel(
     info.model || DEFAULT_REVIEW_TEAM_MODEL,
     strategy.strategyLevel,
     availableModelIds,
+    strategyProfiles,
   );
+  const strategyProfile = strategyProfiles[strategy.strategyLevel];
 
   return {
     id: `extra:${info.id}`,
@@ -865,6 +1038,8 @@ function buildExtraMember(
       info.defaultTools && info.defaultTools.length > 0
         ? [...info.defaultTools]
         : [...REVIEW_WORK_PACKET_ALLOWED_TOOLS],
+    defaultModelSlot: strategyProfile.defaultModelSlot,
+    strategyDirective: strategyProfile.promptDirective,
     ...(options.skipReason ? { skipReason: options.skipReason } : {}),
   };
 }
@@ -873,13 +1048,16 @@ function buildUnavailableExtraMember(
   subagentId: string,
   storedConfig: ReviewTeamStoredConfig,
   availableModelIds?: Set<string>,
+  strategyProfiles: Record<ReviewStrategyLevel, ReviewStrategyProfile> = REVIEW_STRATEGY_PROFILES,
 ): ReviewTeamMember {
   const strategy = resolveMemberStrategy(storedConfig, subagentId);
   const model = resolveMemberModel(
     DEFAULT_REVIEW_TEAM_MODEL,
     strategy.strategyLevel,
     availableModelIds,
+    strategyProfiles,
   );
+  const strategyProfile = strategyProfiles[strategy.strategyLevel];
 
   return {
     id: `extra:${subagentId}`,
@@ -901,6 +1079,8 @@ function buildUnavailableExtraMember(
     subagentSource: 'user',
     accentColor: EXTRA_MEMBER_DEFAULTS.accentColor,
     allowedTools: [],
+    defaultModelSlot: strategyProfile.defaultModelSlot,
+    strategyDirective: strategyProfile.promptDirective,
     skipReason: 'unavailable',
   };
 }
@@ -970,31 +1150,38 @@ export function resolveDefaultReviewTeam(
   storedConfig: ReviewTeamStoredConfig,
   options: ResolveDefaultReviewTeamOptions = {},
 ): ReviewTeam {
+  const definition = options.definition ?? FALLBACK_REVIEW_TEAM_DEFINITION;
   const byId = new Map(subagents.map((subagent) => [subagent.id, subagent]));
   const availableModelIds = options.availableModelIds
     ? new Set(options.availableModelIds)
     : undefined;
-  const coreMembers = DEFAULT_REVIEW_TEAM_CORE_ROLES.map((definition) =>
+  const coreMembers = definition.coreRoles.map((roleDefinition) =>
     buildCoreMember(
-      definition,
-      byId.get(definition.subagentId),
+      roleDefinition,
+      byId.get(roleDefinition.subagentId),
       storedConfig,
       availableModelIds,
+      definition.strategyProfiles,
     ),
   );
-  const extraMembers = storedConfig.extra_subagent_ids.map((subagentId) => {
+  const disallowedExtraSubagentIds = new Set(definition.disallowedExtraSubagentIds);
+  const extraMembers = storedConfig.extra_subagent_ids
+    .filter((subagentId) => !disallowedExtraSubagentIds.has(subagentId))
+    .map((subagentId) => {
     const subagent = byId.get(subagentId);
     if (!subagent) {
       return buildUnavailableExtraMember(
         subagentId,
         storedConfig,
         availableModelIds,
+        definition.strategyProfiles,
       );
     }
     if (!hasReviewTeamExtraMemberShape(subagent)) {
       return buildExtraMember(subagent, storedConfig, availableModelIds, {
         available: false,
         skipReason: 'invalid_tooling',
+        strategyProfiles: definition.strategyProfiles,
       });
     }
     const toolingReadiness = evaluateReviewSubagentToolReadiness(
@@ -1005,21 +1192,24 @@ export function resolveDefaultReviewTeam(
       storedConfig,
       availableModelIds,
       toolingReadiness.readiness === 'invalid'
-        ? { available: false, skipReason: 'invalid_tooling' }
-        : undefined,
+        ? {
+          available: false,
+          skipReason: 'invalid_tooling',
+          strategyProfiles: definition.strategyProfiles,
+        }
+        : { strategyProfiles: definition.strategyProfiles },
     );
   });
 
   return {
-    id: DEFAULT_REVIEW_TEAM_ID,
-    name: 'Code Review Team',
-    description:
-      'A multi-reviewer team for deep code review with mandatory logic, performance, security, architecture, conditional frontend, and quality-gate roles.',
-    warning:
-      'Deep review may take longer and usually consumes more tokens than a standard review.',
+    id: definition.id,
+    name: definition.name,
+    description: definition.description,
+    warning: definition.warning,
     strategyLevel: storedConfig.strategy_level,
     memberStrategyOverrides: storedConfig.member_strategy_overrides,
     executionPolicy: executionPolicyFromStoredConfig(storedConfig),
+    definition,
     members: [...coreMembers, ...extraMembers],
     coreMembers,
     extraMembers,
@@ -1029,13 +1219,15 @@ export function resolveDefaultReviewTeam(
 export async function loadDefaultReviewTeam(
   workspacePath?: string,
 ): Promise<ReviewTeam> {
-  const [storedConfig, subagents, rawModels] = await Promise.all([
+  const [definition, storedConfig, subagents, rawModels] = await Promise.all([
+    loadDefaultReviewTeamDefinition(),
     loadDefaultReviewTeamConfig(),
     SubagentAPI.listSubagents({ workspacePath }),
     configAPI.getConfig('ai.models').catch(() => undefined),
   ]);
 
   return resolveDefaultReviewTeam(subagents, storedConfig, {
+    definition,
     availableModelIds: extractAvailableModelIds(rawModels),
   });
 }
@@ -1099,10 +1291,11 @@ function toManifestMember(
     model: member.model || DEFAULT_REVIEW_TEAM_MODEL,
     configuredModel: member.configuredModel || member.model || DEFAULT_REVIEW_TEAM_MODEL,
     modelFallbackReason: member.modelFallbackReason,
-    defaultModelSlot: strategyProfile.defaultModelSlot,
+    defaultModelSlot: member.defaultModelSlot ?? strategyProfile.defaultModelSlot,
     strategyLevel: member.strategyLevel,
     strategySource: member.strategySource,
-    strategyDirective: roleDirective || strategyProfile.promptDirective,
+    strategyDirective:
+      member.strategyDirective || roleDirective || strategyProfile.promptDirective,
     locked: member.locked,
     source: member.source,
     subagentSource: member.subagentSource,
@@ -1511,8 +1704,11 @@ function formatResponsibilities(items: string[]): string {
   return items.map((item) => `    - ${item}`).join('\n');
 }
 
-function formatStrategyImpact(strategyLevel: ReviewStrategyLevel): string {
-  const definition = getReviewStrategyProfile(strategyLevel);
+function formatStrategyImpact(
+  strategyLevel: ReviewStrategyLevel,
+  strategyProfiles: Record<ReviewStrategyLevel, ReviewStrategyProfile> = REVIEW_STRATEGY_PROFILES,
+): string {
+  const definition = strategyProfiles[strategyLevel];
   return `Token/time impact: approximately ${definition.tokenImpact} token usage and ${definition.runtimeImpact} runtime.`;
 }
 
@@ -1657,15 +1853,16 @@ export function buildReviewTeamPromptBlock(
       )
       : ['  - none']),
   ].join('\n');
+  const strategyProfiles = team.definition?.strategyProfiles ?? REVIEW_STRATEGY_PROFILES;
   const strategyRules = REVIEW_STRATEGY_LEVELS.map((level) => {
-    const definition = getReviewStrategyProfile(level);
+    const definition = strategyProfiles[level];
     const roleEntries = Object.entries(definition.roleDirectives) as [ReviewRoleDirectiveKey, string][];
     const roleLines = roleEntries.map(
       ([role, directive]) => `    - ${role}: ${directive}`,
     );
     return [
       `- ${level}: ${definition.summary}`,
-      `  - ${formatStrategyImpact(level)}`,
+      `  - ${formatStrategyImpact(level, strategyProfiles)}`,
       `  - Default model slot: ${definition.defaultModelSlot}`,
       `  - Prompt directive (fallback): ${definition.promptDirective}`,
       `  - Role-specific directives:`,
@@ -1700,7 +1897,7 @@ export function buildReviewTeamPromptBlock(
     '- If a skipped reviewer has reason budget_limited, mention the budget mode and the coverage tradeoff.',
     '- If a skipped reviewer has reason invalid_tooling, report it as a configuration issue and do not reduce confidence in the reviewers that did run.',
     '- If target_resolution is unknown, conditional reviewers may be activated conservatively; report that as coverage context.',
-    '- Always run the four locked core reviewer roles first: ReviewBusinessLogic, ReviewPerformance, ReviewSecurity, and ReviewArchitecture.',
+    `- Run the active core reviewer roles first: ${formatManifestList(manifest.coreReviewers, 'none')}.`,
     '- Run ReviewJudge only after the reviewer batch finishes, as the quality-gate pass.',
     '- If other extra reviewers are configured and enabled, run them in parallel with the locked reviewers whenever possible.',
     '- When a configured member entry provides model_id, pass model_id with that value to the matching Task call.',
@@ -1714,7 +1911,7 @@ export function buildReviewTeamPromptBlock(
     '- Wait for explicit user approval before starting any remediation.',
     '- The Review Quality Inspector acts as a third-party arbiter: it primarily examines reviewer reports for logical consistency and evidence quality, and only uses code inspection tools for targeted spot-checks when a specific claim needs verification.',
     'Review strategy rules:',
-    `- Team strategy: ${team.strategyLevel}. ${formatStrategyImpact(team.strategyLevel)}`,
+    `- Team strategy: ${team.strategyLevel}. ${formatStrategyImpact(team.strategyLevel, strategyProfiles)}`,
     commonStrategyRules,
     'Review strategy profiles:',
     strategyRules,

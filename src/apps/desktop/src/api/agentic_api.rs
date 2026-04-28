@@ -13,6 +13,9 @@ use bitfun_core::agentic::coordination::{
     SubagentTimeoutAction,
 };
 use bitfun_core::agentic::core::*;
+use bitfun_core::agentic::deep_review_policy::{
+    default_review_team_definition, ReviewTeamDefinition,
+};
 use bitfun_core::agentic::image_analysis::ImageContextData;
 use bitfun_core::agentic::tools::image_context::get_image_context;
 #[derive(Debug, Deserialize)]
@@ -819,6 +822,11 @@ pub async fn get_available_modes(state: State<'_, AppState>) -> Result<Vec<ModeI
         .collect();
 
     Ok(dtos)
+}
+
+#[tauri::command]
+pub async fn get_default_review_team_definition() -> Result<ReviewTeamDefinition, String> {
+    Ok(default_review_team_definition())
 }
 
 #[derive(Debug, Serialize)]
