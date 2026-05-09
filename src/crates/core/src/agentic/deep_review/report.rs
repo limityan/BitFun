@@ -4,6 +4,7 @@ use crate::agentic::agents::get_agent_registry;
 use crate::agentic::context_profile::ContextProfilePolicy;
 use crate::agentic::coordination::get_global_coordinator;
 use crate::agentic::core::CompressionContract;
+use crate::agentic::deep_review::manifest::DeepReviewScopeProfile;
 use crate::agentic::deep_review_policy::{
     deep_review_capacity_skip_count, deep_review_concurrency_cap_rejection_count,
     deep_review_runtime_diagnostics_snapshot, DeepReviewIncrementalCache,
@@ -345,6 +346,20 @@ pub(crate) fn fill_deep_review_reliability_signals(
     run_manifest: Option<&Value>,
     compression_contract: Option<&CompressionContract>,
 ) {
+    if let Some(scope_profile) = run_manifest.and_then(DeepReviewScopeProfile::from_manifest) {
+        if scope_profile.is_reduced_depth() {
+            let mut signal = json!({
+                "kind": "reduced_scope",
+                "severity": "info",
+                "source": "manifest"
+            });
+            if let Some(detail) = scope_profile.coverage_expectation() {
+                signal["detail"] = json!(detail);
+            }
+            push_reliability_signal_if_missing(input, signal);
+        }
+    }
+
     if let Some(token_budget) = run_manifest
         .and_then(|manifest| value_for_any_key(manifest, &["tokenBudget", "token_budget"]))
     {
