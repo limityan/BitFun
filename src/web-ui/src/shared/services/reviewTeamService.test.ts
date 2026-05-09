@@ -937,6 +937,85 @@ describe('reviewTeamService', () => {
     expect(promptBlock).toContain('Use shared_context_cache entries');
   });
 
+  it('builds a metadata-only evidence pack without source, diff, or model output', () => {
+    const team = resolveDefaultReviewTeam(
+      [
+        ...coreSubagents(),
+        subagent('ExtraEnabled', true, 'user', 'fast', true, true),
+      ],
+      storedConfigWithExtra(['ExtraEnabled']),
+    );
+    const files = [
+      'src/web-ui/src/locales/en-US/flow-chat.json',
+      'src/apps/desktop/src/api/agentic_api.rs',
+      'src/crates/api-layer/src/review.rs',
+      'package.json',
+    ];
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      target: classifyReviewTargetFromFiles(files, 'workspace_diff'),
+      changeStats: {
+        fileCount: files.length,
+        totalLinesChanged: 120,
+        lineCountSource: 'diff_stat',
+      },
+      strategyOverride: 'quick',
+    });
+
+    expect(manifest.evidencePack).toMatchObject({
+      version: 1,
+      source: 'target_manifest',
+      changedFiles: files,
+      diffStat: {
+        fileCount: files.length,
+        totalChangedLines: 120,
+        lineCountSource: 'diff_stat',
+      },
+      riskFocusTags: manifest.scopeProfile?.riskFocusTags,
+      packetIds: expect.arrayContaining([
+        'reviewer:ReviewBusinessLogic',
+        'judge:ReviewJudge',
+      ]),
+      privacy: {
+        content: 'metadata_only',
+      },
+    });
+    expect(manifest.evidencePack?.contractHints).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: 'i18n_key',
+          filePath: 'src/web-ui/src/locales/en-US/flow-chat.json',
+        }),
+        expect.objectContaining({
+          kind: 'tauri_command',
+          filePath: 'src/apps/desktop/src/api/agentic_api.rs',
+        }),
+        expect.objectContaining({
+          kind: 'api_contract',
+          filePath: 'src/crates/api-layer/src/review.rs',
+        }),
+        expect.objectContaining({
+          kind: 'config_key',
+          filePath: 'package.json',
+        }),
+      ]),
+    );
+    expect(manifest.evidencePack?.hunkHints).toEqual(
+      files.map((filePath) => ({
+        filePath,
+        changedLineCount: 30,
+        lineCountSource: 'diff_stat',
+      })),
+    );
+
+    const serializedEvidencePack = JSON.stringify(manifest.evidencePack);
+    expect(serializedEvidencePack).not.toContain('promptDirective');
+    expect(serializedEvidencePack).not.toContain('allowedTools');
+    expect(serializedEvidencePack).not.toContain('fullDiff');
+    expect(serializedEvidencePack).not.toContain('sourceText');
+    expect(serializedEvidencePack).not.toContain('modelOutput');
+  });
+
   it('builds an incremental review cache plan for follow-up reviews', () => {
     const team = resolveDefaultReviewTeam(
       coreSubagents(),

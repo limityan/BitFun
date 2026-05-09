@@ -38,6 +38,66 @@ export interface DeepReviewScopeProfile {
   coverageExpectation: string;
 }
 
+export type DeepReviewEvidencePackSource = 'target_manifest';
+export type DeepReviewEvidencePackContentBoundary = 'metadata_only';
+export type DeepReviewEvidencePackContractHintKind =
+  | 'i18n_key'
+  | 'tauri_command'
+  | 'api_contract'
+  | 'config_key';
+
+export interface DeepReviewEvidencePackDiffStat {
+  fileCount: number;
+  totalChangedLines?: number;
+  lineCountSource: ReviewTeamChangeStats['lineCountSource'];
+}
+
+export interface DeepReviewEvidencePackHunkHint {
+  filePath: string;
+  changedLineCount: number;
+  lineCountSource: ReviewTeamChangeStats['lineCountSource'];
+}
+
+export interface DeepReviewEvidencePackContractHint {
+  kind: DeepReviewEvidencePackContractHintKind;
+  filePath: string;
+  source: 'path_classifier';
+}
+
+export interface DeepReviewEvidencePackBudget {
+  maxChangedFiles: number;
+  maxHunkHints: number;
+  maxContractHints: number;
+  omittedChangedFileCount: number;
+  omittedHunkHintCount: number;
+  omittedContractHintCount: number;
+}
+
+export interface DeepReviewEvidencePackPrivacyBoundary {
+  content: DeepReviewEvidencePackContentBoundary;
+  excludes: [
+    'source_text',
+    'full_diff',
+    'model_output',
+    'provider_raw_body',
+    'full_file_contents',
+  ];
+}
+
+export interface DeepReviewEvidencePack {
+  version: 1;
+  source: DeepReviewEvidencePackSource;
+  changedFiles: string[];
+  diffStat: DeepReviewEvidencePackDiffStat;
+  domainTags: ReviewDomainTag[];
+  riskFocusTags: DeepReviewRiskFocusTag[];
+  packetIds: string[];
+  hunkHints: DeepReviewEvidencePackHunkHint[];
+  contractHints: DeepReviewEvidencePackContractHint[];
+  budget: DeepReviewEvidencePackBudget;
+  privacy: DeepReviewEvidencePackPrivacyBoundary;
+}
+
 export interface ReviewStrategyCommonRules {
   reviewerPromptRules: string[];
 }
@@ -373,6 +433,7 @@ export interface ReviewTeamRunManifest {
   concurrencyPolicy: ReviewTeamConcurrencyPolicy;
   changeStats?: ReviewTeamChangeStats;
   preReviewSummary: ReviewTeamPreReviewSummary;
+  evidencePack?: DeepReviewEvidencePack;
   sharedContextCache: ReviewTeamSharedContextCachePlan;
   incrementalReviewCache: ReviewTeamIncrementalReviewCachePlan;
   tokenBudget: ReviewTeamTokenBudgetPlan;
