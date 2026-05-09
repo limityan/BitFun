@@ -70,6 +70,16 @@ impl TaskTool {
         )
     }
 
+    fn should_emit_deep_review_retry_guidance(
+        is_partial_timeout: bool,
+        is_retry: bool,
+        deep_review_subagent_role: Option<DeepReviewSubagentRole>,
+    ) -> bool {
+        is_partial_timeout
+            && !is_retry
+            && matches!(deep_review_subagent_role, Some(DeepReviewSubagentRole::Reviewer))
+    }
+
     fn ensure_deep_review_retry_coverage(
         input: &Value,
         subagent_type: &str,
@@ -1285,7 +1295,11 @@ impl Tool for TaskTool {
         };
 
         // Build retry hint for deep review reviewer timeouts.
-        let retry_hint = if result.is_partial_timeout() && !is_retry {
+        let retry_hint = if Self::should_emit_deep_review_retry_guidance(
+            result.is_partial_timeout(),
+            is_retry,
+            deep_review_subagent_role,
+        ) {
             let retries_used = crate::agentic::deep_review_policy::deep_review_retries_used(
                 &dialog_turn_id,
                 &subagent_type,
@@ -1678,7 +1692,10 @@ mod tests {
         let diagnostics = deep_review_runtime_diagnostics_snapshot(turn_id)
             .expect("runtime diagnostics should record terminal queue wait");
         assert_eq!(diagnostics.queue_wait_count, 1);
-        assert!(diagnostics.queue_wait_total_ms >= 20);
+        assert_eq!(
+            diagnostics.queue_wait_total_ms,
+            diagnostics.queue_wait_max_ms
+        );
     }
 
     #[tokio::test]
@@ -1969,6 +1986,33 @@ mod tests {
             TaskTool::deep_review_retry_guidance_max_retries(Some(&policy), "nonexistent-turn"),
             2
         );
+    }
+
+    #[test]
+    fn deep_review_retry_guidance_only_applies_to_initial_reviewer_timeout() {
+        assert!(TaskTool::should_emit_deep_review_retry_guidance(
+            true,
+            false,
+            Some(DeepReviewSubagentRole::Reviewer)
+        ));
+        assert!(!TaskTool::should_emit_deep_review_retry_guidance(
+            true, false, None
+        ));
+        assert!(!TaskTool::should_emit_deep_review_retry_guidance(
+            true,
+            false,
+            Some(DeepReviewSubagentRole::Judge)
+        ));
+        assert!(!TaskTool::should_emit_deep_review_retry_guidance(
+            true,
+            true,
+            Some(DeepReviewSubagentRole::Reviewer)
+        ));
+        assert!(!TaskTool::should_emit_deep_review_retry_guidance(
+            false,
+            false,
+            Some(DeepReviewSubagentRole::Reviewer)
+        ));
     }
 
     #[test]

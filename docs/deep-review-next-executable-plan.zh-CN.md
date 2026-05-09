@@ -387,7 +387,7 @@ git diff --check
 | M2-P3 Queue event and action-bar reason surface | 展示 provider queue reason、elapsed wait、controls | `DeepReviewActionBar.tsx` 或 split components、`deepReviewQueueStateEvents.ts`、locales | 是，用户可见 queue notice | action bar tests；queue event tests；locale completeness | pause/continue/cancel 可用；provider reason localized；不新增大 modal。 |
 | M2-P4 Manual retry extraction and launch | 已完成：从 report metadata 提取 retryable unresolved slices，增加显式 retry action | `codeReviewReport.ts`、`DeepReviewActionBar.tsx`、action-bar store、locales | 是，新增手动 retry | report parser tests；action-bar tests；locale completeness | 只对 `partial_timeout` / transient `capacity_skipped` 启用；非 retryable source 禁用且有原因。 |
 | M2-P5 Bounded auto retry preference | 已完成：实现 opt-in 设置读取、suppression reasons、runtime guards；未实现后台自动 redispatch scheduler | `reviewTeamService.ts` / `review-team/config.ts`、`task_tool.rs`、`deep_review/concurrency_policy.rs`、`budget.rs` | 是，但默认关闭 | Rust retry admission tests；settings tests；locale tests | 默认 false；预算、scope、elapsed guard、lower timeout 全部生效；不会循环。 |
-| M2-P6 Reliability and docs close | 本轮执行中：更新 report reliability、文档状态和 non-DeepReview inventory | Deep Review docs | 无新增行为 | web report/settings tests；stale claim scan；Rust verification 最后统一执行 | final report 对 queue/retry 诚实；源文档只在验证后标记 implemented。 |
+| M2-P6 Reliability and docs close | 已完成：更新 report reliability、文档状态和 non-DeepReview inventory | Deep Review docs | 无新增行为 | web report/settings tests；stale claim scan；最终 release gate 已执行 | final report 对 queue/retry 诚实；源文档只在验证后标记 implemented。 |
 
 M2 的实现顺序必须固定为 P1 -> P2 -> P3 -> P4 -> P5 -> P6。不要在 P2 同时做 manual retry，也不要在 P4 顺手启用 auto retry。
 

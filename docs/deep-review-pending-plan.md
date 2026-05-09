@@ -82,7 +82,7 @@ Verification:
 
 - Rust tests exist for queueable vs non-queueable provider errors, queue expiry, pause, cancel, and diagnostics counters.
 - Frontend tests exist for provider queue notice, localized reason text, and queue-state updates.
-- Full Rust verification is deferred to the combined milestone verification pass.
+- Final release-gate Rust verification passed with `cargo test -p bitfun-core deep_review -- --nocapture` and `cargo check --workspace --exclude bitfun-cli`.
 
 Exit criteria:
 
@@ -162,7 +162,7 @@ Exit criteria:
 
 ### Round 3: Cost-Aware Review Scope
 
-Status: Implemented with guardrails; remaining work is release-gate verification, observability, and wording alignment.
+Status: Implemented with guardrails; release-gate verification, observability, and wording alignment are recorded.
 
 Goal: Reduce review time and token use on large or slow-model changes by making quick/default strategies focus first on high-risk evidence, while keeping `deep` as the full-depth option.
 
@@ -310,7 +310,7 @@ Exit criteria:
 
 ### Round 5: Documentation Reconciliation And Release Gate
 
-Status: Active release gate for completed provider queue, retry-control, cost-aware scope, and evidence-pack rounds.
+Status: Completed release gate for provider queue, retry-control, cost-aware scope, and evidence-pack rounds.
 
 Goal: Keep documents and code aligned after each functional close.
 

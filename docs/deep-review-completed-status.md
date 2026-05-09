@@ -320,7 +320,7 @@ The source documents record focused and release-gate verification, including:
 - focused frontend tests for `reviewTeamService`, Deep Review action bar/store, queue events, and report utilities;
 - focused Rust tests for runtime diagnostics, cache behavior, retry admission, queue/capacity behavior, and report reliability.
 
-The latest M3 consolidation records focused web verification and static stale-claim/privacy checks. Full Rust verification is deferred to the combined milestone verification pass.
+The latest M4 release gate records focused web verification, static stale-claim/privacy checks, `cargo test -p bitfun-core deep_review -- --nocapture`, and `cargo check --workspace --exclude bitfun-cli`.
 
 ## Completed Boundary Summary
 
