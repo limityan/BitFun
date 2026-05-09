@@ -28,7 +28,11 @@ import {
 } from '../../store/deepReviewActionBarStore';
 import type { ReviewRemediationItem } from '../../utils/codeReviewRemediation';
 import { buildSelectedReviewRemediationPrompt, REMEDIATION_GROUP_ORDER } from '../../utils/codeReviewRemediation';
-import type { RemediationGroupId } from '../../utils/codeReviewReport';
+import {
+  buildDeepReviewRetryPrompt,
+  extractDeepReviewRetryableSlices,
+  type RemediationGroupId,
+} from '../../utils/codeReviewReport';
 import { continueDeepReviewSession } from '../../services/DeepReviewContinuationService';
 import { flowChatManager } from '../../services/FlowChatManager';
 import { globalEventBus } from '@/infrastructure/event-bus';
@@ -226,6 +230,13 @@ export const ReviewActionBar: React.FC = () => {
     return Array.from(sessions.values()).find((s) => s.sessionId === childSessionId) ?? null;
   }, [sessions, childSessionId]);
 
+  const retryableSlices = useMemo(() => {
+    if (!isDeepReview || !reviewData || !childSession?.deepReviewRunManifest) {
+      return [];
+    }
+    return extractDeepReviewRetryableSlices(reviewData, childSession.deepReviewRunManifest);
+  }, [isDeepReview, reviewData, childSession?.deepReviewRunManifest]);
+
   const reviewerProgress = useMemo(() => {
     if (!childSession || childSession.sessionKind !== 'deep_review') return [];
     return aggregateReviewerProgress(childSession);
@@ -392,6 +403,35 @@ export const ReviewActionBar: React.FC = () => {
       store.setActiveAction(null);
     }
   }, [reviewData, childSessionId, selectedRemediationIds, customInstructions, reviewMode, isDeepReview, store, t, completedRemediationIds]);
+
+  const handleRetryIncompleteSlices = useCallback(async () => {
+    if (!childSessionId || retryableSlices.length === 0) return;
+
+    store.setActiveAction('retry');
+    try {
+      await flowChatManager.sendMessage(
+        buildDeepReviewRetryPrompt(retryableSlices),
+        childSessionId,
+        t('deepReviewActionBar.retryIncompleteRequestDisplay', {
+          count: retryableSlices.length,
+          defaultValue: `Retry ${retryableSlices.length} incomplete Deep Review slice(s)`,
+        }),
+        'DeepReview',
+        'agentic',
+      );
+      store.minimize();
+    } catch (error) {
+      log.error('Failed to start DeepReview retry slices', { childSessionId, error });
+      const message = error instanceof Error
+        ? error.message
+        : t('deepReviewActionBar.retryIncompleteFailed', {
+          defaultValue: 'Unable to retry incomplete Deep Review slices.',
+        });
+      notificationService.error(message, { duration: 5000 });
+    } finally {
+      store.setActiveAction(null);
+    }
+  }, [childSessionId, retryableSlices, store, t]);
 
   const handleFillBackInput = useCallback(async () => {
     if (!reviewData) return;
@@ -1272,6 +1312,21 @@ export const ReviewActionBar: React.FC = () => {
 
       {/* Action buttons */}
       <div className="deep-review-action-bar__actions">
+        {phase === 'review_completed' && isDeepReview && retryableSlices.length > 0 && (
+          <Button
+            variant="secondary"
+            size="small"
+            isLoading={activeAction === 'retry'}
+            disabled={activeAction !== null}
+            onClick={() => void handleRetryIncompleteSlices()}
+          >
+            <RotateCcw size={14} />
+            {t('deepReviewActionBar.retryIncompleteSlices', {
+              count: retryableSlices.length,
+              defaultValue: `Retry incomplete slices (${retryableSlices.length})`,
+            })}
+          </Button>
+        )}
         {phase === 'review_completed' && remediationItems.length > 0 && (
           <>
             <Button

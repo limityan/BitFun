@@ -57,6 +57,12 @@ export interface CodeReviewReviewer {
   packet_id?: string;
   packet_status_source?: ReviewPacketStatusSource;
   issue_count?: number;
+  covered_files?: string[];
+  retry_scope_files?: string[];
+  unresolved_files?: string[];
+  capacity_reason?: string;
+  provider_capacity_reason?: string;
+  queue_skip_reason?: string;
 }
 
 export interface CodeReviewReportSectionsData {
@@ -216,6 +222,12 @@ const STRENGTH_GROUP_ORDER: StrengthGroupId[] = [
 
 const DEGRADED_REVIEWER_STATUSES = new Set(['timed_out', 'cancelled_by_user', 'failed', 'skipped']);
 const PARTIAL_TIMEOUT_REVIEWER_STATUSES = new Set(['partial_timeout', 'timed_out', 'cancelled_by_user']);
+const RETRYABLE_CAPACITY_REASONS = new Set([
+  'provider_rate_limit',
+  'provider_concurrency_limit',
+  'retry_after',
+  'temporary_overload',
+]);
 const RELIABILITY_NOTICE_ORDER: ReviewReliabilityNoticeKind[] = [
   'context_pressure',
   'skipped_reviewers',
@@ -298,6 +310,19 @@ export const DEFAULT_CODE_REVIEW_MARKDOWN_LABELS: CodeReviewReportMarkdownLabels
   },
 };
 
+export type DeepReviewRetryableSliceSourceStatus = 'partial_timeout' | 'capacity_skipped';
+
+export interface DeepReviewRetryableSlice {
+  sourcePacketId: string;
+  reviewerId: string;
+  reviewerName: string;
+  sourceStatus: DeepReviewRetryableSliceSourceStatus;
+  coveredFiles: string[];
+  retryScopeFiles: string[];
+  retryTimeoutSeconds: number;
+  capacityReason?: string;
+}
+
 function nonEmpty(values?: Array<string | undefined | null>): string[] {
   const seen = new Set<string>();
   const result: string[] = [];
@@ -312,6 +337,182 @@ function nonEmpty(values?: Array<string | undefined | null>): string[] {
   }
 
   return result;
+}
+
+function reviewerStringArray(
+  reviewer: CodeReviewReviewer,
+  keys: Array<keyof CodeReviewReviewer | string>,
+): string[] {
+  const raw = reviewer as unknown as Record<string, unknown>;
+  for (const key of keys) {
+    const value = raw[String(key)];
+    if (!Array.isArray(value)) {
+      continue;
+    }
+    return nonEmpty(value.map((item) => (typeof item === 'string' ? item : undefined)));
+  }
+  return [];
+}
+
+function reviewerString(
+  reviewer: CodeReviewReviewer,
+  keys: Array<keyof CodeReviewReviewer | string>,
+): string | undefined {
+  const raw = reviewer as unknown as Record<string, unknown>;
+  for (const key of keys) {
+    const value = raw[String(key)];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+  return undefined;
+}
+
+function findWorkPacket(
+  runManifest: ReviewTeamRunManifest,
+  packetId: string,
+  reviewerId: string,
+) {
+  return runManifest.workPackets?.find((packet) => (
+    packet.packetId === packetId && packet.subagentId === reviewerId
+  ));
+}
+
+function retryTimeoutSecondsForPacket(sourceTimeoutSeconds: number): number | null {
+  if (!Number.isFinite(sourceTimeoutSeconds) || sourceTimeoutSeconds <= 1) {
+    return null;
+  }
+  return Math.max(1, Math.min(sourceTimeoutSeconds - 1, Math.floor(sourceTimeoutSeconds / 2)));
+}
+
+function isRetryableCapacityReviewer(reviewer: CodeReviewReviewer): string | null {
+  if (reviewer.status !== 'capacity_skipped') {
+    return null;
+  }
+
+  const terminalReason = reviewerString(reviewer, ['queue_skip_reason', 'queueSkipReason']);
+  if (terminalReason && !RETRYABLE_CAPACITY_REASONS.has(terminalReason)) {
+    return null;
+  }
+
+  const capacityReason = terminalReason ??
+    reviewerString(reviewer, [
+      'capacity_reason',
+      'capacityReason',
+      'provider_capacity_reason',
+      'providerCapacityReason',
+    ]);
+  return capacityReason && RETRYABLE_CAPACITY_REASONS.has(capacityReason)
+    ? capacityReason
+    : null;
+}
+
+export function extractDeepReviewRetryableSlices(
+  report: CodeReviewReportData,
+  runManifest?: ReviewTeamRunManifest,
+): DeepReviewRetryableSlice[] {
+  if (report.review_mode !== 'deep' || !runManifest?.workPackets?.length) {
+    return [];
+  }
+
+  const slices: DeepReviewRetryableSlice[] = [];
+  for (const reviewer of report.reviewers ?? []) {
+    const sourceStatus = reviewer.status === 'partial_timeout'
+      ? 'partial_timeout'
+      : reviewer.status === 'capacity_skipped'
+        ? 'capacity_skipped'
+        : null;
+    if (!sourceStatus) {
+      continue;
+    }
+
+    const capacityReason = isRetryableCapacityReviewer(reviewer);
+    if (sourceStatus === 'capacity_skipped' && !capacityReason) {
+      continue;
+    }
+
+    const sourcePacketId = reviewer.packet_id?.trim();
+    if (!sourcePacketId) {
+      continue;
+    }
+    const reviewerId = reviewerString(reviewer, ['subagent_id', 'subagentId']) ??
+      sourcePacketId.split(':')[1]?.split(':')[0]?.trim() ??
+      '';
+    if (!reviewerId) {
+      continue;
+    }
+
+    const packet = findWorkPacket(runManifest, sourcePacketId, reviewerId);
+    const packetFiles = nonEmpty(packet?.assignedScope.files ?? []);
+    if (!packet || packetFiles.length <= 1) {
+      continue;
+    }
+
+    const retryScopeFiles = reviewerStringArray(reviewer, [
+      'retry_scope_files',
+      'retryScopeFiles',
+      'unresolved_files',
+      'unresolvedFiles',
+    ]);
+    if (retryScopeFiles.length === 0 || retryScopeFiles.length >= packetFiles.length) {
+      continue;
+    }
+
+    const packetFileSet = new Set(packetFiles);
+    if (retryScopeFiles.some((file) => !packetFileSet.has(file))) {
+      continue;
+    }
+
+    const retryScopeSet = new Set(retryScopeFiles);
+    const coveredFiles = reviewerStringArray(reviewer, ['covered_files', 'coveredFiles'])
+      .filter((file) => packetFileSet.has(file) && !retryScopeSet.has(file));
+    const normalizedCoveredFiles = coveredFiles.length > 0
+      ? coveredFiles
+      : packetFiles.filter((file) => !retryScopeSet.has(file));
+
+    const retryTimeoutSeconds = retryTimeoutSecondsForPacket(packet.timeoutSeconds);
+    if (!retryTimeoutSeconds) {
+      continue;
+    }
+
+    slices.push({
+      sourcePacketId,
+      reviewerId,
+      reviewerName: reviewer.name || packet.displayName || reviewerId,
+      sourceStatus,
+      coveredFiles: normalizedCoveredFiles,
+      retryScopeFiles,
+      retryTimeoutSeconds,
+      ...(capacityReason ? { capacityReason } : {}),
+    });
+  }
+
+  return slices;
+}
+
+export function buildDeepReviewRetryPrompt(slices: DeepReviewRetryableSlice[]): string {
+  const retryTasks = slices.map((slice) => ({
+    subagent_type: slice.reviewerId,
+    retry: true,
+    timeout_seconds: slice.retryTimeoutSeconds,
+    retry_coverage: {
+      source_packet_id: slice.sourcePacketId,
+      source_status: slice.sourceStatus,
+      ...(slice.capacityReason ? { capacity_reason: slice.capacityReason } : {}),
+      covered_files: slice.coveredFiles,
+      retry_scope_files: slice.retryScopeFiles,
+    },
+  }));
+
+  return [
+    'Retry only the listed incomplete Deep Review slices in this same session.',
+    'Use the Task tool once for each retry task below. Do not retry files outside retry_scope_files.',
+    'After these retry tasks finish, run ReviewJudge and submit an updated code review report with honest coverage notes.',
+    '',
+    '<deep_review_retry_tasks>',
+    JSON.stringify(retryTasks, null, 2),
+    '</deep_review_retry_tasks>',
+  ].join('\n');
 }
 
 function buildGroups<TId extends string>(
