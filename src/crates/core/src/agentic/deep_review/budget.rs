@@ -38,6 +38,7 @@ struct DeepReviewTurnBudget {
     shared_context_uses: HashMap<DeepReviewSharedContextKey, DeepReviewSharedContextUseRecord>,
     effective_concurrency: Option<DeepReviewEffectiveConcurrencyState>,
     runtime_diagnostics: DeepReviewRuntimeDiagnostics,
+    created_at: Instant,
     updated_at: Instant,
 }
 
@@ -54,6 +55,7 @@ impl DeepReviewTurnBudget {
             shared_context_uses: HashMap::new(),
             effective_concurrency: None,
             runtime_diagnostics: DeepReviewRuntimeDiagnostics::default(),
+            created_at: now,
             updated_at: now,
         }
     }
@@ -251,6 +253,15 @@ impl DeepReviewBudgetTracker {
             shared_context_snapshot.duplicate_context_count,
         );
         (!diagnostics.is_empty()).then_some(diagnostics)
+    }
+
+    pub fn turn_elapsed_seconds(&self, parent_dialog_turn_id: &str) -> Option<u64> {
+        let budget = self.turns.get(parent_dialog_turn_id)?;
+        Some(
+            Instant::now()
+                .saturating_duration_since(budget.created_at)
+                .as_secs(),
+        )
     }
 
     pub fn record_shared_context_tool_use(

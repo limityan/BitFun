@@ -9,7 +9,9 @@ use std::time::{Duration, Instant};
 
 const DEFAULT_MAX_PARALLEL_INSTANCES: usize = 4;
 const DEFAULT_MAX_QUEUE_WAIT_SECONDS: u64 = 60;
+const DEFAULT_AUTO_RETRY_ELAPSED_GUARD_SECONDS: u64 = 180;
 const MAX_QUEUE_WAIT_SECONDS: u64 = 600;
+const MAX_AUTO_RETRY_ELAPSED_GUARD_SECONDS: u64 = 900;
 const EFFECTIVE_CONCURRENCY_RECOVERY_SUCCESS_WINDOW: usize = 3;
 
 /// Dynamic concurrency control for deep review reviewer launches.
@@ -23,6 +25,10 @@ pub struct DeepReviewConcurrencyPolicy {
     pub max_queue_wait_seconds: u64,
     /// Whether to batch extras separately from core reviewers.
     pub batch_extras_separately: bool,
+    /// Whether backend-owned bounded automatic reviewer retries may be admitted.
+    pub allow_bounded_auto_retry: bool,
+    /// Maximum elapsed turn time before backend-owned automatic retries are suppressed.
+    pub auto_retry_elapsed_guard_seconds: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -168,6 +174,8 @@ impl Default for DeepReviewConcurrencyPolicy {
             stagger_seconds: 0,
             max_queue_wait_seconds: DEFAULT_MAX_QUEUE_WAIT_SECONDS,
             batch_extras_separately: true,
+            allow_bounded_auto_retry: false,
+            auto_retry_elapsed_guard_seconds: DEFAULT_AUTO_RETRY_ELAPSED_GUARD_SECONDS,
         }
     }
 }
@@ -209,6 +217,16 @@ impl DeepReviewConcurrencyPolicy {
                 .get("batchExtrasSeparately")
                 .and_then(Value::as_bool)
                 .unwrap_or(true),
+            allow_bounded_auto_retry: obj
+                .get("allowBoundedAutoRetry")
+                .and_then(Value::as_bool)
+                .unwrap_or(false),
+            auto_retry_elapsed_guard_seconds: clamp_u64(
+                obj.get("autoRetryElapsedGuardSeconds"),
+                30,
+                MAX_AUTO_RETRY_ELAPSED_GUARD_SECONDS,
+                DEFAULT_AUTO_RETRY_ELAPSED_GUARD_SECONDS,
+            ),
         }
     }
 

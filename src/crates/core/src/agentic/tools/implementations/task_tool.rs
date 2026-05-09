@@ -7,7 +7,9 @@ use crate::agentic::deep_review::task_adapter::{
 use crate::agentic::deep_review_policy::{
     deep_review_active_reviewer_count, deep_review_effective_concurrency_snapshot,
     deep_review_effective_parallel_instances, deep_review_has_judge_been_launched,
-    load_default_deep_review_policy, record_deep_review_effective_concurrency_success,
+    deep_review_turn_elapsed_seconds, load_default_deep_review_policy,
+    record_deep_review_effective_concurrency_success, record_deep_review_runtime_auto_retry,
+    record_deep_review_runtime_auto_retry_suppressed, record_deep_review_runtime_manual_retry,
     record_deep_review_task_budget, try_begin_deep_review_active_reviewer,
     DeepReviewActiveReviewerGuard, DeepReviewCapacityQueueReason, DeepReviewConcurrencyPolicy,
     DeepReviewExecutionPolicy, DeepReviewIncrementalCache, DeepReviewPolicyViolation,
@@ -78,6 +80,59 @@ impl TaskTool {
             subagent_type,
             run_manifest,
         )
+    }
+
+    fn is_deep_review_auto_retry(input: &Value) -> bool {
+        input
+            .get("auto_retry")
+            .and_then(Value::as_bool)
+            .unwrap_or(false)
+    }
+
+    fn auto_retry_suppression_reason(code: &str) -> &'static str {
+        match code {
+            "deep_review_auto_retry_disabled" => "auto_retry_disabled",
+            "deep_review_auto_retry_elapsed_guard_exceeded" => "elapsed_guard_exceeded",
+            "deep_review_retry_budget_exhausted" => "budget_exhausted",
+            "deep_review_retry_without_initial_attempt" => "without_initial_attempt",
+            "deep_review_retry_missing_coverage" => "missing_coverage",
+            "deep_review_retry_missing_packet_id" => "missing_coverage",
+            "deep_review_retry_missing_status" => "missing_coverage",
+            "deep_review_retry_non_retryable_status" => "non_retryable_status",
+            "deep_review_retry_unknown_packet" => "unknown_packet",
+            "deep_review_retry_missing_packet_scope" => "unknown_packet",
+            "deep_review_retry_timeout_required" => "timeout_not_reduced",
+            "deep_review_retry_timeout_not_reduced" => "timeout_not_reduced",
+            "deep_review_retry_empty_scope" => "empty_scope",
+            "deep_review_retry_scope_not_reduced" => "scope_not_reduced",
+            _ => "invalid_coverage",
+        }
+    }
+
+    fn ensure_deep_review_auto_retry_allowed(
+        conc_policy: &DeepReviewConcurrencyPolicy,
+        dialog_turn_id: &str,
+    ) -> Result<(), DeepReviewPolicyViolation> {
+        if !conc_policy.allow_bounded_auto_retry {
+            return Err(DeepReviewPolicyViolation::new(
+                "deep_review_auto_retry_disabled",
+                "DeepReview bounded automatic retry is disabled by Review Team settings",
+            ));
+        }
+
+        if let Some(elapsed_seconds) = deep_review_turn_elapsed_seconds(dialog_turn_id) {
+            if elapsed_seconds > conc_policy.auto_retry_elapsed_guard_seconds {
+                return Err(DeepReviewPolicyViolation::new(
+                    "deep_review_auto_retry_elapsed_guard_exceeded",
+                    format!(
+                        "DeepReview automatic retry elapsed guard exceeded (elapsed: {}s, guard: {}s)",
+                        elapsed_seconds, conc_policy.auto_retry_elapsed_guard_seconds
+                    ),
+                ));
+            }
+        }
+
+        Ok(())
     }
 
     fn prompt_with_deep_review_retry_scope(prompt: &str, retry_scope_files: &[String]) -> String {
@@ -316,7 +371,7 @@ Usage notes:
 - The 'workspace_path' parameter must still be provided explicitly for the Explore and FileFinder agent.
 - Use 'model_id' when a caller needs a specific model or model slot for the subagent. Omit it to use the agent default.
 - Use 'timeout_seconds' when you need a hard deadline for the subagent. Omit it or set it to 0 to disable the timeout.
-- For DeepReview only, set 'retry' to true when re-dispatching a reviewer after that same reviewer returned partial_timeout or an explicit transient capacity failure in the current turn. Retry calls must include retry_coverage with source_packet_id, source_status, covered_files, and a smaller retry_scope_files list.
+- For DeepReview only, set 'retry' to true when re-dispatching a reviewer after that same reviewer returned partial_timeout or an explicit transient capacity failure in the current turn. Retry calls must include retry_coverage with source_packet_id, source_status, covered_files, and a smaller retry_scope_files list. Do not set 'auto_retry' unless this is a backend-owned automatic retry admitted by Review Team settings.
 - Launch multiple agents concurrently whenever possible, to maximize performance; to do that, use a single message with multiple tool calls
 - When the agent is done, it will return a single message back to you.
 - The agent's outputs should generally be trusted
@@ -442,6 +497,10 @@ impl Tool for TaskTool {
                 "retry": {
                     "type": "boolean",
                     "description": "DeepReview only: true when this Task call is a retry for the same reviewer role after partial_timeout or an explicit transient capacity failure in the current turn."
+                },
+                "auto_retry": {
+                    "type": "boolean",
+                    "description": "DeepReview only: true only for backend-owned bounded automatic retries. Requires Review Team auto retry opt-in and retry=true. User/model-issued retry actions must omit this field or set it to false."
                 },
                 "retry_coverage": {
                     "type": "object",
@@ -624,6 +683,8 @@ impl Tool for TaskTool {
             None => None,
         };
         let is_retry = input.get("retry").and_then(Value::as_bool).unwrap_or(false);
+        let requested_auto_retry = Self::is_deep_review_auto_retry(input);
+        let is_auto_retry = is_retry && requested_auto_retry;
         let current_workspace_path = context
             .workspace_root()
             .map(|path| path.to_string_lossy().into_owned());
@@ -767,6 +828,11 @@ impl Tool for TaskTool {
                     ))
                 })?;
             deep_review_subagent_role = Some(role);
+            if requested_auto_retry && !is_retry {
+                return Err(BitFunError::tool(
+                    "auto_retry requires retry=true for DeepReview Task calls".to_string(),
+                ));
+            }
             if let Some(gate) = run_manifest
                 .as_ref()
                 .and_then(DeepReviewRunManifestGate::from_value)
@@ -778,20 +844,42 @@ impl Tool for TaskTool {
                     ))
                 })?;
             }
+            let conc_policy = policy
+                .concurrency_policy_from_manifest(run_manifest.as_ref().unwrap_or(&Value::Null));
+            deep_review_concurrency_policy = Some(conc_policy.clone());
             if is_retry && role == DeepReviewSubagentRole::Reviewer {
-                deep_review_retry_scope_files = Some(
-                    Self::ensure_deep_review_retry_coverage(
-                        input,
-                        &subagent_type,
-                        run_manifest.as_ref(),
-                    )
-                    .map_err(|violation| {
-                        BitFunError::tool(format!(
+                deep_review_retry_scope_files = Some(match Self::ensure_deep_review_retry_coverage(
+                    input,
+                    &subagent_type,
+                    run_manifest.as_ref(),
+                ) {
+                    Ok(retry_scope_files) => retry_scope_files,
+                    Err(violation) => {
+                        if is_auto_retry {
+                            record_deep_review_runtime_auto_retry_suppressed(
+                                &dialog_turn_id,
+                                Self::auto_retry_suppression_reason(violation.code),
+                            );
+                        }
+                        return Err(BitFunError::tool(format!(
                             "DeepReview Task policy violation: {}",
                             violation.to_tool_error_message()
-                        ))
-                    })?,
-                );
+                        )));
+                    }
+                });
+                if is_auto_retry {
+                    Self::ensure_deep_review_auto_retry_allowed(&conc_policy, &dialog_turn_id)
+                        .map_err(|violation| {
+                            record_deep_review_runtime_auto_retry_suppressed(
+                                &dialog_turn_id,
+                                Self::auto_retry_suppression_reason(violation.code),
+                            );
+                            BitFunError::tool(format!(
+                                "DeepReview Task policy violation: {}",
+                                violation.to_tool_error_message()
+                            ))
+                        })?;
+                }
             }
             let is_readonly = get_agent_registry()
                 .get_subagent_is_readonly(&subagent_type)
@@ -854,9 +942,6 @@ impl Tool for TaskTool {
             }
 
             // Enforce dynamic concurrency policy from the run manifest.
-            let conc_policy = policy
-                .concurrency_policy_from_manifest(run_manifest.as_ref().unwrap_or(&Value::Null));
-            deep_review_concurrency_policy = Some(conc_policy.clone());
             match role {
                 DeepReviewSubagentRole::Reviewer => {
                     deep_review_reviewer_configured_max_parallel_instances =
@@ -928,11 +1013,24 @@ impl Tool for TaskTool {
                 is_retry,
             )
             .map_err(|violation| {
+                if is_auto_retry {
+                    record_deep_review_runtime_auto_retry_suppressed(
+                        &dialog_turn_id,
+                        Self::auto_retry_suppression_reason(violation.code),
+                    );
+                }
                 BitFunError::tool(format!(
                     "DeepReview Task policy violation: {}",
                     violation.to_tool_error_message()
                 ))
             })?;
+            if is_retry && role == DeepReviewSubagentRole::Reviewer {
+                if is_auto_retry {
+                    record_deep_review_runtime_auto_retry(&dialog_turn_id);
+                } else {
+                    record_deep_review_runtime_manual_retry(&dialog_turn_id);
+                }
+            }
         }
 
         if let Some(retry_scope_files) = deep_review_retry_scope_files.as_ref() {
@@ -1388,6 +1486,8 @@ mod tests {
             stagger_seconds: 0,
             max_queue_wait_seconds: 60,
             batch_extras_separately: true,
+            allow_bounded_auto_retry: false,
+            auto_retry_elapsed_guard_seconds: 180,
         };
         // 0 active -> allowed
         assert!(policy
@@ -1412,6 +1512,8 @@ mod tests {
             stagger_seconds: 0,
             max_queue_wait_seconds: 60,
             batch_extras_separately: true,
+            allow_bounded_auto_retry: false,
+            auto_retry_elapsed_guard_seconds: 180,
         };
         let violation = policy
             .check_launch_allowed(2, DeepReviewSubagentRole::Reviewer, false)
@@ -1442,6 +1544,8 @@ mod tests {
             stagger_seconds: 0,
             max_queue_wait_seconds: 0,
             batch_extras_separately: true,
+            allow_bounded_auto_retry: false,
+            auto_retry_elapsed_guard_seconds: 180,
         };
 
         let outcome = TaskTool::wait_for_deep_review_reviewer_capacity(
@@ -1494,6 +1598,8 @@ mod tests {
             stagger_seconds: 0,
             max_queue_wait_seconds: 60,
             batch_extras_separately: true,
+            allow_bounded_auto_retry: false,
+            auto_retry_elapsed_guard_seconds: 180,
         };
 
         let outcome = TaskTool::wait_for_deep_review_reviewer_capacity(
@@ -1536,6 +1642,8 @@ mod tests {
             stagger_seconds: 0,
             max_queue_wait_seconds: 1,
             batch_extras_separately: true,
+            allow_bounded_auto_retry: false,
+            auto_retry_elapsed_guard_seconds: 180,
         };
         let turn_id_owned = turn_id.to_string();
         let tool_id_owned = tool_id.to_string();
@@ -1590,6 +1698,8 @@ mod tests {
             stagger_seconds: 0,
             max_queue_wait_seconds: 0,
             batch_extras_separately: true,
+            allow_bounded_auto_retry: false,
+            auto_retry_elapsed_guard_seconds: 180,
         };
         let turn_id_owned = turn_id.to_string();
         let tool_id_owned = tool_id.to_string();
@@ -1651,6 +1761,8 @@ mod tests {
             stagger_seconds: 0,
             max_queue_wait_seconds: 60,
             batch_extras_separately: true,
+            allow_bounded_auto_retry: false,
+            auto_retry_elapsed_guard_seconds: 180,
         };
 
         let outcome = TaskTool::wait_for_deep_review_reviewer_capacity(
@@ -1860,6 +1972,47 @@ mod tests {
     }
 
     #[test]
+    fn deep_review_auto_retry_requires_review_team_opt_in() {
+        use crate::agentic::deep_review_policy::DeepReviewConcurrencyPolicy;
+
+        let policy = DeepReviewConcurrencyPolicy {
+            max_parallel_instances: 4,
+            stagger_seconds: 0,
+            max_queue_wait_seconds: 60,
+            batch_extras_separately: true,
+            allow_bounded_auto_retry: false,
+            auto_retry_elapsed_guard_seconds: 180,
+        };
+
+        let violation =
+            TaskTool::ensure_deep_review_auto_retry_allowed(&policy, "turn-auto-retry-disabled")
+                .expect_err("auto retry must be disabled by default");
+
+        assert_eq!(violation.code, "deep_review_auto_retry_disabled");
+        assert_eq!(
+            TaskTool::auto_retry_suppression_reason(violation.code),
+            "auto_retry_disabled"
+        );
+    }
+
+    #[test]
+    fn deep_review_auto_retry_opt_in_allows_guarded_admission() {
+        use crate::agentic::deep_review_policy::DeepReviewConcurrencyPolicy;
+
+        let policy = DeepReviewConcurrencyPolicy {
+            max_parallel_instances: 4,
+            stagger_seconds: 0,
+            max_queue_wait_seconds: 60,
+            batch_extras_separately: true,
+            allow_bounded_auto_retry: true,
+            auto_retry_elapsed_guard_seconds: 180,
+        };
+
+        TaskTool::ensure_deep_review_auto_retry_allowed(&policy, "turn-auto-retry-enabled")
+            .expect("opted-in auto retry should pass the admission gate before budget checks");
+    }
+
+    #[test]
     fn deep_review_retry_rejects_missing_structured_coverage() {
         let manifest = json!({
             "workPackets": [
@@ -2020,6 +2173,8 @@ mod tests {
             stagger_seconds: 0,
             max_queue_wait_seconds: 30,
             batch_extras_separately: true,
+            allow_bounded_auto_retry: false,
+            auto_retry_elapsed_guard_seconds: 180,
         };
         let turn_id = "turn-provider-capacity-skip";
         let decision =
@@ -2073,6 +2228,8 @@ mod tests {
             stagger_seconds: 0,
             max_queue_wait_seconds: 30,
             batch_extras_separately: true,
+            allow_bounded_auto_retry: false,
+            auto_retry_elapsed_guard_seconds: 180,
         };
         let decision = TaskTool::deep_review_capacity_decision_for_provider_error(
             &BitFunError::ai("Provider error: code=429, message=Retry-After: 45"),
@@ -2093,6 +2250,8 @@ mod tests {
             stagger_seconds: 0,
             max_queue_wait_seconds: 30,
             batch_extras_separately: true,
+            allow_bounded_auto_retry: false,
+            auto_retry_elapsed_guard_seconds: 180,
         };
         let decision = TaskTool::deep_review_capacity_decision_for_provider_error(
             &BitFunError::ai("Provider error: code=invalid_model, message=model does not exist"),
@@ -2123,6 +2282,8 @@ mod tests {
             stagger_seconds: 0,
             max_queue_wait_seconds: 60,
             batch_extras_separately: true,
+            allow_bounded_auto_retry: false,
+            auto_retry_elapsed_guard_seconds: 180,
         };
 
         let outcome = TaskTool::wait_for_deep_review_provider_capacity_retry(
@@ -2177,6 +2338,8 @@ mod tests {
             stagger_seconds: 0,
             max_queue_wait_seconds: 1,
             batch_extras_separately: true,
+            allow_bounded_auto_retry: false,
+            auto_retry_elapsed_guard_seconds: 180,
         };
         let turn_id_owned = turn_id.to_string();
         let tool_id_owned = tool_id.to_string();

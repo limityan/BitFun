@@ -297,6 +297,10 @@ pub fn deep_review_retries_used(parent_dialog_turn_id: &str, subagent_type: &str
     GLOBAL_DEEP_REVIEW_BUDGET_TRACKER.retries_used(parent_dialog_turn_id, subagent_type)
 }
 
+pub fn deep_review_turn_elapsed_seconds(parent_dialog_turn_id: &str) -> Option<u64> {
+    GLOBAL_DEEP_REVIEW_BUDGET_TRACKER.turn_elapsed_seconds(parent_dialog_turn_id)
+}
+
 /// Returns the fallback max retries per role when an effective run policy is unavailable.
 pub fn deep_review_max_retries_per_role(_parent_dialog_turn_id: &str) -> usize {
     DEFAULT_MAX_RETRIES_PER_ROLE
@@ -1033,12 +1037,32 @@ mod tests {
         let raw = json!({
             "maxParallelInstances": 6,
             "staggerSeconds": 5,
-            "batchExtrasSeparately": false
+            "batchExtrasSeparately": false,
+            "allowBoundedAutoRetry": true,
+            "autoRetryElapsedGuardSeconds": 240
         });
         let policy = super::DeepReviewConcurrencyPolicy::from_manifest(&raw);
         assert_eq!(policy.max_parallel_instances, 6);
         assert_eq!(policy.stagger_seconds, 5);
         assert!(!policy.batch_extras_separately);
+        assert!(policy.allow_bounded_auto_retry);
+        assert_eq!(policy.auto_retry_elapsed_guard_seconds, 240);
+    }
+
+    #[test]
+    fn concurrency_policy_clamps_auto_retry_elapsed_guard() {
+        let policy = super::DeepReviewConcurrencyPolicy::from_manifest(&json!({
+            "allowBoundedAutoRetry": true,
+            "autoRetryElapsedGuardSeconds": 1
+        }));
+        assert!(policy.allow_bounded_auto_retry);
+        assert_eq!(policy.auto_retry_elapsed_guard_seconds, 30);
+
+        let policy = super::DeepReviewConcurrencyPolicy::from_manifest(&json!({
+            "allowBoundedAutoRetry": true,
+            "autoRetryElapsedGuardSeconds": 9999
+        }));
+        assert_eq!(policy.auto_retry_elapsed_guard_seconds, 900);
     }
 
     #[test]
@@ -1049,6 +1073,8 @@ mod tests {
             stagger_seconds: 0,
             max_queue_wait_seconds: 60,
             batch_extras_separately: true,
+            allow_bounded_auto_retry: false,
+            auto_retry_elapsed_guard_seconds: 180,
         };
         // 5 reviewer types (4 core + 1 conditional), 4 / 5 = 0 -> clamped to 1
         assert_eq!(
@@ -1061,6 +1087,8 @@ mod tests {
             stagger_seconds: 0,
             max_queue_wait_seconds: 60,
             batch_extras_separately: true,
+            allow_bounded_auto_retry: false,
+            auto_retry_elapsed_guard_seconds: 180,
         };
         // 12 / 5 = 2, capped by default max_same_role_instances (3) -> 2
         assert_eq!(
