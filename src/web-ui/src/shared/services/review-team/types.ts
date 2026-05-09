@@ -9,6 +9,35 @@ export type ReviewMemberStrategyLevel = ReviewStrategyLevel | 'inherit';
 export type ReviewStrategySource = 'team' | 'member';
 export type ReviewModelFallbackReason = 'model_removed';
 
+export type DeepReviewScopeReviewDepth =
+  | 'high_risk_only'
+  | 'risk_expanded'
+  | 'full_depth';
+export type DeepReviewScopeDependencyHops = number | 'policy_limited';
+export type DeepReviewOptionalReviewerPolicy =
+  | 'risk_matched_only'
+  | 'configured'
+  | 'full';
+export type DeepReviewRiskFocusTag =
+  | 'security'
+  | 'data_loss'
+  | 'migrations'
+  | 'authentication_authorization'
+  | 'cross_boundary_api_contracts'
+  | 'concurrency'
+  | 'persistence'
+  | 'configuration_changes'
+  | 'platform_boundary_violations';
+
+export interface DeepReviewScopeProfile {
+  reviewDepth: DeepReviewScopeReviewDepth;
+  riskFocusTags: DeepReviewRiskFocusTag[];
+  maxDependencyHops: DeepReviewScopeDependencyHops;
+  optionalReviewerPolicy: DeepReviewOptionalReviewerPolicy;
+  allowBroadToolExploration: boolean;
+  coverageExpectation: string;
+}
+
 export interface ReviewStrategyCommonRules {
   reviewerPromptRules: string[];
 }
@@ -337,6 +366,7 @@ export interface ReviewTeamRunManifest {
   policySource: 'default-review-team-config';
   target: ReviewTargetClassification;
   strategyLevel: ReviewStrategyLevel;
+  scopeProfile?: DeepReviewScopeProfile;
   strategyRecommendation?: ReviewTeamStrategyRecommendation;
   strategyDecision: ReviewTeamStrategyDecision;
   executionPolicy: ReviewTeamExecutionPolicy;
@@ -362,4 +392,3 @@ export function getActiveReviewTeamManifestMembers(
     ...(manifest.qualityGateReviewer ? [manifest.qualityGateReviewer] : []),
   ];
 }
-

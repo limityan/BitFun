@@ -690,6 +690,64 @@ describe('reviewTeamService', () => {
     ]);
   });
 
+  it('maps review strategies to explicit scope profiles in the run manifest', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra(),
+    );
+
+    expect(buildEffectiveReviewTeamManifest(team, { strategyOverride: 'quick' }).scopeProfile)
+      .toMatchObject({
+        reviewDepth: 'high_risk_only',
+        maxDependencyHops: 0,
+        optionalReviewerPolicy: 'risk_matched_only',
+        allowBroadToolExploration: false,
+      });
+    expect(buildEffectiveReviewTeamManifest(team, { strategyOverride: 'normal' }).scopeProfile)
+      .toMatchObject({
+        reviewDepth: 'risk_expanded',
+        maxDependencyHops: 1,
+        optionalReviewerPolicy: 'configured',
+        allowBroadToolExploration: false,
+      });
+    expect(buildEffectiveReviewTeamManifest(team, { strategyOverride: 'deep' }).scopeProfile)
+      .toMatchObject({
+        reviewDepth: 'full_depth',
+        maxDependencyHops: 'policy_limited',
+        optionalReviewerPolicy: 'full',
+        allowBroadToolExploration: true,
+      });
+  });
+
+  it('keeps changed-file coverage metadata visible for reduced-depth scope profiles', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra([], { strategy_level: 'quick' }),
+    );
+    const files = [
+      'src/crates/core/src/agentic/deep_review/report.rs',
+      'src/apps/desktop/src/api/agentic_api.rs',
+      'src/web-ui/src/app/scenes/agents/components/ReviewTeamPage.tsx',
+    ];
+
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      target: classifyReviewTargetFromFiles(files, 'workspace_diff'),
+    });
+
+    expect(manifest.scopeProfile.reviewDepth).toBe('high_risk_only');
+    expect(manifest.target.files.map((file) => file.normalizedPath)).toEqual(files);
+    expect(
+      manifest.workPackets
+        ?.filter((packet) => packet.phase === 'reviewer')
+        .every((packet) => packet.assignedScope.files.every((file) => files.includes(file))),
+    ).toBe(true);
+    expect(
+      manifest.workPackets
+        ?.filter((packet) => packet.phase === 'reviewer')
+        .some((packet) => files.every((file) => packet.assignedScope.files.includes(file))),
+    ).toBe(true);
+  });
+
   it('generates structured work packets for active reviewers and the judge', () => {
     const team = resolveDefaultReviewTeam(
       [
