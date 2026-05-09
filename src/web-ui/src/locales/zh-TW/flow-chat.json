@@ -635,6 +635,16 @@
       "title": "審核員正在等待容量",
       "pausedTitle": "佇列已暫停",
       "detail": "排隊等待時間不會計入審核員執行時長。",
+      "reason": "原因：{{reason}}",
+      "elapsed": "已等待 {{elapsed}}",
+      "elapsedWithMax": "已等待 {{elapsed}} / {{max}}",
+      "reasons": {
+        "providerRateLimit": "模型服務限速",
+        "providerConcurrencyLimit": "模型服務並發限制",
+        "retryAfter": "模型服務要求稍後重試",
+        "localConcurrencyCap": "本地審核員容量",
+        "temporaryOverload": "模型服務暫時過載"
+      },
       "sessionBusy": "目前會話較忙，可暫停 Deep Review 或稍後繼續。",
       "stopHint": "可使用停止按鈕中斷目前審核佇列。",
       "pauseQueue": "暫停佇列",

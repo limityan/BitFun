@@ -23,6 +23,7 @@ import { Button, Checkbox, Tooltip } from '@/component-library';
 import {
   useReviewActionBarStore,
   type DeepReviewCapacityQueueAction,
+  type DeepReviewCapacityQueueReason,
   type ReviewActionPhase,
 } from '../../store/deepReviewActionBarStore';
 import type { ReviewRemediationItem } from '../../utils/codeReviewRemediation';
@@ -87,6 +88,14 @@ const GROUP_PRIORITY_META: Record<RemediationGroupId, { color: string }> = {
   verification: { color: 'var(--color-success, #22c55e)' },
 };
 
+const CAPACITY_QUEUE_REASON_KEYS: Record<DeepReviewCapacityQueueReason, string> = {
+  provider_rate_limit: 'deepReviewActionBar.capacityQueue.reasons.providerRateLimit',
+  provider_concurrency_limit: 'deepReviewActionBar.capacityQueue.reasons.providerConcurrencyLimit',
+  retry_after: 'deepReviewActionBar.capacityQueue.reasons.retryAfter',
+  local_concurrency_cap: 'deepReviewActionBar.capacityQueue.reasons.localConcurrencyCap',
+  temporary_overload: 'deepReviewActionBar.capacityQueue.reasons.temporaryOverload',
+};
+
 const stopNestedScrollPropagation = (event: React.WheelEvent | React.TouchEvent) => {
   event.stopPropagation();
   if ('nativeEvent' in event && typeof event.nativeEvent.stopImmediatePropagation === 'function') {
@@ -143,6 +152,17 @@ export const ReviewActionBar: React.FC = () => {
     capacityQueueState?.controlMode === 'backend'
       ? hasBackendQueueControlTarget
       : capacityQueueState?.controlMode !== 'session_stop_only';
+  const capacityQueueReasonLabel = capacityQueueState?.reason
+    ? t(CAPACITY_QUEUE_REASON_KEYS[capacityQueueState.reason], {
+      defaultValue: capacityQueueState.reason.split('_').join(' '),
+    })
+    : null;
+  const capacityQueueElapsedLabel = capacityQueueState?.queueElapsedMs !== undefined
+    ? formatElapsedTime(capacityQueueState.queueElapsedMs)
+    : null;
+  const capacityQueueMaxWaitLabel = capacityQueueState?.maxQueueWaitSeconds !== undefined
+    ? formatElapsedTime(capacityQueueState.maxQueueWaitSeconds * 1000)
+    : null;
 
   const handleCapacityQueueAction = useCallback(async (
     action: DeepReviewCapacityQueueAction,
@@ -723,6 +743,32 @@ export const ReviewActionBar: React.FC = () => {
                   defaultValue: 'Queue wait does not count against reviewer runtime.',
                 })}
               </span>
+              {(capacityQueueReasonLabel || capacityQueueElapsedLabel) && (
+                <span className="deep-review-action-bar__capacity-queue-meta">
+                  {capacityQueueReasonLabel && (
+                    <span className="deep-review-action-bar__capacity-queue-chip">
+                      {t('deepReviewActionBar.capacityQueue.reason', {
+                        reason: capacityQueueReasonLabel,
+                        defaultValue: `Reason: ${capacityQueueReasonLabel}`,
+                      })}
+                    </span>
+                  )}
+                  {capacityQueueElapsedLabel && (
+                    <span className="deep-review-action-bar__capacity-queue-chip">
+                      {capacityQueueMaxWaitLabel
+                        ? t('deepReviewActionBar.capacityQueue.elapsedWithMax', {
+                          elapsed: capacityQueueElapsedLabel,
+                          max: capacityQueueMaxWaitLabel,
+                          defaultValue: `Waited ${capacityQueueElapsedLabel} of ${capacityQueueMaxWaitLabel}`,
+                        })
+                        : t('deepReviewActionBar.capacityQueue.elapsed', {
+                          elapsed: capacityQueueElapsedLabel,
+                          defaultValue: `Waited ${capacityQueueElapsedLabel}`,
+                        })}
+                    </span>
+                  )}
+                </span>
+              )}
               {capacityQueueState.sessionConcurrencyHigh && (
                 <span className="deep-review-action-bar__capacity-queue-detail">
                   {t('deepReviewActionBar.capacityQueue.sessionBusy', {

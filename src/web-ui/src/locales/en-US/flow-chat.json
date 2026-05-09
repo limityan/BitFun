@@ -635,6 +635,16 @@
       "title": "Reviewers waiting for capacity",
       "pausedTitle": "Queue paused",
       "detail": "Queue wait does not count against reviewer runtime.",
+      "reason": "Reason: {{reason}}",
+      "elapsed": "Waited {{elapsed}}",
+      "elapsedWithMax": "Waited {{elapsed}} of {{max}}",
+      "reasons": {
+        "providerRateLimit": "provider rate limit",
+        "providerConcurrencyLimit": "provider concurrency limit",
+        "retryAfter": "provider retry-after",
+        "localConcurrencyCap": "local reviewer capacity",
+        "temporaryOverload": "temporary provider overload"
+      },
       "sessionBusy": "Your active session is busy. Pause Deep Review or continue later.",
       "stopHint": "Use Stop to interrupt this review queue.",
       "pauseQueue": "Pause queue",

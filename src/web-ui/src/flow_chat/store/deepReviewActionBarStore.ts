@@ -49,11 +49,19 @@ export type DeepReviewCapacityQueueAction =
   | 'cancel'
   | 'skip_optional';
 
+export type DeepReviewCapacityQueueReason =
+  | 'provider_rate_limit'
+  | 'provider_concurrency_limit'
+  | 'retry_after'
+  | 'local_concurrency_cap'
+  | 'temporary_overload';
+
 export interface DeepReviewCapacityQueueState {
   toolId?: string;
   subagentType?: string;
   dialogTurnId?: string;
   status: DeepReviewCapacityQueueStatus;
+  reason?: DeepReviewCapacityQueueReason;
   queuedReviewerCount: number;
   activeReviewerCount?: number;
   effectiveParallelInstances?: number;

@@ -635,6 +635,16 @@
       "title": "审核员正在等待容量",
       "pausedTitle": "队列已暂停",
       "detail": "排队等待时间不会计入审核员运行时长。",
+      "reason": "原因：{{reason}}",
+      "elapsed": "已等待 {{elapsed}}",
+      "elapsedWithMax": "已等待 {{elapsed}} / {{max}}",
+      "reasons": {
+        "providerRateLimit": "模型服务限速",
+        "providerConcurrencyLimit": "模型服务并发限制",
+        "retryAfter": "模型服务要求稍后重试",
+        "localConcurrencyCap": "本地审核员容量",
+        "temporaryOverload": "模型服务临时过载"
+      },
       "sessionBusy": "当前会话较忙，可暂停 Deep Review 或稍后继续。",
       "stopHint": "可使用停止按钮中断当前审核队列。",
       "pauseQueue": "暂停队列",

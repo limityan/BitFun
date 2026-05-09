@@ -417,9 +417,12 @@ describeWithJsdom('DeepReviewActionBar', () => {
     useReviewActionBarStore.setState({
       capacityQueueState: {
         status: 'queued_for_capacity',
+        reason: 'provider_concurrency_limit',
         queuedReviewerCount: 2,
         activeReviewerCount: 1,
         optionalReviewerCount: 1,
+        queueElapsedMs: 12_000,
+        maxQueueWaitSeconds: 60,
         sessionConcurrencyHigh: true,
       },
     } as Partial<ReturnType<typeof useReviewActionBarStore.getState>>);
@@ -430,6 +433,8 @@ describeWithJsdom('DeepReviewActionBar', () => {
 
     expect(container.textContent).toContain('Reviewers waiting for capacity');
     expect(container.textContent).toContain('Queue wait does not count against reviewer runtime.');
+    expect(container.textContent).toContain('Reason: provider concurrency limit');
+    expect(container.textContent).toContain('Waited 12s of 1m 0s');
     expect(container.textContent).toContain('Your active session is busy.');
     expect(container.textContent).toContain('Run slower next time');
     expect(container.textContent).toContain('Open Review settings');
