@@ -748,6 +748,24 @@ describe('reviewTeamService', () => {
     ).toBe(true);
   });
 
+  it('includes reduced-depth scope profile guidance in the prompt block', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra([], { strategy_level: 'quick' }),
+    );
+
+    const promptBlock = buildReviewTeamPromptBlock(team);
+
+    expect(promptBlock).toContain('Scope profile:');
+    expect(promptBlock).toContain('- review_depth: high_risk_only');
+    expect(promptBlock).toContain('- max_dependency_hops: 0');
+    expect(promptBlock).toContain('- optional_reviewer_policy: risk_matched_only');
+    expect(promptBlock).toContain('- allow_broad_tool_exploration: no');
+    expect(promptBlock).toContain('- coverage_expectation: High-risk-only pass.');
+    expect(promptBlock).toContain('Reduced-depth profiles are not full-depth coverage.');
+    expect(promptBlock).toContain('populate reliability_signals with reduced_scope');
+  });
+
   it('generates structured work packets for active reviewers and the judge', () => {
     const team = resolveDefaultReviewTeam(
       [

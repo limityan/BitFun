@@ -2565,6 +2565,27 @@ function formatSharedContextCacheBlock(plan: ReviewTeamSharedContextCachePlan): 
   ].join('\n');
 }
 
+function formatScopeProfileBlock(profile?: DeepReviewScopeProfile): string {
+  if (!profile) {
+    return [
+      'Scope profile:',
+      '- none',
+    ].join('\n');
+  }
+
+  return [
+    'Scope profile:',
+    `- review_depth: ${profile.reviewDepth}`,
+    `- risk_focus_tags: ${profile.riskFocusTags.join(', ') || 'none'}`,
+    `- max_dependency_hops: ${profile.maxDependencyHops}`,
+    `- optional_reviewer_policy: ${profile.optionalReviewerPolicy}`,
+    `- allow_broad_tool_exploration: ${profile.allowBroadToolExploration ? 'yes' : 'no'}`,
+    `- coverage_expectation: ${profile.coverageExpectation}`,
+    '- Reduced-depth profiles are not full-depth coverage. Keep changed files visible in coverage notes and do not describe quick or normal runs as full-depth reviews.',
+    '- Reviewers and the judge must carry review_depth and coverage_expectation into their summaries. If review_depth is high_risk_only or risk_expanded, populate reliability_signals with reduced_scope in the final submit_code_review payload.',
+  ].join('\n');
+}
+
 function incrementalReviewCacheToPromptPayload(plan: ReviewTeamIncrementalReviewCachePlan) {
   return {
     source: plan.source,
@@ -2732,6 +2753,7 @@ export function buildReviewTeamPromptBlock(
 
   return [
     manifestBlock,
+    formatScopeProfileBlock(manifest.scopeProfile),
     formatPreReviewSummaryBlock(manifest.preReviewSummary),
     formatSharedContextCacheBlock(manifest.sharedContextCache),
     formatIncrementalReviewCacheBlock(manifest.incrementalReviewCache),
@@ -2739,6 +2761,7 @@ export function buildReviewTeamPromptBlock(
     formatWorkPacketBlock(manifest.workPackets),
     'Work packet rules:',
     '- Each reviewer Task prompt must include the matching work packet verbatim.',
+    '- Each reviewer and judge Task prompt must include the Scope profile review_depth, risk_focus_tags, max_dependency_hops, and coverage_expectation.',
     '- Include the packet_id in each Task description, for example "Security review [packet reviewer:ReviewSecurity:group-1-of-3]".',
     '- Each reviewer and judge response must echo packet_id and set status to completed, partial_timeout, timed_out, cancelled_by_user, failed, or skipped.',
     '- If the reviewer reports packet_id itself, mark reviewers[].packet_status_source as reported in the final submit_code_review payload.',
@@ -2773,7 +2796,7 @@ export function buildReviewTeamPromptBlock(
     '- If judge_timeout_seconds is greater than 0, pass timeout_seconds with that value to the ReviewJudge Task call.',
     '- If a reviewer Task returns status partial_timeout, treat its output as partial evidence: preserve it in reviewers[].partial_output, mark the reviewer status partial_timeout, and mention the confidence impact in coverage_notes.',
     '- If a reviewer fails or times out without useful partial output, retry that same reviewer at most max_retries_per_role times: reduce its scope, downgrade strategy by one level when possible, use a shorter timeout, and set retry to true on the retry Task call.',
-    '- In the final submit_code_review payload, populate reliability_signals for context_pressure, compression_preserved, partial_reviewer, and user_decision when those conditions apply. Use severity info/warning/action, count when useful, and source runtime/manifest/report/inferred.',
+    '- In the final submit_code_review payload, populate reliability_signals for context_pressure, compression_preserved, partial_reviewer, reduced_scope, and user_decision when those conditions apply. Use severity info/warning/action, count when useful, and source runtime/manifest/report/inferred.',
     '- If reviewer_file_split_threshold is greater than 0 and the target file count exceeds it, split files across multiple same-role reviewer instances only up to the concurrency-capped max_same_role_instances for this run.',
     '- Prefer module/workspace-area coherent file groups when splitting reviewer work; avoid mixing unrelated workspace areas in the same packet when the group budget allows it.',
     '- When file splitting is active, each same-role instance must only review its assigned file group. Label instances in the Task description with both group and packet_id (e.g. "Security review [group 1/3] [packet reviewer:ReviewSecurity:group-1-of-3]").',

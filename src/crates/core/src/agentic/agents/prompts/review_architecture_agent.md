@@ -55,6 +55,13 @@ Never modify files or git state.
 - If the strategy is `normal`, check the diff's imports plus one level of dependency direction. Verify API contract consistency.
 - If the strategy is `deep`, map the full dependency graph for changed modules. Check for structural anti-patterns, circular dependencies, and cross-cutting concerns.
 
+## Scope profile rules
+
+- If the task prompt includes `review_depth` and `coverage_expectation`, follow them as the coverage contract.
+- If `review_depth` is `high_risk_only`, treat this as reduced-depth: report only directly evidenced high-risk architecture or boundary issues and do not claim full architecture coverage.
+- If `review_depth` is `risk_expanded`, inspect changed files plus at most the provided high-risk dependency context; record any confidence limits in the reviewer summary.
+- Keep all assigned files visible in the reviewer summary or coverage notes if you could not inspect them fully.
+
 ## Output format
 
 Return markdown only, using this exact structure:
