@@ -29,6 +29,8 @@ The configured manifest may also include an **execution policy** with reviewer t
 
 The configured manifest may also include a **scope profile** with `review_depth`, `risk_focus_tags`, `max_dependency_hops`, `allow_broad_tool_exploration`, and `coverage_expectation`. Treat this as the coverage contract for the run. `high_risk_only` and `risk_expanded` are reduced-depth profiles, not full-depth coverage.
 
+The configured manifest may also include a metadata-only **evidence pack** with changed files, diff stats, packet ids, hunk hints, and contract hints. Use it as an orientation map only. Hunk hints and contract hints may be stale; reviewers and the judge must verify any hinted claim with `GetFileDiff`, `Read`, `Grep`, or read-only `Git` before reporting it as a finding.
+
 If the manifest includes **Review work packets**, treat them as the structured dispatch contract. Each packet defines the reviewer, assigned scope, allowed tools, timeout, required output fields, model, and prompt directive for one reviewer or judge task. Do not launch a reviewer unless it has an active packet or appears in the active reviewer manifest.
 
 ### File splitting for large review targets
@@ -143,6 +145,7 @@ Each reviewer Task prompt must include:
 - any user-provided focus text
 - the reviewer-specific strategy from the configured manifest (`quick`, `normal`, or `deep`) and its exact `prompt_directive`
 - the scope profile fields (`review_depth`, `risk_focus_tags`, `max_dependency_hops`, and `coverage_expectation`)
+- the evidence pack when present, plus an instruction that it is metadata-only orientation and hinted claims require tool confirmation
 - a reminder to stay read-only
 - a request for concrete findings only
 - a strict output format that is easy to verify later
@@ -162,6 +165,12 @@ Scope profile guidance:
 - `high_risk_only`: tell the reviewer this is reduced-depth. It should keep all assigned files visible in its summary or coverage notes, but only report directly evidenced high-risk findings.
 - `risk_expanded`: tell the reviewer this is reduced-depth. It may inspect one-hop high-risk context when needed, but must not describe the run as full coverage.
 - `full_depth`: tell the reviewer to use the policy-limited broad context needed for release-quality findings.
+
+Evidence pack guidance:
+
+- Treat `evidence_pack` as metadata orientation only. It is not source text, a full diff, model output, or provider raw data.
+- Treat `hunk_hints` and `contract_hints` as stale until the reviewer confirms them with `GetFileDiff`, `Read`, `Grep`, or read-only `Git`.
+- Do not let reviewers cite the evidence pack alone as proof for a finding.
 
 Role-specific strategy amplification (append to the reviewer Task prompt when the strategy matches):
 
@@ -185,6 +194,7 @@ After the reviewer batch finishes, launch `ReviewJudge` with:
 
 - the matching judge work packet verbatim
 - the scope profile fields and `coverage_expectation`
+- the evidence pack when present, with the same metadata-only and tool-confirmation boundary
 - the same review target
 - the full reviewer outputs from every reviewer that ran, including timeout/cancel/failure notes
 - if file splitting was used, include outputs from **all** same-role instances and label each by group (e.g. "Security Reviewer [group 1/3]")
@@ -206,6 +216,7 @@ The judge must explicitly call out:
 - reviewer outputs that are missing `packet_id` or `status`; treat those as lower confidence rather than discarding the whole review
 - reviewer outputs whose packet id was inferred from scheduling metadata rather than reported by the reviewer
 - whether `review_depth` was reduced-depth, and whether reviewer claims stay within the declared `coverage_expectation`
+- whether any surviving finding relies on an evidence pack hint without independent tool confirmation
 - which findings should survive into the final report
 
 ### Phase 4: Report and wait for user approval

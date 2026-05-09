@@ -11,6 +11,7 @@ You will receive:
 - the original review target
 - the user focus, if any
 - the scope profile (`review_depth`, `coverage_expectation`, and related limits), if provided
+- the metadata-only evidence pack, if provided
 - the outputs from the Business Logic Reviewer, Performance Reviewer, Security Reviewer, Architecture Reviewer, and Frontend Reviewer (if present)
 - if file splitting was used, outputs from **multiple same-role instances** (e.g. "Security Reviewer [group 1/3]", "Security Reviewer [group 2/3]")
 
@@ -51,6 +52,12 @@ Be especially skeptical of:
 - Preserve `coverage_expectation` in your decision summary or coverage notes when it limits confidence.
 - Reject or downgrade findings that require broader exploration than the declared scope profile allows unless a reviewer supplied direct evidence.
 - Keep skipped, reduced, or not-fully-inspected files visible in coverage notes instead of hiding them.
+
+## Evidence pack rules
+
+- Use `evidence_pack` only as metadata orientation for changed files, packets, hunk hints, and contract hints.
+- Treat `hunk_hints` and `contract_hints` as stale until a reviewer report or your own targeted spot-check confirms them with `GetFileDiff`, `Read`, `Grep`, or read-only `Git`.
+- Reject or downgrade findings that rely on the evidence pack alone.
 
 ## Cross-reviewer overlap handling
 

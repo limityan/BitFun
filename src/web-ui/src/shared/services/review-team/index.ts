@@ -2665,6 +2665,61 @@ function formatPreReviewSummaryBlock(summary: ReviewTeamPreReviewSummary): strin
   ].join('\n');
 }
 
+function evidencePackToPromptPayload(pack: DeepReviewEvidencePack) {
+  return {
+    version: pack.version,
+    source: pack.source,
+    changed_files: pack.changedFiles,
+    diff_stat: {
+      file_count: pack.diffStat.fileCount,
+      ...(pack.diffStat.totalChangedLines !== undefined
+        ? { total_changed_lines: pack.diffStat.totalChangedLines }
+        : {}),
+      line_count_source: pack.diffStat.lineCountSource,
+    },
+    domain_tags: pack.domainTags,
+    risk_focus_tags: pack.riskFocusTags,
+    packet_ids: pack.packetIds,
+    hunk_hints: pack.hunkHints.map((hint) => ({
+      file_path: hint.filePath,
+      changed_line_count: hint.changedLineCount,
+      line_count_source: hint.lineCountSource,
+    })),
+    contract_hints: pack.contractHints.map((hint) => ({
+      kind: hint.kind,
+      file_path: hint.filePath,
+      source: hint.source,
+    })),
+    budget: {
+      max_changed_files: pack.budget.maxChangedFiles,
+      max_hunk_hints: pack.budget.maxHunkHints,
+      max_contract_hints: pack.budget.maxContractHints,
+      omitted_changed_file_count: pack.budget.omittedChangedFileCount,
+      omitted_hunk_hint_count: pack.budget.omittedHunkHintCount,
+      omitted_contract_hint_count: pack.budget.omittedContractHintCount,
+    },
+    privacy: pack.privacy,
+  };
+}
+
+function formatEvidencePackBlock(pack?: DeepReviewEvidencePack): string {
+  if (!pack) {
+    return [
+      'Evidence pack:',
+      '- none',
+    ].join('\n');
+  }
+
+  return [
+    'Evidence pack:',
+    '```json',
+    JSON.stringify(evidencePackToPromptPayload(pack), null, 2),
+    '```',
+    '- Evidence pack hunk_hints and contract_hints are orientation only; verify each hinted claim with GetFileDiff, Read, Grep, or Git before reporting it.',
+    '- The evidence pack privacy boundary is metadata_only. Do not treat it as source text, a full diff, model output, or provider raw data.',
+  ].join('\n');
+}
+
 function sharedContextCacheToPromptPayload(plan: ReviewTeamSharedContextCachePlan) {
   return {
     source: plan.source,
@@ -2878,6 +2933,7 @@ export function buildReviewTeamPromptBlock(
   return [
     manifestBlock,
     formatScopeProfileBlock(manifest.scopeProfile),
+    formatEvidencePackBlock(manifest.evidencePack),
     formatPreReviewSummaryBlock(manifest.preReviewSummary),
     formatSharedContextCacheBlock(manifest.sharedContextCache),
     formatIncrementalReviewCacheBlock(manifest.incrementalReviewCache),
@@ -2893,6 +2949,7 @@ export function buildReviewTeamPromptBlock(
     '- If packet_id cannot be reported or inferred, mark packet_status_source as missing and explain the confidence impact in coverage_notes.',
     '- If a reviewer response is missing packet_id or status, the judge must treat that reviewer output as lower confidence instead of discarding the whole review.',
     '- Use the pre-generated diff summary for initial orientation and token discipline, but verify claims against assigned files or diffs before reporting findings.',
+    '- Evidence pack hunk_hints and contract_hints are orientation only; verify each hinted claim with GetFileDiff, Read, Grep, or Git before reporting it.',
     '- When prompt_byte_limit_exceeded is yes, use the pre-generated diff summary before detailed reads. Do not remove files from assigned_scope or hide unreviewed files; if a file cannot be covered, report it in coverage_notes and reliability_signals.',
     '- Use shared_context_cache entries to reuse read-only GetFileDiff/Read context by cache_key across reviewer packets. Do not duplicate full-file reads when a reusable cached diff or file summary already covers the same path.',
     '- Use incremental_review_cache only when the target fingerprint matches a prior run; preserve completed reviewer outputs by packet_id and rerun only missing, failed, timed-out, or stale packets. If any invalidates_on condition changed, ignore the cache and explain the fresh review boundary.',

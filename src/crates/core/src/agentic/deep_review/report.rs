@@ -4,7 +4,7 @@ use crate::agentic::agents::get_agent_registry;
 use crate::agentic::context_profile::ContextProfilePolicy;
 use crate::agentic::coordination::get_global_coordinator;
 use crate::agentic::core::CompressionContract;
-use crate::agentic::deep_review::manifest::DeepReviewScopeProfile;
+use crate::agentic::deep_review::manifest::{DeepReviewEvidencePack, DeepReviewScopeProfile};
 use crate::agentic::deep_review_policy::{
     deep_review_capacity_skip_count, deep_review_concurrency_cap_rejection_count,
     deep_review_runtime_diagnostics_snapshot, DeepReviewIncrementalCache,
@@ -357,6 +357,20 @@ pub(crate) fn fill_deep_review_reliability_signals(
                 signal["detail"] = json!(detail);
             }
             push_reliability_signal_if_missing(input, signal);
+        }
+    }
+
+    if let Some(manifest) = run_manifest {
+        if let Err(error) = DeepReviewEvidencePack::from_manifest(manifest) {
+            push_reliability_signal_if_missing(
+                input,
+                json!({
+                    "kind": "context_pressure",
+                    "severity": "warning",
+                    "source": "manifest",
+                    "detail": format!("Evidence pack ignored: {}", error)
+                }),
+            );
         }
     }
 

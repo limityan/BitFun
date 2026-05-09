@@ -1326,6 +1326,67 @@ mod tests {
     }
 
     #[test]
+    fn deep_review_invalid_evidence_pack_becomes_manifest_reliability_signal() {
+        let manifest = json!({
+            "reviewMode": "deep",
+            "evidencePack": {
+                "version": 1,
+                "source": "target_manifest",
+                "changedFiles": ["src/lib.rs"],
+                "diffStat": {
+                    "fileCount": 1,
+                    "lineCountSource": "diff_stat"
+                },
+                "domainTags": ["core"],
+                "riskFocusTags": ["security"],
+                "packetIds": ["reviewer:ReviewSecurity"],
+                "hunkHints": [],
+                "contractHints": [],
+                "budget": {
+                    "maxChangedFiles": 80,
+                    "maxHunkHints": 80,
+                    "maxContractHints": 40,
+                    "omittedChangedFileCount": 0,
+                    "omittedHunkHintCount": 0,
+                    "omittedContractHintCount": 0
+                },
+                "privacy": {
+                    "content": "full_diff",
+                    "excludes": [
+                        "source_text",
+                        "full_diff",
+                        "model_output",
+                        "provider_raw_body",
+                        "full_file_contents"
+                    ]
+                }
+            }
+        });
+        let mut input = json!({
+            "summary": {
+                "overall_assessment": "No blocking issues",
+                "risk_level": "low",
+                "recommended_action": "approve"
+            },
+            "issues": [],
+            "positive_points": []
+        });
+
+        CodeReviewTool::validate_and_fill_defaults(&mut input, true, Some(&manifest), None);
+
+        let signals = input["reliability_signals"]
+            .as_array()
+            .expect("invalid evidence pack should emit a reliability signal");
+        assert_eq!(signals[0]["kind"], "context_pressure");
+        assert_eq!(signals[0]["severity"], "warning");
+        assert_eq!(signals[0]["source"], "manifest");
+        assert!(signals[0]["detail"]
+            .as_str()
+            .expect("signal should include detail")
+            .contains("privacy.content"));
+    }
+
+    #[test]
     fn deep_review_full_depth_manifest_has_no_reduced_scope_signal() {
         let manifest = json!({
             "reviewMode": "deep",

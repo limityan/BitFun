@@ -1016,6 +1016,37 @@ describe('reviewTeamService', () => {
     expect(serializedEvidencePack).not.toContain('modelOutput');
   });
 
+  it('injects the metadata-only evidence pack into the prompt as verifiable orientation', () => {
+    const team = resolveDefaultReviewTeam(
+      coreSubagents(),
+      storedConfigWithExtra(),
+    );
+    const files = [
+      'src/web-ui/src/locales/en-US/flow-chat.json',
+      'src/crates/api-layer/src/review.rs',
+    ];
+    const manifest = buildEffectiveReviewTeamManifest(team, {
+      target: classifyReviewTargetFromFiles(files, 'workspace_diff'),
+      changeStats: {
+        fileCount: files.length,
+        totalLinesChanged: 20,
+        lineCountSource: 'diff_stat',
+      },
+    });
+
+    const promptBlock = buildReviewTeamPromptBlock(team, manifest);
+
+    expect(promptBlock).toContain('Evidence pack:');
+    expect(promptBlock).toContain('"content": "metadata_only"');
+    expect(promptBlock).toContain('"changed_files"');
+    expect(promptBlock).toContain('"contract_hints"');
+    expect(promptBlock).toContain('Evidence pack hunk_hints and contract_hints are orientation only');
+    expect(promptBlock).toContain('verify each hinted claim with GetFileDiff, Read, Grep, or Git before reporting it');
+    expect(promptBlock).not.toContain('sourceText');
+    expect(promptBlock).not.toContain('fullDiff');
+    expect(promptBlock).not.toContain('modelOutput');
+  });
+
   it('builds an incremental review cache plan for follow-up reviews', () => {
     const team = resolveDefaultReviewTeam(
       coreSubagents(),
