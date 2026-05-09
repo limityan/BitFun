@@ -1,3 +1,5 @@
+//! Deep Review agent type and role constants.
+
 pub const DEEP_REVIEW_AGENT_TYPE: &str = "DeepReview";
 pub const REVIEW_JUDGE_AGENT_TYPE: &str = "ReviewJudge";
 pub const REVIEW_FIXER_AGENT_TYPE: &str = "ReviewFixer";

@@ -1,3 +1,5 @@
+//! Typed Deep Review launch manifest accessors.
+
 use super::execution_policy::DeepReviewPolicyViolation;
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
