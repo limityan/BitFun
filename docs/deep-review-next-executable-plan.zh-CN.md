@@ -707,7 +707,7 @@ pnpm run type-check:web
 5. 发布门禁。
 
 ```powershell
-rg -n "project-level cache.*implement.*ed|auto retry.*compl.*ete|provider/adaptive queue.*compl.*ete|hard prompt.*compl.*ete|global.*concurrency.*auto.*matic" docs/deep-review-design.md docs/deep-review-phase2-plan.md docs/deep-review-phase2-addendum.md docs/deep-review-phase3-followup-plan.md docs/deep-review-pending-plan.md
+rg -n "project-level cache.*implement[[:alpha:]]*ed|auto retry.*compl[[:alpha:]]*ete|provider/adaptive queue.*compl[[:alpha:]]*ete|hard prompt.*compl[[:alpha:]]*ete|global.*concurrency.*auto[[:alpha:]]*matic" docs/deep-review-design.md docs/deep-review-phase2-plan.md docs/deep-review-phase2-addendum.md docs/deep-review-phase3-followup-plan.md docs/deep-review-pending-plan.md
 cargo test -p bitfun-core deep_review -- --nocapture
 cargo test -p bitfun-events deep_review_queue_state_event_serializes_stable_contract -- --nocapture
 cargo check --workspace --exclude bitfun-cli

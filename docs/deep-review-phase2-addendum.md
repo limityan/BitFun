@@ -162,7 +162,7 @@ Frontend:
 Verification:
 
 - `rg - n "PARTIAL|Safety net|write-through|queue|redispatch|prompt-guided" docs/deep-review-design.md docs/deep-review-phase2-plan.md docs/deep-review-phase2-addendum.md`
-- Expected: the three docs explicitly describe partial completion and do not claim queued dispatch, automatic retry, or cache write-through as complete.
+- Expected: the three docs explicitly describe partial completion and do not mark queued dispatch, automatic retry, or cache write-through as shipped.
 
 ### Round 2: First-Run Consent Dialog I18n And Density
 
@@ -584,7 +584,7 @@ Exit checks:
 
 ## Completion Criteria
 
-- Existing docs no longer state that queued dispatch, automatic retry redispatch, cache write-through, or hard prompt-byte clipping/enforcement are complete unless code implements them.
+- Existing docs no longer mark queued dispatch, automatic retry redispatch, cache write-through, or hard prompt-byte clipping/enforcement as shipped unless code implements them.
 - Per-session incremental cache can only return data by a verified packet id and matching fingerprint.
 - Concurrency cap behavior is either user/report-visible as a skipped/rejected reviewer or is converted into bounded backpressure.
 - Any future bounded backpressure keeps queue time separate from execution timeout and keeps Deep Review capacity from starving normal user session work.
