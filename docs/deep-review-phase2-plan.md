@@ -291,6 +291,8 @@ Phase D (Optional / lower priority):
 | Incremental cache | Per-session data model, metadata field, packet-id read/write path, and hit/miss reporting exist | Project-level persistence and retention/privacy policy only |
 | Token budget | File-split/max-file guardrails, heuristic prompt-byte estimates, full-scope summary-first metadata, and context-pressure warnings exist | Hard prompt-byte clipping and byte-accurate enforcement only; summary-first must keep assigned files visible |
 | Shared context cache | Prompt rules plus local duplicate Read/GetFileDiff measurement and aggregate debug diagnostics | Tool-result interception only if real-run measurement shows material duplicate IO/token cost |
+| Cost-aware strategy depth | Strategy metadata and token-budget hints exist, but quick/default reviewer prompts may still perform broad discovery on large changes | Add a manifest depth profile so quick means high-risk-only, normal means risk-expanded, and deep means full-depth |
+| Shared evidence pack | Duplicate-tool measurement exists, but reviewers still rediscover changed files, hunk locations, risk tags, and cheap contract facts independently | Precompute compact source-agnostic evidence once per run before considering programmatic `Read`/`GetFileDiff` result reuse |
 | Observability | Report reliability signals cover cache hit/miss, concurrency cap rejection, partial timeout, retry guidance, skipped reviewers, and token-budget tradeoffs | External telemetry/dashboard metrics only if needed later |
 
 ### Latest Release-Gate Verification
@@ -325,6 +327,12 @@ Post-Round 11b reconciliation re-ran the current release gate after document/cod
 
 6. **P2-7 pre-review summary UI**: Where to display?
    - **Decision**: Use the existing launch confirmation dialog for a compact summary. Defer separate Review Team page or inline Flow Chat preview surfaces until product needs a denser pre-review view.
+
+7. **Cost-aware review depth**: Should quick/default reduce depth automatically for large changes?
+   - **Recommendation**: Yes, but only through explicit scope wording and coverage metadata. Quick should be a high-risk gate, normal should be risk-expanded, and deep should remain full-depth. Reduced-depth modes must not hide changed files or suppress severe categories such as security, persistence, auth, concurrency, data loss, migrations, cross-boundary APIs, and i18n contract drift.
+
+8. **Shared evidence before shared tool cache**: Should the runtime cache full tool results across parallel reviewers now?
+   - **Recommendation**: Not yet. First add a shared evidence pack with changed files, hunk hints, risk/domain tags, packet ids, and cheap contract hints. Keep programmatic result reuse limited to immutable diff/stat data until aggregate duplicate-call measurements prove that full tool-result interception is worth the complexity.
 
 ## Verification Commands
 
