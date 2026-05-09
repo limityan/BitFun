@@ -56,6 +56,8 @@ The detailed execution order and per-round exit checks are tracked in `docs/deep
 - **Project-level incremental review cache**: Per-session cache read/write support is implemented and keyed by `packet_id`; cross-session/project-level persistence remains product-decision-required and deferred. Current cached reviewer outputs live only with session metadata and are deleted with that session metadata.
 - **Shared context cache**: Frontend plan generation, prompt rules, local duplicate `Read`/`GetFileDiff` measurement, and aggregate debug diagnostics exist, but backend result reuse is not programmatically enforced.
 - **Token budget enforcement**: File splitting, max-file style limits, heuristic prompt-byte estimates, and full-scope `largeDiffSummaryFirst` decisions are present in manifest policy. Hard prompt-byte clipping and byte-accurate enforcement remain deferred, and any summary-first path must keep unreviewed files visible in coverage notes/reliability signals.
+- **Cost-aware review depth**: Quick/default strategies still need a product-level depth contract that makes `quick` a high-risk gate, `normal` a risk-expanded review, and `deep` the explicit full-depth path. This should reduce slow-model time and token use without hiding changed files from coverage metadata.
+- **Shared evidence pack**: Duplicate-tool diagnostics can show repeated `Read`/`GetFileDiff` work, but reviewers still rediscover common facts. A source-agnostic evidence pack should precompute changed files, hunk hints, domain/risk tags, packet ids, and cheap contract hints once per run so subagents spend more tokens on judgment than discovery.
 - **Pre-review summary UI**: Compact launch-dialog summary is implemented. A separate dense pre-review report remains deferred unless product later needs it.
 - **Work packet batched scheduling**: Frontend work packet data structure and prompt rules are complete; backend `launchBatch` / `staggerSeconds` / `batchExtrasSeparately` scheduling remains prompt-driven except for TaskTool's hard concurrency cap.
 - **Conditional reviewer extensibility**: Path-domain classification and reviewer applicability rules now support the current Frontend Reviewer; future conditional reviewer families should extend the registry and add focused tests.
@@ -103,6 +105,8 @@ Key components:
 | **Error fallback** | Retry budget, guidance, structured retry admission, and bounded retry-scope prompt injection exist, but backend-owned automatic reduced-scope redispatch is not implemented | Retry launch behavior still depends on the orchestrator model |
 | **Context management** | Shared context cache is prompt-only with local duplicate Read/GetFileDiff measurement and aggregate debug diagnostics; backend result reuse is not enforced | Reviewers may duplicate IO and token usage until real-run measurements justify an interception/cache plan |
 | **Strategy selection** | Frontend recommendation, backend-compatible recommendation, user override, final strategy, mismatch state, and mismatch severity are recorded as launch metadata; runtime launch still follows configured/user-selected strategy | Users may still over- or under-review, but the product now has non-blocking metadata to explain the tradeoff without silently changing token/concurrency cost |
+| **Review cost by strategy** | Quick and normal modes have budget metadata, but role prompts can still perform broad discovery unless a scope-depth contract is explicit | Slow models and large diffs can consume excessive time/tokens before reaching high-risk findings |
+| **Repeated evidence discovery** | Duplicate `Read`/`GetFileDiff` calls are measured, but reviewers do not yet receive a shared evidence pack with hunk/risk/contract hints | Parallel subagents can spend their first turns reading the same files and git facts instead of reasoning |
 
 ### Scenario Breakdown
 
@@ -110,7 +114,7 @@ Key components:
 |----------|-------|-------|------------------|---------|
 | A: Small change | < 5 | < 200 | 4 always-on reviewers, optional frontend only when applicable | Can still be over-provisioned if the user chooses a deeper strategy |
 | B: Medium change | 5-20 | 200-1000 | 4 always-on reviewers with predictive timeout and local-cap backpressure | Logic-heavy reviewers may still return partial output on slow models |
-| C: Large change | 20-50 | 1000+ | File split can create multiple reviewer packets plus judge; local reviewer-cap waiting is bounded | Provider/adaptive queueing, backend batch/stagger scheduling, and programmatic shared context reuse remain deferred |
+| C: Large change | 20-50 | 1000+ | File split can create multiple reviewer packets plus judge; local reviewer-cap waiting is bounded | Cost-aware high-risk-first scope and shared evidence packs are still needed before adding heavier scheduler behavior |
 | D: Any + slow model | Any | Any | Predictive timeout, partial capture, and structured retry admission exist | Backend-owned retry redispatch is still prompt-guided/deferred |
 | E: Any + rate limit | Any | Any | Local cap pressure is bounded and visible; explicit provider transient-capacity reviewer failures become `capacity_skipped` and lower the turn-local effective cap | Provider-side automatic queueing/retry execution is not implemented |
 
@@ -899,6 +903,8 @@ ReviewFrontend: {
 4. **Runtime strategy authority**: Keep backend `auto_select_strategy()` as advisory/mismatch-warning metadata. Only revisit authoritative auto-selection after measured complexity delta exists and product explicitly accepts strategy changes that can alter token/concurrency cost.
 5. **Token and context budgets**: Keep heuristic prompt-byte estimates and full-scope summary-first metadata as the current boundary. Add hard clipping or byte-accurate enforcement only after it can preserve explicit coverage for every file.
 6. **Operational evidence**: Keep the implemented report reliability surfaces for partial timeouts, retry guidance, cache hits/misses, skipped reviewers, token-budget tradeoffs, and TaskTool cap rejections. Keep shared-context duplicate measurement local and non-reporting; final Deep Review submission may emit aggregate debug counts for local sampling, but real runs must show that programmatic reuse is worth the runtime complexity before adding interception or cache reuse. Add external telemetry only if product diagnostics require it.
+7. **Cost-aware scope depth**: Add a manifest-level depth profile before broadening runtime scheduling. `quick` should focus only on high-risk hunks and direct contract/security/config/concurrency paths, `normal` should review changed code plus one-hop high-risk context, and `deep` remains the full-depth option. Reports must label reduced-depth coverage honestly.
+8. **Shared evidence pack**: Precompute compact source-agnostic evidence once per run and pass it to every reviewer. Start with metadata, hunk hints, domain/risk tags, packet ids, and cheap contract hints; keep full `Read` output reuse deferred until duplicate-call measurements prove it is worth the tool-pipeline complexity.
 
 ### Superseded Next Phase: Strategy Engine Foundation
 
@@ -988,7 +994,7 @@ The original design defined a simple `hasFrontendFiles()` boolean check. The imp
 
 ### Advanced (Lower Priority)
 
-13. **Shared context cache** - Programmatic reuse remains deferred; current runtime measures duplicate `Read`/`GetFileDiff` calls and emits aggregate local debug diagnostics at report submission.
+13. **Shared context cache** - Programmatic reuse remains deferred; current runtime measures duplicate `Read`/`GetFileDiff` calls and emits aggregate local debug diagnostics at report submission. The next lower-risk step is a shared evidence pack, not cross-subagent full-file result caching.
 14. **Incremental review caching** - Per-session packet cache is implemented; project-level follow-up reuse remains product-decision-required.
 
 ## Verification
