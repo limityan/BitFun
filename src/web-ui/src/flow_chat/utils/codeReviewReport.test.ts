@@ -188,6 +188,20 @@ function buildRetryRunManifest(
   };
 }
 
+function buildReducedScopeRunManifest(): ReviewTeamRunManifest {
+  return {
+    ...buildRunManifest(),
+    scopeProfile: {
+      reviewDepth: 'high_risk_only',
+      riskFocusTags: ['security', 'cross_boundary_api_contracts'],
+      maxDependencyHops: 0,
+      optionalReviewerPolicy: 'risk_matched_only',
+      allowBroadToolExploration: false,
+      coverageExpectation: 'High-risk-only pass; changed files remain visible.',
+    },
+  };
+}
+
 describe('codeReviewReport', () => {
   it('uses structured report sections when present', () => {
     const report = {
@@ -530,6 +544,36 @@ describe('codeReviewReport', () => {
 
     expect(markdown).toContain('- Skipped reviewers [info/manifest]: Count: 2');
     expect(markdown).toContain('- Token budget limited reviewer coverage [warning/manifest]: Count: 1');
+  });
+
+  it('surfaces reduced-depth scope profile in reliability notices and markdown export', () => {
+    const report = {
+      summary: {
+        overall_assessment: 'No blocking issues found in the high-risk pass.',
+        risk_level: 'low' as const,
+        recommended_action: 'approve' as const,
+      },
+      review_mode: 'deep' as const,
+      reviewers: [],
+    };
+    const runManifest = buildReducedScopeRunManifest();
+
+    const notices = buildCodeReviewReliabilityNotices(report, runManifest);
+
+    expect(notices).toContainEqual({
+      kind: 'reduced_scope',
+      severity: 'info',
+      source: 'manifest',
+      detail: 'High-risk-only pass; changed files remain visible.',
+    });
+
+    const markdown = formatCodeReviewReportMarkdown(report, undefined, { runManifest });
+
+    expect(markdown).toContain('- Review depth: high_risk_only');
+    expect(markdown).toContain('- Coverage expectation: High-risk-only pass; changed files remain visible.');
+    expect(markdown).toContain(
+      '- Reduced-depth coverage [info/manifest]: High-risk-only pass; changed files remain visible.',
+    );
   });
 
   it('keeps team and issue details collapsed by default while leaving remediation visible', () => {

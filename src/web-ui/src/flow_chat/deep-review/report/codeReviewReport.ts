@@ -142,6 +142,7 @@ export type ReviewReliabilityNoticeKind =
   | 'cache_miss'
   | 'concurrency_limited'
   | 'partial_reviewer'
+  | 'reduced_scope'
   | 'retry_guidance'
   | 'skipped_reviewers'
   | 'token_budget_limited'
@@ -230,6 +231,7 @@ const RETRYABLE_CAPACITY_REASONS = new Set([
 ]);
 const RELIABILITY_NOTICE_ORDER: ReviewReliabilityNoticeKind[] = [
   'context_pressure',
+  'reduced_scope',
   'skipped_reviewers',
   'token_budget_limited',
   'compression_preserved',
@@ -247,6 +249,7 @@ const RELIABILITY_NOTICE_FALLBACK_LABELS: Record<ReviewReliabilityNoticeKind, st
   cache_miss: 'Incremental cache missed or refreshed',
   concurrency_limited: 'Reviewer launch was concurrency-limited',
   partial_reviewer: 'Reviewer timed out with partial result',
+  reduced_scope: 'Reduced-depth coverage',
   retry_guidance: 'Retry guidance emitted',
   skipped_reviewers: 'Skipped reviewers',
   token_budget_limited: 'Token budget limited reviewer coverage',
@@ -259,6 +262,7 @@ const RELIABILITY_NOTICE_SEVERITY_BY_KIND: Record<ReviewReliabilityNoticeKind, R
   cache_miss: 'info',
   concurrency_limited: 'warning',
   partial_reviewer: 'warning',
+  reduced_scope: 'info',
   retry_guidance: 'warning',
   skipped_reviewers: 'info',
   token_budget_limited: 'warning',
@@ -636,6 +640,11 @@ function countTokenBudgetLimitedReviewers(runManifest?: ReviewTeamRunManifest): 
   return skippedByBudget.size;
 }
 
+function isReducedScopeProfile(runManifest?: ReviewTeamRunManifest): boolean {
+  const reviewDepth = runManifest?.scopeProfile?.reviewDepth;
+  return reviewDepth === 'high_risk_only' || reviewDepth === 'risk_expanded';
+}
+
 function countDecisionItems(report: CodeReviewReportData): number {
   const structuredDecisionItems = report.report_sections?.remediation_groups?.needs_decision ?? [];
   if (structuredDecisionItems.length > 0) {
@@ -740,6 +749,20 @@ export function buildCodeReviewReliabilityNotices(
       severity: 'info',
       count: runManifest.tokenBudget.estimatedReviewerCalls,
       source: 'manifest',
+    });
+  }
+
+  const structuredReducedScope = structuredNotices.get('reduced_scope');
+  if (structuredReducedScope) {
+    notices.push(structuredReducedScope);
+  } else if (isReducedScopeProfile(runManifest)) {
+    notices.push({
+      kind: 'reduced_scope',
+      severity: 'info',
+      source: 'manifest',
+      ...(runManifest?.scopeProfile?.coverageExpectation
+        ? { detail: runManifest.scopeProfile.coverageExpectation }
+        : {}),
     });
   }
 
@@ -1016,6 +1039,10 @@ function pushRunManifestSection(
   lines.push(`- ${labels.target}: ${manifestTarget(manifest)}`);
   lines.push(`- ${labels.budget}: ${manifest.tokenBudget.mode}`);
   lines.push(`- ${labels.estimatedCalls}: ${manifest.tokenBudget.estimatedReviewerCalls}`);
+  if (manifest.scopeProfile) {
+    lines.push(`- Review depth: ${manifest.scopeProfile.reviewDepth}`);
+    lines.push(`- Coverage expectation: ${manifest.scopeProfile.coverageExpectation}`);
+  }
   if (manifest.strategyRecommendation) {
     lines.push(`- Recommended strategy: ${manifest.strategyRecommendation.strategyLevel}`);
     lines.push(`- Recommendation score: ${manifest.strategyRecommendation.score}`);
