@@ -8,7 +8,7 @@ This inventory lists the shared areas touched by the current Deep Review work wh
 
 | Area | Current Deep Review change | Non-DeepReview risk | Required mitigation |
 |---|---|---|---|
-| `TaskTool` | Deep Review reviewer capacity queueing, effective concurrency learning, provider capacity skip conversion, structured retry admission, packet/cache lookup | Ordinary hidden subagents could accidentally enter queue/retry/cache behavior if context gating is wrong | Keep all Deep Review logic behind explicit agent type/manifest checks; add regression tests for ordinary Task calls. |
+| `TaskTool` | Deep Review reviewer capacity queueing, provider short queue/one reattempt, effective concurrency learning, provider capacity skip conversion, structured retry admission, guarded `auto_retry` admission, packet/cache lookup | Ordinary hidden subagents could accidentally enter queue/retry/cache behavior if context gating is wrong | Keep all Deep Review logic behind explicit agent type/manifest checks; add regression tests for ordinary Task calls. |
 | `tool_pipeline.rs` | Propagates Deep Review context variables and records duplicate `Read`/`GetFileDiff` measurements | Generic tool execution can become feature-aware and harder to reuse | Extract propagation and measurement into a Deep Review hook; keep the pipeline generic. |
 | `CodeReviewTool` | Deep Review packet metadata fallback, reliability signals, runtime diagnostics, incremental cache write-through | Standard Code Review reports could gain Deep Review-only reliability or cache behavior | Gate enrichments by Deep Review context and add standard Code Review regression tests. |
 | `bitfun-events` / agentic events | Adds Deep Review queue state event payload | Event enum becomes increasingly domain-specific | Keep current event stable for compatibility; only design generic subagent queue events after product/API review. |
@@ -33,6 +33,7 @@ This inventory lists the shared areas touched by the current Deep Review work wh
 
 - A normal `Task` tool call without `deep_review_run_manifest` does not apply Deep Review queue controls.
 - A normal `Task` tool retry does not require Deep Review `retry_coverage`.
+- A normal `Task` tool call is not affected by Deep Review `auto_retry` admission unless the parent agent is Deep Review.
 - Standard `CodeReviewTool` submission does not emit Deep Review packet metadata, cache hit/miss, or queue reliability signals.
 - Deep Review queue events serialize with the existing stable event shape.
 - Tool pipeline duplicate-read measurement ignores non-DeepReview `Read` and `GetFileDiff` calls.

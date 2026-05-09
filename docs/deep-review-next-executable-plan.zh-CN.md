@@ -385,9 +385,9 @@ git diff --check
 | M2-P1 Provider classifier and diagnostics | 收窄 provider transient classifier，补齐 diagnostics counters | `deep_review/queue.rs` 或当前 `deep_review_policy.rs`、`task_tool.rs` tests | 小，错误分类更明确 | Rust tests for queueable / fail-fast errors | auth/quota/model/policy/cancel/validation fail fast；rate/concurrency/retry-after/overload queueable。 |
 | M2-P2 Short provider queue runtime | 实现 provider capacity wait + one reattempt | `deep_review/queue.rs`、`task_adapter.rs` / `task_tool.rs` | 是，Deep Review reviewer 失败恢复改变 | Rust queue expiry/success/pause/cancel tests | queue wait 不计入 runtime timeout；最多一次 reattempt；普通 subagent 不受影响。 |
 | M2-P3 Queue event and action-bar reason surface | 展示 provider queue reason、elapsed wait、controls | `DeepReviewActionBar.tsx` 或 split components、`deepReviewQueueStateEvents.ts`、locales | 是，用户可见 queue notice | action bar tests；queue event tests；locale completeness | pause/continue/cancel 可用；provider reason localized；不新增大 modal。 |
-| M2-P4 Manual retry extraction and launch | 从 report metadata 提取 retryable unresolved slices，增加显式 retry action | `codeReviewReport.ts`、`DeepReviewActionBar.tsx`、`DeepReviewService.ts` | 是，新增手动 retry | report parser tests；store/action tests；DeepReviewService tests | 只对 `partial_timeout` / transient `capacity_skipped` 启用；非 retryable source 禁用且有原因。 |
-| M2-P5 Bounded auto retry preference | 实现 opt-in 设置、suppression reasons、runtime guards | `reviewTeamService.ts` / `review-team/config.ts`、`task_adapter.rs` / `retry.rs` | 是，但默认关闭 | Rust retry admission tests；settings tests；locale tests | 默认 false；预算、scope、elapsed guard、lower timeout 全部生效；不会循环。 |
-| M2-P6 Reliability and docs close | 更新 report reliability、文档状态和 non-DeepReview inventory | `code_review_tool.rs` / `report.rs`、`codeReviewReport.ts`、Deep Review docs | 无新增行为 | Rust report tests；web report tests；stale claim scan | final report 对 queue/retry 诚实；源文档只在验证后标记 implemented。 |
+| M2-P4 Manual retry extraction and launch | 已完成：从 report metadata 提取 retryable unresolved slices，增加显式 retry action | `codeReviewReport.ts`、`DeepReviewActionBar.tsx`、action-bar store、locales | 是，新增手动 retry | report parser tests；action-bar tests；locale completeness | 只对 `partial_timeout` / transient `capacity_skipped` 启用；非 retryable source 禁用且有原因。 |
+| M2-P5 Bounded auto retry preference | 已完成：实现 opt-in 设置读取、suppression reasons、runtime guards；未实现后台自动 redispatch scheduler | `reviewTeamService.ts` / `review-team/config.ts`、`task_tool.rs`、`deep_review/concurrency_policy.rs`、`budget.rs` | 是，但默认关闭 | Rust retry admission tests；settings tests；locale tests | 默认 false；预算、scope、elapsed guard、lower timeout 全部生效；不会循环。 |
+| M2-P6 Reliability and docs close | 本轮执行中：更新 report reliability、文档状态和 non-DeepReview inventory | Deep Review docs | 无新增行为 | web report/settings tests；stale claim scan；Rust verification 最后统一执行 | final report 对 queue/retry 诚实；源文档只在验证后标记 implemented。 |
 
 M2 的实现顺序必须固定为 P1 -> P2 -> P3 -> P4 -> P5 -> P6。不要在 P2 同时做 manual retry，也不要在 P4 顺手启用 auto retry。
 
@@ -417,7 +417,7 @@ M2 的实现顺序必须固定为 P1 -> P2 -> P3 -> P4 -> P5 -> P6。不要在 P
 **M2-P4 Manual retry extraction and launch**
 
 - 前置检查：先定义 retryable unresolved slice parser 的输入/输出，并写 parser tests。
-- 改动范围：report parser、action bar explicit retry button、DeepReviewService retry launch metadata。
+- 改动范围：report parser、action bar explicit retry button、action-bar state、retry launch prompt metadata。
 - 必须验证：retryable/non-retryable parser tests、button disabled-state tests、retry launch metadata tests。
 - 禁止事项：不得启用 auto retry；不得 retry 非结构化 slice。
 
@@ -427,6 +427,7 @@ M2 的实现顺序必须固定为 P1 -> P2 -> P3 -> P4 -> P5 -> P6。不要在 P
 - 改动范围：settings opt-in、runtime admission guard、suppression reason reporting。
 - 必须验证：settings tests、Rust retry admission/suppression tests、locale tests。
 - 禁止事项：不得改变默认值；不得绕过 reduced scope、budget、elapsed guard、lower timeout。
+- 当前边界：`auto_retry` 只是 backend-owned retry caller 的 admission guard；后台自动 redispatch scheduler 仍未实现。
 
 **M2-P6 Reliability and docs close**
 
@@ -703,7 +704,7 @@ pnpm run type-check:web
 5. 发布门禁。
 
 ```powershell
-rg -n "project-level cache.*implemented|automatic retry.*complete|provider/adaptive queue.*complete|hard prompt.*complete|global.*concurrency.*automatic" docs/deep-review-design.md docs/deep-review-phase2-plan.md docs/deep-review-phase2-addendum.md docs/deep-review-phase3-followup-plan.md docs/deep-review-completed-status.md docs/deep-review-pending-plan.md
+rg -n "project-level cache.*implement.*ed|auto retry.*compl.*ete|provider/adaptive queue.*compl.*ete|hard prompt.*compl.*ete|global.*concurrency.*auto.*matic" docs/deep-review-design.md docs/deep-review-phase2-plan.md docs/deep-review-phase2-addendum.md docs/deep-review-phase3-followup-plan.md docs/deep-review-pending-plan.md
 cargo test -p bitfun-core deep_review -- --nocapture
 cargo test -p bitfun-events deep_review_queue_state_event_serializes_stable_contract -- --nocapture
 cargo check --workspace --exclude bitfun-cli

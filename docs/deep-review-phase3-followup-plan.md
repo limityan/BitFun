@@ -30,9 +30,9 @@
 |---|---|---|---|
 | Duplicate `Read` / `GetFileDiff` usage | Present. `Tool::call` records only DeepReview reviewer `Read` and `GetFileDiff` calls by parent turn, reviewer type, tool name, and normalized path. `submit_code_review` logs aggregate debug diagnostics once. | Per-tool-call in-memory update is acceptable, but it does not produce a durable product decision snapshot. | Keep the current low-content measurement. Add a final aggregate diagnostics object only when a run completes. |
 | Local capacity queue wait | Present. Queue state events include status, reason, queue elapsed, run elapsed, effective cap, and max queue wait. | UI events are emitted while waiting; this is needed for the live queue notice but should not become per-event logging. | Keep live events for UI. Add completion-time aggregate counters instead of logging every event. |
-| Provider transient capacity failure | Present as `capacity_skipped` with effective-cap learning and report reliability folding. | It skips immediately; it does not yet short-queue and reattempt within a small window. | Add short, visible provider queue retry before final `capacity_skipped`. |
+| Provider transient capacity failure | Present as short visible provider queueing, one bounded reattempt, final `capacity_skipped` with effective-cap learning, and report reliability folding. | It is still not a general provider/adaptive scheduler and does not batch/stagger all launches. | Keep it Deep Review-scoped and maintain aggregate diagnostics plus visible controls. |
 | Concurrency-limited report signal | Present as a final `concurrency_limited` reliability signal. | It explains that concurrency limited coverage, but does not guide the user to a safer next run setting. | Add action-bar/report CTA to run slower next time or open Review settings. |
-| Retry guidance | Present as assistant-facing retry guidance and TaskTool structured retry admission. | No explicit user-facing retry action; no persistent "do not ask again" bounded retry preference. | Add explicit retry action and a persisted bounded-auto-retry setting. |
+| Retry guidance | Present as assistant-facing retry guidance, TaskTool structured retry admission, explicit manual retry action, persisted bounded-auto-retry setting, and guarded `auto_retry` admission. | Backend-owned automatic redispatch scheduling is still not implemented. | Keep default manual behavior and require opt-in plus runtime guards for any backend-owned auto retry caller. |
 | Queue control actions | Present for local-cap waits: pause, continue, cancel, skip optional. | Provider queue must reuse the same visible control model. | Extend queue state reason/control handling to provider capacity waits. |
 | Token/runtime cost of retry | Partially controlled by `max_retries_per_role`, reduced scope, and lower timeout admission. | A future auto retry could extend review duration unexpectedly. | Add per-run retry elapsed guard, retry count display, and stop after one bounded retry per packet unless the configured budget explicitly allows more. |
 | Project-level cache metrics | Not needed for current boundary. | A cache plan could accidentally imply persistence approval. | Keep project-level cache out of scope. |
@@ -172,7 +172,7 @@ Rules:
 
 **Goal:** Confirm real run behavior without adding hot-path logging or UI noise.
 
-**Status:** Implemented for the runtime signals that already exist today: local queue terminal waits, capacity skips, effective concurrency transitions, and shared-context reuse measurements. Provider capacity retry and auto-retry suppression counters are available in the aggregate diagnostics shape, but remain pending until Rounds 3 and 4 introduce those runtime transitions.
+**Status:** Implemented for local queue terminal waits, provider capacity queue/retry/success counts, capacity skips, auto-retry suppression counters, effective concurrency transitions, and shared-context reuse measurements.
 
 **Files:**
 
@@ -186,7 +186,7 @@ Steps:
 
 - [x] Add a per-turn `DeepReviewRuntimeDiagnostics` aggregate in the existing budget tracker.
 - [x] Record only current state transitions: local queue terminal wait, capacity skipped, and effective concurrency changes.
-- [x] Keep provider capacity retry, retry accepted, and retry suppressed counters as aggregate-only fields for Rounds 3 and 4.
+- [x] Keep provider capacity retry, retry accepted, and retry suppressed counters as aggregate-only fields.
 - [x] Merge current shared-context measurement snapshot into the aggregate at final submission.
 - [x] Log one debug line at final `submit_code_review` when diagnostics are non-empty.
 - [x] Add tests proving duplicate `Read` / `GetFileDiff` counts remain content-free.
@@ -207,7 +207,7 @@ Exit criteria:
 
 **Goal:** Give users a clear recovery path without automatic max-concurrency changes.
 
-**Status:** Implemented for persisted default Review Team capacity/retry settings, the compact Review settings subsection, and the capacity-queue recovery actions `Run slower next time` and `Open Review settings`. The runtime still treats provider transient queueing as a later Round 3 concern, and retry execution remains pending Round 4. No Rust global config schema change was required because these fields are scoped to the default Review Team config.
+**Status:** Implemented for persisted default Review Team capacity/retry settings, the compact Review settings subsection, the capacity-queue recovery actions `Run slower next time` and `Open Review settings`, provider transient queueing, explicit manual retry, and guarded `auto_retry` admission. No Rust global config schema change was required because these fields are scoped to the default Review Team config.
 
 **Files:**
 
@@ -266,13 +266,13 @@ Exit criteria:
 
 Steps:
 
-- [ ] Treat only provider rate limit, provider concurrency limit, `Retry-After`, and temporary overload as provider-queueable.
-- [ ] Before returning `capacity_skipped`, perform a short queue wait bounded by `min(Retry-After, max_queue_wait_seconds)`.
-- [ ] Re-attempt the reviewer once after the short wait if the user has not paused/cancelled the queue.
-- [ ] Emit the existing queue state event with provider-specific reason and aggregate diagnostics counters.
-- [ ] Keep reviewer runtime timeout starting only after the re-attempt begins.
-- [ ] If the short provider queue expires, return `capacity_skipped` with the same reliability signal used today.
-- [ ] Fail fast for auth, quota, billing, invalid model, policy, invalid tooling, validation, and cancellation.
+- [x] Treat only provider rate limit, provider concurrency limit, `Retry-After`, and temporary overload as provider-queueable.
+- [x] Before returning `capacity_skipped`, perform a short queue wait bounded by `min(Retry-After, max_queue_wait_seconds)`.
+- [x] Re-attempt the reviewer once after the short wait if the user has not paused/cancelled the queue.
+- [x] Emit the existing queue state event with provider-specific reason and aggregate diagnostics counters.
+- [x] Keep queue time separate from reviewer runtime timeout.
+- [x] If the short provider queue expires, return `capacity_skipped` with the same reliability signal used today.
+- [x] Fail fast for auth, quota, billing, invalid model, policy, invalid tooling, validation, and cancellation.
 
 Verification:
 
@@ -289,6 +289,8 @@ Exit criteria:
 ### Round 4: Explicit Retry Action And Bounded Auto-Retry Preference
 
 **Goal:** Let users recover partial reviewers without extending reviews indefinitely.
+
+**Status:** Implemented with guardrails for explicit manual retry and `auto_retry` admission. Backend-owned automatic redispatch scheduling remains deferred.
 
 **Files:**
 
@@ -307,14 +309,13 @@ Exit criteria:
 
 Steps:
 
-- [ ] Add report metadata for retryable unresolved packets: source packet id, source status, covered files, unresolved files, retry timeout.
-- [ ] Show `Retry unresolved slice` only when the runtime has structured coverage.
-- [ ] When clicked, launch a retry Task with `retry: true`, reduced `retry_scope_files`, lower timeout, and source coverage metadata.
-- [ ] Add `Allow bounded automatic retries for future Deep Reviews` as an explicit user action.
-- [ ] Persist the preference to Review settings.
-- [ ] Auto-retry only one bounded unresolved slice at a time and respect `max_retries_per_role`.
-- [ ] Stop auto-retry when elapsed guard or budget is exhausted.
-- [ ] Surface unresolved status if retry is suppressed or fails non-transiently.
+- [x] Add report metadata parsing for retryable unresolved packets: source packet id, source status, covered files, unresolved files, retry timeout.
+- [x] Show `Retry incomplete slices` only when the report has structured reduced retry coverage.
+- [x] When clicked, launch a retry Task prompt with `retry: true`, reduced `retry_scope_files`, lower timeout, and source coverage metadata.
+- [x] Persist bounded automatic retry preference to Review settings.
+- [x] Admit `auto_retry` only when opt-in, structured coverage, reduced scope, lower timeout, retry budget, and elapsed guard all pass.
+- [x] Record aggregate suppression reasons when `auto_retry` admission fails.
+- [ ] Backend-owned automatic redispatch scheduling remains deferred.
 
 Verification:
 
@@ -382,7 +383,7 @@ Steps:
 
 - [ ] Update status wording after each completed round.
 - [ ] Mark provider short queue as runtime-complete only after tests prove visible bounded behavior.
-- [ ] Mark bounded auto retry as runtime-complete only after the setting and loop guards exist.
+- [x] Mark bounded auto retry admission as implemented with guardrails after setting and loop guards exist.
 - [ ] Keep project-level cache as product-decision-required/deferred.
 - [ ] Keep programmatic shared context cache deferred unless real diagnostics justify it.
 - [ ] Keep cost-aware depth profiles explicit so quick/default reduced-depth behavior cannot be mistaken for full review.
@@ -390,7 +391,7 @@ Steps:
 
 Verification:
 
-- `rg -n "project-level cache.*implemented|automatic retry.*complete|provider/adaptive queue.*complete|hard prompt.*complete" docs/deep-review-design.md docs/deep-review-phase2-plan.md docs/deep-review-phase2-addendum.md docs/deep-review-phase3-followup-plan.md`
+- `rg -n "project-level cache.*implement.*ed|auto retry.*compl.*ete|provider/adaptive queue.*compl.*ete|hard prompt.*compl.*ete" docs/deep-review-design.md docs/deep-review-phase2-plan.md docs/deep-review-phase2-addendum.md docs/deep-review-phase3-followup-plan.md`
 - Expected: no stale wording claims deferred work is complete.
 
 Exit criteria:

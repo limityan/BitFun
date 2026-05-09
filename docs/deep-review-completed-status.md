@@ -13,7 +13,7 @@ This consolidation covers the following current Deep Review documents and compan
 | `docs/deep-review-design.md` | Original strategy-engine, Architecture Reviewer, Frontend Reviewer, prompt ownership, and current implementation status. |
 | `docs/deep-review-phase2-plan.md` | Phase 2 implementation status for strategy, concurrency, retry, cache, token budget, and report reliability work. |
 | `docs/deep-review-phase2-addendum.md` | Truth model, status wording, risk register, completed rounds, and deferred boundaries. |
-| `docs/deep-review-phase3-followup-plan.md` | Latest product decisions and the current Phase 3 split between implemented diagnostics/settings and pending provider queue, retry action, and cost scope work. |
+| `docs/deep-review-phase3-followup-plan.md` | Latest product decisions and the current Phase 3 split between implemented diagnostics/settings/provider queue/retry controls and pending cost scope work. |
 | `docs/deep-review-architecture-refactor-plan.md` | Architecture refactor goals and module boundaries; implemented behavior from this document is not claimed here because it is a pending refactor plan. |
 | `docs/deep-review-nondeepreview-impact-inventory.md` | Shared-runtime impact rules that are already documented and must continue to constrain future work. |
 | `docs/superpowers/plans/2026-05-09-deep-review-phase3-execution-plan.md` | Round-level execution status and verification history for Phase 3. |
@@ -148,9 +148,11 @@ The orchestrator is still source-agnostic. Git-backed changes, local workspace c
 
 ### Current Boundary
 
-- Current queue automation is narrow and local-cap oriented.
-- Explicit provider transient-capacity reviewer failures currently become `capacity_skipped`, lower the turn-local effective cap, and feed reliability signals.
-- Short automatic provider requeue/retry is pending, not implemented.
+- Current queue automation is narrow and Deep Review reviewer-oriented.
+- Local-cap waits are bounded, visible, pauseable, continuable, cancellable, and optional-extra skippable.
+- Explicit provider transient-capacity reviewer failures now enter a short bounded provider queue and reattempt once before final `capacity_skipped`.
+- Provider queue/retry/success counts and provider reason counts are aggregate diagnostics.
+- Provider queue time remains separated from reviewer runtime timeout.
 - Backend batch/stagger scheduling is pending.
 - User-facing effective-cap override controls are pending.
 - Deep Review queueing is not global subagent queueing.
@@ -170,8 +172,11 @@ The orchestrator is still source-agnostic. Git-backed changes, local workspace c
   - available retry budget.
 - Accepted retry Tasks receive a bounded retry-scope prompt block.
 - Missing coverage, broad scope, non-retryable status, non-lowered timeout, and exhausted budget are rejected.
-- Backend-owned automatic redispatch remains pending.
-- User-facing explicit retry action remains pending.
+- User-facing explicit retry action exists for structured unresolved Deep Review slices.
+- Manual retry is enabled only for `partial_timeout` or transient `capacity_skipped` sources with explicit reduced retry scope.
+- Bounded automatic retry admission is guarded by Review Team opt-in, structured coverage, reduced scope, lower timeout, retry budget, and elapsed guard.
+- Bounded automatic retry remains disabled by default.
+- Backend-owned automatic redispatch scheduling remains pending; `auto_retry` is only an admission path for backend-owned retry callers, not a general scheduler.
 
 ## Completed Incremental Cache Boundary
 
@@ -252,7 +257,7 @@ The orchestrator is still source-agnostic. Git-backed changes, local workspace c
 - Defaults remain conservative:
   - 4 parallel reviewers;
   - 60 seconds max queue wait;
-  - provider capacity queue allowed by policy but short runtime queue still pending;
+  - provider capacity queue allowed by policy and bounded to one short reattempt;
   - bounded automatic retry disabled by default;
   - 180 seconds elapsed guard.
 - Controls are scoped to Review Team settings.
@@ -298,7 +303,7 @@ The source documents record focused and release-gate verification, including:
 - focused frontend tests for `reviewTeamService`, Deep Review action bar/store, queue events, and report utilities;
 - focused Rust tests for runtime diagnostics, cache behavior, retry admission, queue/capacity behavior, and report reliability.
 
-The latest consolidation in this document does not claim new runtime verification. It records already documented implementation status and separates pending work into `docs/deep-review-pending-plan.md`.
+The latest M2 consolidation records focused web verification and static stale-claim checks. Full Rust verification is deferred to the combined milestone verification pass.
 
 ## Completed Boundary Summary
 
@@ -313,7 +318,10 @@ Deep Review has moved from a prompt-only concept to a guarded runtime with:
 - predictive timeouts;
 - partial-timeout final-message capture;
 - local-cap queue controls;
+- bounded provider-capacity queue with one reattempt;
 - structured retry admission;
+- explicit manual retry action for structured unresolved slices;
+- guarded `auto_retry` admission with default-off Review Team settings;
 - per-session packet cache;
 - packet fallback;
 - report reliability signals;
@@ -321,4 +329,4 @@ Deep Review has moved from a prompt-only concept to a guarded runtime with:
 - compact launch summary;
 - review-scoped capacity and retry settings.
 
-The completed boundary intentionally stops before automatic provider requeue, user-facing retry actions, project-level cache, hard byte clipping, programmatic shared tool-result reuse, global subagent scheduling, and large-scale architecture refactoring.
+The completed boundary intentionally stops before backend-owned retry redispatch scheduling, backend batch/stagger scheduling, project-level cache, hard byte clipping, programmatic shared tool-result reuse, global subagent scheduling, and large-scale architecture refactoring.

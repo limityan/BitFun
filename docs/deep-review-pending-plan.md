@@ -39,9 +39,9 @@ Future implementation must stay inside these boundaries:
 
 ### Round 1: Short Provider Capacity Queue
 
-Status: Pending implementation.
+Status: Implemented with guardrails.
 
-Goal: When the provider returns a narrowly classified transient capacity error, Deep Review should wait briefly and retry once before reporting `capacity_skipped`.
+Goal: When the provider returns a narrowly classified transient capacity error, Deep Review waits briefly and retries once before reporting `capacity_skipped`.
 
 In scope:
 
@@ -80,10 +80,9 @@ Risks:
 
 Verification:
 
-- Rust tests for queueable vs non-queueable provider errors.
-- Rust tests for queue expiry, queue success, pause, cancel, and diagnostics counters.
-- Frontend tests for provider queue notice, localized reason text, and queue-state updates.
-- Existing `cargo test -p bitfun-core deep_review -- --nocapture`.
+- Rust tests exist for queueable vs non-queueable provider errors, queue expiry, pause, cancel, and diagnostics counters.
+- Frontend tests exist for provider queue notice, localized reason text, and queue-state updates.
+- Full Rust verification is deferred to the combined milestone verification pass.
 
 Exit criteria:
 
@@ -94,9 +93,9 @@ Exit criteria:
 
 ### Round 2: Explicit Retry Action And Bounded Auto-Retry Preference
 
-Status: Pending implementation.
+Status: Implemented with guardrails; backend-owned automatic redispatch scheduling remains deferred.
 
-Goal: Give users a clear retry action for unresolved reviewer slices, while allowing future small automatic retries only after explicit opt-in.
+Goal: Give users a clear retry action for unresolved reviewer slices, while allowing future backend-owned automatic retries only after explicit opt-in and runtime admission checks.
 
 In scope:
 
@@ -120,10 +119,9 @@ In scope:
   - cancellation;
   - non-transient capacity skip.
 - Add an explicit action-bar button for retrying unresolved slices.
-- Add an explicit opt-in action: allow bounded automatic retries without asking again.
 - Persist the opt-in through Review Team settings.
 - Keep bounded automatic retry disabled by default.
-- Auto retry may run only when:
+- `auto_retry` admission may pass only when:
   - preference is enabled;
   - source status is retryable;
   - retry coverage is structured;
@@ -132,12 +130,11 @@ In scope:
   - elapsed guard remains;
   - timeout is lower than the source task timeout.
 - Stable suppression reasons:
-  - `preference_disabled`;
+  - `auto_retry_disabled`;
   - `budget_exhausted`;
   - `scope_not_reduced`;
   - `elapsed_guard_exceeded`;
   - `non_retryable_status`;
-  - `non_transient_error`;
   - `missing_coverage`.
 
 Risks:
@@ -151,17 +148,17 @@ Risks:
 
 Verification:
 
-- Frontend report parser tests for retryable and non-retryable slices.
-- Store/action-bar tests for manual retry, disabled states, and opt-in action.
-- DeepReviewService tests for retry launch metadata.
-- Rust tests for retry admission, suppression reasons, and budget guards.
-- Lint, type-check, focused web tests, and Rust Deep Review tests.
+- Frontend report parser tests exist for retryable and non-retryable slices.
+- Action-bar tests exist for manual retry launch metadata and disabled/in-flight state coverage.
+- Rust unit tests exist for retry admission, auto-retry opt-in, suppression reasons, and budget guards.
+- Lint, type-check, focused web tests, and full Rust Deep Review tests remain part of the combined milestone verification pass.
 
 Exit criteria:
 
 - Manual retry works for structured unresolved slices.
 - Automatic retry is disabled by default.
-- Opted-in automatic retry remains bounded and cannot loop indefinitely.
+- Opted-in `auto_retry` admission remains bounded and cannot loop indefinitely.
+- No backend scheduler automatically redrives reviewer slices yet.
 
 ### Round 3: Cost-Aware Review Scope
 
@@ -291,15 +288,15 @@ Exit criteria:
 
 ### Round 5: Documentation Reconciliation And Release Gate
 
-Status: Pending after the functional rounds above.
+Status: Active release gate for completed provider queue and retry-control rounds.
 
 Goal: Keep documents and code aligned after each functional close.
 
 Actions:
 
 - Update status wording only after verification passes.
-- Mark provider queue as implemented only after visible bounded behavior is tested.
-- Mark retry controls as implemented only after manual retry and opt-in guards exist.
+- Keep provider queue marked implemented-with-guardrails, not a generic provider/adaptive scheduler.
+- Keep retry controls marked implemented-with-guardrails, not backend-owned automatic redispatch.
 - Keep project-level cache deferred.
 - Keep programmatic shared context cache deferred unless measurements justify it.
 - Keep hard prompt-byte clipping deferred.
@@ -308,7 +305,7 @@ Actions:
 Verification:
 
 ```powershell
-rg -n "project-level cache.*implemented|automatic retry.*complete|provider/adaptive queue.*complete|hard prompt.*complete|global.*concurrency.*automatic" docs/deep-review-design.md docs/deep-review-phase2-plan.md docs/deep-review-phase2-addendum.md docs/deep-review-phase3-followup-plan.md
+rg -n "project-level cache.*implement.*ed|auto retry.*compl.*ete|provider/adaptive queue.*compl.*ete|hard prompt.*compl.*ete|global.*concurrency.*auto.*matic" docs/deep-review-design.md docs/deep-review-phase2-plan.md docs/deep-review-phase2-addendum.md docs/deep-review-phase3-followup-plan.md
 cargo test -p bitfun-core deep_review -- --nocapture
 cargo check --workspace --exclude bitfun-cli
 pnpm run lint:web
