@@ -66,7 +66,10 @@ pub struct DeepReviewCapacityQueueDecision {
 }
 
 impl DeepReviewCapacityQueueDecision {
-    fn queueable(reason: DeepReviewCapacityQueueReason, retry_after_seconds: Option<u64>) -> Self {
+    pub fn queueable(
+        reason: DeepReviewCapacityQueueReason,
+        retry_after_seconds: Option<u64>,
+    ) -> Self {
         Self {
             queueable: true,
             reason: Some(reason),
@@ -75,7 +78,7 @@ impl DeepReviewCapacityQueueDecision {
         }
     }
 
-    fn fail_fast(reason: DeepReviewCapacityFailFastReason) -> Self {
+    pub fn fail_fast(reason: DeepReviewCapacityFailFastReason) -> Self {
         Self {
             queueable: false,
             reason: None,

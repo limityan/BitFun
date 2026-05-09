@@ -7,10 +7,14 @@ use crate::agentic::deep_review_policy::{
     deep_review_active_reviewer_count, deep_review_effective_parallel_instances,
     deep_review_max_retries_per_role, deep_review_queue_control_snapshot,
     record_deep_review_capacity_skip_for_reason,
-    record_deep_review_effective_concurrency_capacity_error, record_deep_review_runtime_queue_wait,
-    try_begin_deep_review_active_reviewer, DeepReviewActiveReviewerGuard,
-    DeepReviewCapacityQueueReason, DeepReviewConcurrencyPolicy, DeepReviewExecutionPolicy,
-    DeepReviewPolicyViolation,
+    record_deep_review_effective_concurrency_capacity_error,
+    record_deep_review_runtime_provider_capacity_queue,
+    record_deep_review_runtime_provider_capacity_retry,
+    record_deep_review_runtime_provider_capacity_retry_success,
+    record_deep_review_runtime_queue_wait, try_begin_deep_review_active_reviewer,
+    DeepReviewActiveReviewerGuard, DeepReviewCapacityFailFastReason,
+    DeepReviewCapacityQueueDecision, DeepReviewCapacityQueueReason, DeepReviewConcurrencyPolicy,
+    DeepReviewExecutionPolicy, DeepReviewPolicyViolation,
 };
 use crate::agentic::events::{
     DeepReviewQueueReason, DeepReviewQueueState, DeepReviewQueueStatus, ErrorCategory,
@@ -35,6 +39,16 @@ pub(crate) enum DeepReviewQueueWaitSkipReason {
 pub(crate) enum DeepReviewQueueWaitOutcome {
     Ready {
         guard: DeepReviewActiveReviewerGuard<'static>,
+    },
+    Skipped {
+        queue_elapsed_ms: u64,
+        skip_reason: DeepReviewQueueWaitSkipReason,
+    },
+}
+
+pub(crate) enum DeepReviewProviderQueueWaitOutcome {
+    ReadyToRetry {
+        queue_elapsed_ms: u64,
     },
     Skipped {
         queue_elapsed_ms: u64,
@@ -401,7 +415,7 @@ pub(crate) fn queue_reason_to_snake_case(reason: DeepReviewCapacityQueueReason) 
 
 pub(crate) fn capacity_decision_for_provider_error(
     error: &BitFunError,
-) -> crate::agentic::deep_review::queue::DeepReviewCapacityQueueDecision {
+) -> DeepReviewCapacityQueueDecision {
     let detail = error.error_detail();
     let error_message = error.to_string();
     let code = detail.provider_code.as_deref().unwrap_or_default();
@@ -409,25 +423,54 @@ pub(crate) fn capacity_decision_for_provider_error(
         .provider_message
         .as_deref()
         .unwrap_or(error_message.as_str());
-    classify_deep_review_capacity_error(code, message, extract_retry_after_seconds(&error_message))
-}
-
-pub(crate) fn capacity_reason_for_provider_error(
-    error: &BitFunError,
-) -> Option<DeepReviewCapacityQueueReason> {
-    let detail = error.error_detail();
-    let decision = capacity_decision_for_provider_error(error);
-    if decision.queueable {
-        return decision.reason;
+    let decision = classify_deep_review_capacity_error(
+        code,
+        message,
+        extract_retry_after_seconds(&error_message),
+    );
+    if decision.queueable
+        || decision.fail_fast_reason
+            != Some(DeepReviewCapacityFailFastReason::DeterministicProviderError)
+    {
+        return decision;
     }
 
     match detail.category {
-        ErrorCategory::RateLimit => Some(DeepReviewCapacityQueueReason::ProviderRateLimit),
-        ErrorCategory::ProviderUnavailable => {
-            Some(DeepReviewCapacityQueueReason::TemporaryOverload)
-        }
-        _ => None,
+        ErrorCategory::RateLimit => DeepReviewCapacityQueueDecision::queueable(
+            DeepReviewCapacityQueueReason::ProviderRateLimit,
+            decision.retry_after_seconds,
+        ),
+        ErrorCategory::ProviderUnavailable => DeepReviewCapacityQueueDecision::queueable(
+            DeepReviewCapacityQueueReason::TemporaryOverload,
+            decision.retry_after_seconds,
+        ),
+        _ => decision,
     }
+}
+
+pub(crate) fn provider_capacity_queue_wait_seconds(
+    decision: &DeepReviewCapacityQueueDecision,
+    conc_policy: &DeepReviewConcurrencyPolicy,
+) -> Option<u64> {
+    if !decision.queueable || conc_policy.max_queue_wait_seconds == 0 {
+        return None;
+    }
+
+    match decision.reason? {
+        DeepReviewCapacityQueueReason::ProviderRateLimit
+        | DeepReviewCapacityQueueReason::ProviderConcurrencyLimit
+        | DeepReviewCapacityQueueReason::RetryAfter
+        | DeepReviewCapacityQueueReason::TemporaryOverload => {}
+        DeepReviewCapacityQueueReason::LocalConcurrencyCap => return None,
+    }
+
+    Some(
+        decision
+            .retry_after_seconds
+            .unwrap_or(conc_policy.max_queue_wait_seconds)
+            .min(conc_policy.max_queue_wait_seconds),
+    )
+    .filter(|seconds| *seconds > 0)
 }
 
 pub(crate) fn capacity_skip_result_for_provider_reason(
@@ -436,6 +479,26 @@ pub(crate) fn capacity_skip_result_for_provider_reason(
     subagent_type: &str,
     conc_policy: &DeepReviewConcurrencyPolicy,
     duration_ms: u128,
+) -> (Value, String) {
+    capacity_skip_result_for_provider_queue_outcome(
+        reason,
+        dialog_turn_id,
+        subagent_type,
+        conc_policy,
+        duration_ms,
+        0,
+        None,
+    )
+}
+
+pub(crate) fn capacity_skip_result_for_provider_queue_outcome(
+    reason: DeepReviewCapacityQueueReason,
+    dialog_turn_id: &str,
+    subagent_type: &str,
+    conc_policy: &DeepReviewConcurrencyPolicy,
+    duration_ms: u128,
+    queue_elapsed_ms: u64,
+    terminal_skip_reason: Option<DeepReviewQueueWaitSkipReason>,
 ) -> (Value, String) {
     let snapshot = record_deep_review_effective_concurrency_capacity_error(
         dialog_turn_id,
@@ -447,16 +510,32 @@ pub(crate) fn capacity_skip_result_for_provider_reason(
 
     let duration_ms = u64::try_from(duration_ms).unwrap_or(u64::MAX);
     let reason_code = queue_reason_to_snake_case(reason);
-    let assistant_message = format!(
-        "Subagent '{}' was skipped because the provider reported transient DeepReview capacity pressure.\n<queue_result status=\"capacity_skipped\" reason=\"{}\" queue_elapsed_ms=\"0\" />",
-        subagent_type, reason_code
-    );
+    let queue_skip_reason = match terminal_skip_reason {
+        Some(DeepReviewQueueWaitSkipReason::UserCancelled) => "user_cancelled",
+        Some(DeepReviewQueueWaitSkipReason::OptionalSkipped) => "optional_skipped",
+        Some(DeepReviewQueueWaitSkipReason::QueueExpired) | None => reason_code,
+    };
+    let assistant_message = match terminal_skip_reason {
+        Some(DeepReviewQueueWaitSkipReason::UserCancelled) => format!(
+            "Subagent '{}' was skipped because the DeepReview provider capacity queue was cancelled by the user.\n<queue_result status=\"capacity_skipped\" reason=\"user_cancelled\" queue_elapsed_ms=\"{}\" />",
+            subagent_type, queue_elapsed_ms
+        ),
+        Some(DeepReviewQueueWaitSkipReason::OptionalSkipped) => format!(
+            "Subagent '{}' was skipped because optional DeepReview provider capacity retries were skipped by the user.\n<queue_result status=\"capacity_skipped\" reason=\"optional_skipped\" queue_elapsed_ms=\"{}\" />",
+            subagent_type, queue_elapsed_ms
+        ),
+        Some(DeepReviewQueueWaitSkipReason::QueueExpired) | None => format!(
+            "Subagent '{}' was skipped because the provider reported transient DeepReview capacity pressure.\n<queue_result status=\"capacity_skipped\" reason=\"{}\" queue_elapsed_ms=\"{}\" />",
+            subagent_type, reason_code, queue_elapsed_ms
+        ),
+    };
     let data = json!({
         "duration": duration_ms,
         "status": "capacity_skipped",
-        "queue_elapsed_ms": 0,
+        "queue_elapsed_ms": queue_elapsed_ms,
         "max_queue_wait_seconds": conc_policy.max_queue_wait_seconds,
-        "queue_skip_reason": reason_code,
+        "queue_skip_reason": queue_skip_reason,
+        "provider_capacity_reason": reason_code,
         "effective_parallel_instances": snapshot.effective_parallel_instances
     });
 
@@ -501,6 +580,153 @@ pub(crate) async fn emit_queue_state(
             )
             .await;
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn wait_for_provider_capacity_retry(
+    session_id: &str,
+    dialog_turn_id: &str,
+    tool_id: &str,
+    subagent_type: &str,
+    conc_policy: &DeepReviewConcurrencyPolicy,
+    reason: DeepReviewCapacityQueueReason,
+    max_wait_seconds: u64,
+    is_optional_reviewer: bool,
+) -> DeepReviewProviderQueueWaitOutcome {
+    let started_at = Instant::now();
+    let max_wait = Duration::from_secs(max_wait_seconds);
+    let mut paused_since: Option<Instant> = None;
+    let mut paused_total = Duration::ZERO;
+    let optional_reviewer_count = is_optional_reviewer.then_some(1);
+
+    record_deep_review_runtime_provider_capacity_queue(dialog_turn_id, reason);
+
+    loop {
+        let now = Instant::now();
+        let current_pause_elapsed = paused_since
+            .map(|paused_at| now.saturating_duration_since(paused_at))
+            .unwrap_or_default();
+        let queue_elapsed = now
+            .saturating_duration_since(started_at)
+            .saturating_sub(paused_total)
+            .saturating_sub(current_pause_elapsed);
+        let queue_elapsed_ms = u64::try_from(queue_elapsed.as_millis()).unwrap_or(u64::MAX);
+        let active_reviewers = deep_review_active_reviewer_count(dialog_turn_id);
+        let effective_parallel_instances = deep_review_effective_parallel_instances(
+            dialog_turn_id,
+            conc_policy.max_parallel_instances,
+        );
+        let control_snapshot = deep_review_queue_control_snapshot(dialog_turn_id, tool_id);
+
+        if control_snapshot.cancelled || (is_optional_reviewer && control_snapshot.skip_optional) {
+            record_deep_review_runtime_queue_wait(dialog_turn_id, queue_elapsed_ms);
+            clear_deep_review_queue_control_for_tool(dialog_turn_id, tool_id);
+            emit_queue_state(
+                session_id,
+                dialog_turn_id,
+                tool_id,
+                subagent_type,
+                DeepReviewQueueStatus::CapacitySkipped,
+                Some(reason),
+                0,
+                active_reviewers,
+                optional_reviewer_count,
+                Some(effective_parallel_instances),
+                queue_elapsed_ms,
+                conc_policy.max_queue_wait_seconds,
+            )
+            .await;
+            return DeepReviewProviderQueueWaitOutcome::Skipped {
+                queue_elapsed_ms,
+                skip_reason: if control_snapshot.cancelled {
+                    DeepReviewQueueWaitSkipReason::UserCancelled
+                } else {
+                    DeepReviewQueueWaitSkipReason::OptionalSkipped
+                },
+            };
+        }
+
+        if control_snapshot.paused {
+            if paused_since.is_none() {
+                paused_since = Some(now);
+            }
+            emit_queue_state(
+                session_id,
+                dialog_turn_id,
+                tool_id,
+                subagent_type,
+                DeepReviewQueueStatus::PausedByUser,
+                Some(reason),
+                1,
+                active_reviewers,
+                optional_reviewer_count,
+                Some(effective_parallel_instances),
+                queue_elapsed_ms,
+                conc_policy.max_queue_wait_seconds,
+            )
+            .await;
+            sleep(DEEP_REVIEW_QUEUE_POLL_INTERVAL).await;
+            continue;
+        }
+
+        if let Some(paused_at) = paused_since.take() {
+            paused_total += now.saturating_duration_since(paused_at);
+        }
+
+        if queue_elapsed >= max_wait {
+            record_deep_review_runtime_queue_wait(dialog_turn_id, queue_elapsed_ms);
+            clear_deep_review_queue_control_for_tool(dialog_turn_id, tool_id);
+            emit_queue_state(
+                session_id,
+                dialog_turn_id,
+                tool_id,
+                subagent_type,
+                DeepReviewQueueStatus::Running,
+                Some(reason),
+                0,
+                active_reviewers,
+                optional_reviewer_count,
+                Some(effective_parallel_instances),
+                queue_elapsed_ms,
+                conc_policy.max_queue_wait_seconds,
+            )
+            .await;
+            return DeepReviewProviderQueueWaitOutcome::ReadyToRetry { queue_elapsed_ms };
+        }
+
+        emit_queue_state(
+            session_id,
+            dialog_turn_id,
+            tool_id,
+            subagent_type,
+            DeepReviewQueueStatus::QueuedForCapacity,
+            Some(reason),
+            1,
+            active_reviewers,
+            optional_reviewer_count,
+            Some(effective_parallel_instances),
+            queue_elapsed_ms,
+            conc_policy.max_queue_wait_seconds,
+        )
+        .await;
+
+        let remaining = max_wait.saturating_sub(queue_elapsed);
+        sleep(DEEP_REVIEW_QUEUE_POLL_INTERVAL.min(remaining)).await;
+    }
+}
+
+pub(crate) fn record_provider_capacity_retry(
+    dialog_turn_id: &str,
+    reason: DeepReviewCapacityQueueReason,
+) {
+    record_deep_review_runtime_provider_capacity_retry(dialog_turn_id, reason);
+}
+
+pub(crate) fn record_provider_capacity_retry_success(
+    dialog_turn_id: &str,
+    reason: DeepReviewCapacityQueueReason,
+) {
+    record_deep_review_runtime_provider_capacity_retry_success(dialog_turn_id, reason);
 }
 
 pub(crate) async fn wait_for_reviewer_capacity(

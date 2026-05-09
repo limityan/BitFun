@@ -1,7 +1,8 @@
 use crate::agentic::agents::{get_agent_registry, AgentInfo};
 use crate::agentic::coordination::get_global_coordinator;
 use crate::agentic::deep_review::task_adapter::{
-    self as deep_review_task_adapter, DeepReviewQueueWaitOutcome, DeepReviewQueueWaitSkipReason,
+    self as deep_review_task_adapter, DeepReviewProviderQueueWaitOutcome,
+    DeepReviewQueueWaitOutcome, DeepReviewQueueWaitSkipReason,
 };
 use crate::agentic::deep_review_policy::{
     deep_review_active_reviewer_count, deep_review_effective_concurrency_snapshot,
@@ -83,10 +84,10 @@ impl TaskTool {
         deep_review_task_adapter::prompt_with_deep_review_retry_scope(prompt, retry_scope_files)
     }
 
-    fn deep_review_capacity_reason_for_provider_error(
+    fn deep_review_capacity_decision_for_provider_error(
         error: &BitFunError,
-    ) -> Option<DeepReviewCapacityQueueReason> {
-        deep_review_task_adapter::capacity_reason_for_provider_error(error)
+    ) -> crate::agentic::deep_review_policy::DeepReviewCapacityQueueDecision {
+        deep_review_task_adapter::capacity_decision_for_provider_error(error)
     }
 
     fn deep_review_capacity_skip_result_for_provider_reason(
@@ -103,6 +104,70 @@ impl TaskTool {
             conc_policy,
             duration_ms,
         )
+    }
+
+    fn deep_review_capacity_skip_result_for_provider_queue_outcome(
+        reason: DeepReviewCapacityQueueReason,
+        dialog_turn_id: &str,
+        subagent_type: &str,
+        conc_policy: &DeepReviewConcurrencyPolicy,
+        duration_ms: u128,
+        queue_elapsed_ms: u64,
+        terminal_skip_reason: Option<DeepReviewQueueWaitSkipReason>,
+    ) -> (Value, String) {
+        deep_review_task_adapter::capacity_skip_result_for_provider_queue_outcome(
+            reason,
+            dialog_turn_id,
+            subagent_type,
+            conc_policy,
+            duration_ms,
+            queue_elapsed_ms,
+            terminal_skip_reason,
+        )
+    }
+
+    fn deep_review_provider_capacity_queue_wait_seconds(
+        decision: &crate::agentic::deep_review_policy::DeepReviewCapacityQueueDecision,
+        conc_policy: &DeepReviewConcurrencyPolicy,
+    ) -> Option<u64> {
+        deep_review_task_adapter::provider_capacity_queue_wait_seconds(decision, conc_policy)
+    }
+
+    async fn wait_for_deep_review_provider_capacity_retry(
+        session_id: &str,
+        dialog_turn_id: &str,
+        tool_id: &str,
+        subagent_type: &str,
+        conc_policy: &DeepReviewConcurrencyPolicy,
+        reason: DeepReviewCapacityQueueReason,
+        max_wait_seconds: u64,
+        is_optional_reviewer: bool,
+    ) -> DeepReviewProviderQueueWaitOutcome {
+        deep_review_task_adapter::wait_for_provider_capacity_retry(
+            session_id,
+            dialog_turn_id,
+            tool_id,
+            subagent_type,
+            conc_policy,
+            reason,
+            max_wait_seconds,
+            is_optional_reviewer,
+        )
+        .await
+    }
+
+    fn record_deep_review_provider_capacity_retry(
+        dialog_turn_id: &str,
+        reason: DeepReviewCapacityQueueReason,
+    ) {
+        deep_review_task_adapter::record_provider_capacity_retry(dialog_turn_id, reason);
+    }
+
+    fn record_deep_review_provider_capacity_retry_success(
+        dialog_turn_id: &str,
+        reason: DeepReviewCapacityQueueReason,
+    ) {
+        deep_review_task_adapter::record_provider_capacity_retry_success(dialog_turn_id, reason);
     }
 
     async fn emit_deep_review_queue_state(
@@ -153,6 +218,53 @@ impl TaskTool {
             is_optional_reviewer,
         )
         .await
+    }
+
+    fn deep_review_local_capacity_skip_tool_result(
+        dialog_turn_id: &str,
+        subagent_type: &str,
+        conc_policy: &DeepReviewConcurrencyPolicy,
+        skip_reason: DeepReviewQueueWaitSkipReason,
+        queue_elapsed_ms: u64,
+        duration_ms: u128,
+    ) -> ToolResult {
+        let queue_skip_reason = match skip_reason {
+            DeepReviewQueueWaitSkipReason::QueueExpired => "queue_expired",
+            DeepReviewQueueWaitSkipReason::UserCancelled => "user_cancelled",
+            DeepReviewQueueWaitSkipReason::OptionalSkipped => "optional_skipped",
+        };
+        let assistant_message = match skip_reason {
+            DeepReviewQueueWaitSkipReason::QueueExpired => format!(
+                "Subagent '{}' was skipped because the DeepReview capacity queue reached its maximum wait ({}s).\n<queue_result status=\"capacity_skipped\" reason=\"local_concurrency_cap\" queue_elapsed_ms=\"{}\" />",
+                subagent_type,
+                conc_policy.max_queue_wait_seconds,
+                queue_elapsed_ms
+            ),
+            DeepReviewQueueWaitSkipReason::UserCancelled => format!(
+                "Subagent '{}' was skipped because the DeepReview capacity queue was cancelled by the user.\n<queue_result status=\"capacity_skipped\" reason=\"user_cancelled\" queue_elapsed_ms=\"{}\" />",
+                subagent_type, queue_elapsed_ms
+            ),
+            DeepReviewQueueWaitSkipReason::OptionalSkipped => format!(
+                "Subagent '{}' was skipped because optional DeepReview queued reviewers were skipped by the user.\n<queue_result status=\"capacity_skipped\" reason=\"optional_skipped\" queue_elapsed_ms=\"{}\" />",
+                subagent_type, queue_elapsed_ms
+            ),
+        };
+
+        ToolResult::Result {
+            data: json!({
+                "duration": duration_ms,
+                "status": "capacity_skipped",
+                "queue_elapsed_ms": queue_elapsed_ms,
+                "max_queue_wait_seconds": conc_policy.max_queue_wait_seconds,
+                "queue_skip_reason": queue_skip_reason,
+                "effective_parallel_instances": deep_review_effective_concurrency_snapshot(
+                    dialog_turn_id,
+                    conc_policy.max_parallel_instances,
+                ).effective_parallel_instances
+            }),
+            result_for_assistant: Some(assistant_message),
+            image_attachments: None,
+        }
     }
 
     fn format_agent_descriptions(&self, agents: &[AgentInfo]) -> String {
@@ -781,46 +893,16 @@ impl Tool for TaskTool {
                                 queue_elapsed_ms,
                                 skip_reason,
                             } => {
-                                let queue_skip_reason = match skip_reason {
-                                    DeepReviewQueueWaitSkipReason::QueueExpired => "queue_expired",
-                                    DeepReviewQueueWaitSkipReason::UserCancelled => {
-                                        "user_cancelled"
-                                    }
-                                    DeepReviewQueueWaitSkipReason::OptionalSkipped => {
-                                        "optional_skipped"
-                                    }
-                                };
-                                let assistant_message = match skip_reason {
-                                    DeepReviewQueueWaitSkipReason::QueueExpired => format!(
-                                        "Subagent '{}' was skipped because the DeepReview capacity queue reached its maximum wait ({}s).\n<queue_result status=\"capacity_skipped\" reason=\"local_concurrency_cap\" queue_elapsed_ms=\"{}\" />",
-                                        subagent_type,
-                                        conc_policy.max_queue_wait_seconds,
-                                        queue_elapsed_ms
+                                return Ok(vec![
+                                    Self::deep_review_local_capacity_skip_tool_result(
+                                        &dialog_turn_id,
+                                        &subagent_type,
+                                        &conc_policy,
+                                        skip_reason,
+                                        queue_elapsed_ms,
+                                        start_time.elapsed().as_millis(),
                                     ),
-                                    DeepReviewQueueWaitSkipReason::UserCancelled => format!(
-                                        "Subagent '{}' was skipped because the DeepReview capacity queue was cancelled by the user.\n<queue_result status=\"capacity_skipped\" reason=\"user_cancelled\" queue_elapsed_ms=\"{}\" />",
-                                        subagent_type, queue_elapsed_ms
-                                    ),
-                                    DeepReviewQueueWaitSkipReason::OptionalSkipped => format!(
-                                        "Subagent '{}' was skipped because optional DeepReview queued reviewers were skipped by the user.\n<queue_result status=\"capacity_skipped\" reason=\"optional_skipped\" queue_elapsed_ms=\"{}\" />",
-                                        subagent_type, queue_elapsed_ms
-                                    ),
-                                };
-                                return Ok(vec![ToolResult::Result {
-                                    data: json!({
-                                        "duration": start_time.elapsed().as_millis(),
-                                        "status": "capacity_skipped",
-                                        "queue_elapsed_ms": queue_elapsed_ms,
-                                        "max_queue_wait_seconds": conc_policy.max_queue_wait_seconds,
-                                        "queue_skip_reason": queue_skip_reason,
-                                        "effective_parallel_instances": deep_review_effective_concurrency_snapshot(
-                                            &dialog_turn_id,
-                                            conc_policy.max_parallel_instances,
-                                        ).effective_parallel_instances
-                                    }),
-                                    result_for_assistant: Some(assistant_message),
-                                    image_attachments: None,
-                                }]);
+                                ]);
                             }
                         }
                     }
@@ -857,11 +939,6 @@ impl Tool for TaskTool {
             prompt = Self::prompt_with_deep_review_retry_scope(&prompt, retry_scope_files);
         }
 
-        let parent_info = SubagentParentInfo {
-            tool_call_id: tool_call_id.clone(),
-            session_id: session_id.clone(),
-            dialog_turn_id: dialog_turn_id.clone(),
-        };
         let subagent_context = deep_review_subagent_role.map(|role| {
             let mut values = HashMap::new();
             values.insert(
@@ -878,65 +955,216 @@ impl Tool for TaskTool {
             );
             values
         });
-        let result = match coordinator
-            .execute_subagent(
-                subagent_type.clone(),
-                prompt,
-                parent_info,
-                Some(effective_workspace_path.clone()),
-                subagent_context,
-                context.cancellation_token.as_ref(),
-                model_id,
-                timeout_seconds,
-            )
-            .await
-        {
-            Ok(result) => result,
-            Err(error) => {
-                if matches!(
-                    deep_review_subagent_role,
-                    Some(DeepReviewSubagentRole::Reviewer)
-                ) {
-                    if let (Some(reason), Some(conc_policy)) = (
-                        Self::deep_review_capacity_reason_for_provider_error(&error),
-                        deep_review_concurrency_policy.as_ref(),
-                    ) {
-                        drop(deep_review_active_guard.take());
-                        let (data, assistant_message) =
-                            Self::deep_review_capacity_skip_result_for_provider_reason(
-                                reason,
-                                &dialog_turn_id,
-                                &subagent_type,
-                                conc_policy,
-                                start_time.elapsed().as_millis(),
-                            );
-                        let effective_parallel_instances = data
-                            .get("effective_parallel_instances")
-                            .and_then(Value::as_u64)
-                            .and_then(|value| usize::try_from(value).ok());
-                        Self::emit_deep_review_queue_state(
-                            &session_id,
+        let prepared_prompt = prompt;
+        let mut provider_capacity_retry_reason: Option<DeepReviewCapacityQueueReason> = None;
+        let mut provider_capacity_queue_elapsed_ms = 0_u64;
+        let result = loop {
+            let parent_info = SubagentParentInfo {
+                tool_call_id: tool_call_id.clone(),
+                session_id: session_id.clone(),
+                dialog_turn_id: dialog_turn_id.clone(),
+            };
+            let execution_result = coordinator
+                .execute_subagent(
+                    subagent_type.clone(),
+                    prepared_prompt.clone(),
+                    parent_info,
+                    Some(effective_workspace_path.clone()),
+                    subagent_context.clone(),
+                    context.cancellation_token.as_ref(),
+                    model_id.clone(),
+                    timeout_seconds,
+                )
+                .await;
+
+            match execution_result {
+                Ok(result) => {
+                    if let Some(reason) = provider_capacity_retry_reason {
+                        Self::record_deep_review_provider_capacity_retry_success(
                             &dialog_turn_id,
-                            &tool_call_id,
-                            &subagent_type,
-                            DeepReviewQueueStatus::CapacitySkipped,
-                            Some(reason),
-                            0,
-                            deep_review_active_reviewer_count(&dialog_turn_id),
-                            deep_review_is_optional_reviewer.then_some(1),
-                            effective_parallel_instances,
-                            0,
-                            conc_policy.max_queue_wait_seconds,
-                        )
-                        .await;
-                        return Ok(vec![ToolResult::Result {
-                            data,
-                            result_for_assistant: Some(assistant_message),
-                            image_attachments: None,
-                        }]);
+                            reason,
+                        );
                     }
+                    break result;
                 }
-                return Err(error);
+                Err(error) => {
+                    if matches!(
+                        deep_review_subagent_role,
+                        Some(DeepReviewSubagentRole::Reviewer)
+                    ) {
+                        if let Some(conc_policy) = deep_review_concurrency_policy.as_ref() {
+                            let decision =
+                                Self::deep_review_capacity_decision_for_provider_error(&error);
+                            if let Some(reason) =
+                                decision.queueable.then_some(decision.reason).flatten()
+                            {
+                                drop(deep_review_active_guard.take());
+
+                                if provider_capacity_retry_reason.is_some() {
+                                    let (data, assistant_message) = Self::deep_review_capacity_skip_result_for_provider_queue_outcome(
+                                        reason,
+                                        &dialog_turn_id,
+                                        &subagent_type,
+                                        conc_policy,
+                                        start_time.elapsed().as_millis(),
+                                        provider_capacity_queue_elapsed_ms,
+                                        None,
+                                    );
+                                    let effective_parallel_instances = data
+                                        .get("effective_parallel_instances")
+                                        .and_then(Value::as_u64)
+                                        .and_then(|value| usize::try_from(value).ok());
+                                    Self::emit_deep_review_queue_state(
+                                        &session_id,
+                                        &dialog_turn_id,
+                                        &tool_call_id,
+                                        &subagent_type,
+                                        DeepReviewQueueStatus::CapacitySkipped,
+                                        Some(reason),
+                                        0,
+                                        deep_review_active_reviewer_count(&dialog_turn_id),
+                                        deep_review_is_optional_reviewer.then_some(1),
+                                        effective_parallel_instances,
+                                        provider_capacity_queue_elapsed_ms,
+                                        conc_policy.max_queue_wait_seconds,
+                                    )
+                                    .await;
+                                    return Ok(vec![ToolResult::Result {
+                                        data,
+                                        result_for_assistant: Some(assistant_message),
+                                        image_attachments: None,
+                                    }]);
+                                }
+
+                                if let Some(max_wait_seconds) =
+                                    Self::deep_review_provider_capacity_queue_wait_seconds(
+                                        &decision,
+                                        conc_policy,
+                                    )
+                                {
+                                    match Self::wait_for_deep_review_provider_capacity_retry(
+                                        &session_id,
+                                        &dialog_turn_id,
+                                        &tool_call_id,
+                                        &subagent_type,
+                                        conc_policy,
+                                        reason,
+                                        max_wait_seconds,
+                                        deep_review_is_optional_reviewer,
+                                    )
+                                    .await
+                                    {
+                                        DeepReviewProviderQueueWaitOutcome::ReadyToRetry {
+                                            queue_elapsed_ms,
+                                        } => {
+                                            provider_capacity_queue_elapsed_ms = queue_elapsed_ms;
+                                            let effective_parallel_instances =
+                                                deep_review_effective_parallel_instances(
+                                                    &dialog_turn_id,
+                                                    conc_policy.max_parallel_instances,
+                                                );
+                                            if let Some(guard) =
+                                                try_begin_deep_review_active_reviewer(
+                                                    &dialog_turn_id,
+                                                    effective_parallel_instances,
+                                                )
+                                            {
+                                                deep_review_active_guard = Some(guard);
+                                            } else {
+                                                match Self::wait_for_deep_review_reviewer_capacity(
+                                                    &session_id,
+                                                    &dialog_turn_id,
+                                                    &tool_call_id,
+                                                    &subagent_type,
+                                                    conc_policy,
+                                                    deep_review_is_optional_reviewer,
+                                                )
+                                                .await?
+                                                {
+                                                    DeepReviewQueueWaitOutcome::Ready { guard } => {
+                                                        deep_review_active_guard = Some(guard);
+                                                    }
+                                                    DeepReviewQueueWaitOutcome::Skipped {
+                                                        queue_elapsed_ms,
+                                                        skip_reason,
+                                                    } => {
+                                                        return Ok(vec![Self::deep_review_local_capacity_skip_tool_result(
+                                                            &dialog_turn_id,
+                                                            &subagent_type,
+                                                            conc_policy,
+                                                            skip_reason,
+                                                            queue_elapsed_ms,
+                                                            start_time.elapsed().as_millis(),
+                                                        )]);
+                                                    }
+                                                }
+                                            }
+                                            provider_capacity_retry_reason = Some(reason);
+                                            Self::record_deep_review_provider_capacity_retry(
+                                                &dialog_turn_id,
+                                                reason,
+                                            );
+                                            continue;
+                                        }
+                                        DeepReviewProviderQueueWaitOutcome::Skipped {
+                                            queue_elapsed_ms,
+                                            skip_reason,
+                                        } => {
+                                            let (data, assistant_message) = Self::deep_review_capacity_skip_result_for_provider_queue_outcome(
+                                                reason,
+                                                &dialog_turn_id,
+                                                &subagent_type,
+                                                conc_policy,
+                                                start_time.elapsed().as_millis(),
+                                                queue_elapsed_ms,
+                                                Some(skip_reason),
+                                            );
+                                            return Ok(vec![ToolResult::Result {
+                                                data,
+                                                result_for_assistant: Some(assistant_message),
+                                                image_attachments: None,
+                                            }]);
+                                        }
+                                    }
+                                }
+
+                                let (data, assistant_message) =
+                                    Self::deep_review_capacity_skip_result_for_provider_reason(
+                                        reason,
+                                        &dialog_turn_id,
+                                        &subagent_type,
+                                        conc_policy,
+                                        start_time.elapsed().as_millis(),
+                                    );
+                                let effective_parallel_instances = data
+                                    .get("effective_parallel_instances")
+                                    .and_then(Value::as_u64)
+                                    .and_then(|value| usize::try_from(value).ok());
+                                Self::emit_deep_review_queue_state(
+                                    &session_id,
+                                    &dialog_turn_id,
+                                    &tool_call_id,
+                                    &subagent_type,
+                                    DeepReviewQueueStatus::CapacitySkipped,
+                                    Some(reason),
+                                    0,
+                                    deep_review_active_reviewer_count(&dialog_turn_id),
+                                    deep_review_is_optional_reviewer.then_some(1),
+                                    effective_parallel_instances,
+                                    0,
+                                    conc_policy.max_queue_wait_seconds,
+                                )
+                                .await;
+                                return Ok(vec![ToolResult::Result {
+                                    data,
+                                    result_for_assistant: Some(assistant_message),
+                                    image_attachments: None,
+                                }]);
+                            }
+                        }
+                    }
+                    return Err(error);
+                }
             }
         };
         if !result.is_partial_timeout() {
@@ -1020,6 +1248,7 @@ mod tests {
         DeepReviewBudgetTracker, DeepReviewExecutionPolicy, DeepReviewSubagentRole,
     };
     use crate::agentic::tools::framework::Tool;
+    use crate::util::BitFunError;
     use serde_json::json;
 
     #[test]
@@ -1793,10 +2022,14 @@ mod tests {
             batch_extras_separately: true,
         };
         let turn_id = "turn-provider-capacity-skip";
-        let reason = TaskTool::deep_review_capacity_reason_for_provider_error(&BitFunError::ai(
-            "Provider error: provider=openai, code=429, message=rate limit exceeded",
-        ))
-        .expect("provider rate limit should surface as capacity_skipped");
+        let decision =
+            TaskTool::deep_review_capacity_decision_for_provider_error(&BitFunError::ai(
+                "Provider error: provider=openai, code=429, message=rate limit exceeded",
+            ));
+        assert!(decision.queueable);
+        let reason = decision
+            .reason
+            .expect("provider rate limit should surface as capacity_skipped");
         let (data, assistant_message) =
             TaskTool::deep_review_capacity_skip_result_for_provider_reason(
                 reason,
@@ -1821,14 +2054,167 @@ mod tests {
     fn deep_review_provider_quota_error_is_not_capacity_skipped() {
         use crate::util::BitFunError;
 
-        let reason = TaskTool::deep_review_capacity_reason_for_provider_error(&BitFunError::ai(
-            "Provider error: provider=glm, code=1113, message=insufficient quota",
-        ));
+        let decision = TaskTool::deep_review_capacity_decision_for_provider_error(
+            &BitFunError::ai("Provider error: provider=glm, code=1113, message=insufficient quota"),
+        );
 
         assert!(
-            reason.is_none(),
+            !decision.queueable,
             "quota errors should remain fail-fast instead of entering capacity queue flow"
         );
+    }
+
+    #[test]
+    fn deep_review_provider_queue_wait_is_bounded_by_retry_after_and_policy() {
+        use crate::agentic::deep_review_policy::DeepReviewConcurrencyPolicy;
+
+        let policy = DeepReviewConcurrencyPolicy {
+            max_parallel_instances: 3,
+            stagger_seconds: 0,
+            max_queue_wait_seconds: 30,
+            batch_extras_separately: true,
+        };
+        let decision = TaskTool::deep_review_capacity_decision_for_provider_error(
+            &BitFunError::ai("Provider error: code=429, message=Retry-After: 45"),
+        );
+
+        assert_eq!(
+            TaskTool::deep_review_provider_capacity_queue_wait_seconds(&decision, &policy),
+            Some(30)
+        );
+    }
+
+    #[test]
+    fn deep_review_provider_queue_wait_rejects_fail_fast_errors() {
+        use crate::agentic::deep_review_policy::DeepReviewConcurrencyPolicy;
+
+        let policy = DeepReviewConcurrencyPolicy {
+            max_parallel_instances: 3,
+            stagger_seconds: 0,
+            max_queue_wait_seconds: 30,
+            batch_extras_separately: true,
+        };
+        let decision = TaskTool::deep_review_capacity_decision_for_provider_error(
+            &BitFunError::ai("Provider error: code=invalid_model, message=model does not exist"),
+        );
+
+        assert_eq!(
+            TaskTool::deep_review_provider_capacity_queue_wait_seconds(&decision, &policy),
+            None
+        );
+    }
+
+    #[tokio::test]
+    async fn deep_review_provider_capacity_queue_cancel_control_skips_retry() {
+        use crate::agentic::deep_review::task_adapter::{
+            DeepReviewProviderQueueWaitOutcome, DeepReviewQueueWaitSkipReason,
+        };
+        use crate::agentic::deep_review_policy::{
+            apply_deep_review_queue_control, deep_review_runtime_diagnostics_snapshot,
+            DeepReviewCapacityQueueReason, DeepReviewConcurrencyPolicy,
+            DeepReviewQueueControlAction,
+        };
+
+        let turn_id = "turn-provider-queue-cancel";
+        let tool_id = "tool-provider-queue-cancel";
+        apply_deep_review_queue_control(turn_id, tool_id, DeepReviewQueueControlAction::Cancel);
+        let policy = DeepReviewConcurrencyPolicy {
+            max_parallel_instances: 2,
+            stagger_seconds: 0,
+            max_queue_wait_seconds: 60,
+            batch_extras_separately: true,
+        };
+
+        let outcome = TaskTool::wait_for_deep_review_provider_capacity_retry(
+            "session-provider-queue-cancel",
+            turn_id,
+            tool_id,
+            "ReviewSecurity",
+            &policy,
+            DeepReviewCapacityQueueReason::ProviderRateLimit,
+            60,
+            false,
+        )
+        .await;
+
+        match outcome {
+            DeepReviewProviderQueueWaitOutcome::Skipped {
+                queue_elapsed_ms,
+                skip_reason,
+            } => {
+                assert!(queue_elapsed_ms < 100);
+                assert_eq!(skip_reason, DeepReviewQueueWaitSkipReason::UserCancelled);
+            }
+            DeepReviewProviderQueueWaitOutcome::ReadyToRetry { .. } => {
+                panic!("cancelled provider queue should not retry")
+            }
+        }
+
+        let diagnostics = deep_review_runtime_diagnostics_snapshot(turn_id)
+            .expect("provider queue should record diagnostics");
+        assert_eq!(diagnostics.provider_capacity_queue_count, 1);
+        assert_eq!(
+            diagnostics
+                .provider_capacity_queue_reason_counts
+                .get("provider_rate_limit"),
+            Some(&1)
+        );
+    }
+
+    #[tokio::test]
+    async fn deep_review_provider_capacity_queue_pause_does_not_count_against_wait() {
+        use crate::agentic::deep_review::task_adapter::DeepReviewProviderQueueWaitOutcome;
+        use crate::agentic::deep_review_policy::{
+            apply_deep_review_queue_control, DeepReviewCapacityQueueReason,
+            DeepReviewConcurrencyPolicy, DeepReviewQueueControlAction,
+        };
+
+        let turn_id = "turn-provider-queue-pause";
+        let tool_id = "tool-provider-queue-pause";
+        apply_deep_review_queue_control(turn_id, tool_id, DeepReviewQueueControlAction::Pause);
+        let policy = DeepReviewConcurrencyPolicy {
+            max_parallel_instances: 2,
+            stagger_seconds: 0,
+            max_queue_wait_seconds: 1,
+            batch_extras_separately: true,
+        };
+        let turn_id_owned = turn_id.to_string();
+        let tool_id_owned = tool_id.to_string();
+
+        let handle = tokio::spawn(async move {
+            TaskTool::wait_for_deep_review_provider_capacity_retry(
+                "session-provider-queue-pause",
+                &turn_id_owned,
+                &tool_id_owned,
+                "ReviewSecurity",
+                &policy,
+                DeepReviewCapacityQueueReason::ProviderConcurrencyLimit,
+                1,
+                false,
+            )
+            .await
+        });
+
+        tokio::time::sleep(tokio::time::Duration::from_millis(30)).await;
+        assert!(
+            !handle.is_finished(),
+            "paused provider queue should not expire before continue"
+        );
+
+        apply_deep_review_queue_control(turn_id, tool_id, DeepReviewQueueControlAction::Continue);
+        let outcome = tokio::time::timeout(tokio::time::Duration::from_millis(1500), handle)
+            .await
+            .expect("continued provider queue should finish")
+            .expect("spawned wait should not panic");
+
+        match outcome {
+            DeepReviewProviderQueueWaitOutcome::ReadyToRetry { queue_elapsed_ms } => {
+                assert!(queue_elapsed_ms >= 900);
+            }
+            DeepReviewProviderQueueWaitOutcome::Skipped { .. } => {
+                panic!("continued provider queue should retry after bounded wait")
+            }
+        }
     }
 
     #[test]
