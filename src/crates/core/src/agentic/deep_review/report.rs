@@ -491,6 +491,10 @@ pub(crate) fn log_deep_review_runtime_diagnostics(dialog_turn_id: Option<&str>) 
         provider_capacity_retry_count,
         provider_capacity_retry_success_count,
         capacity_skip_count,
+        provider_capacity_queue_reason_counts,
+        provider_capacity_retry_reason_counts,
+        provider_capacity_retry_success_reason_counts,
+        capacity_skip_reason_counts,
         effective_parallel_min,
         effective_parallel_final,
         manual_queue_action_count,
@@ -507,9 +511,20 @@ pub(crate) fn log_deep_review_runtime_diagnostics(dialog_turn_id: Option<&str>) 
     let auto_retry_suppressed_reason_counts =
         serde_json::to_string(&auto_retry_suppressed_reason_counts)
             .unwrap_or_else(|_| "{}".to_string());
+    let provider_capacity_queue_reason_counts =
+        serde_json::to_string(&provider_capacity_queue_reason_counts)
+            .unwrap_or_else(|_| "{}".to_string());
+    let provider_capacity_retry_reason_counts =
+        serde_json::to_string(&provider_capacity_retry_reason_counts)
+            .unwrap_or_else(|_| "{}".to_string());
+    let provider_capacity_retry_success_reason_counts =
+        serde_json::to_string(&provider_capacity_retry_success_reason_counts)
+            .unwrap_or_else(|_| "{}".to_string());
+    let capacity_skip_reason_counts =
+        serde_json::to_string(&capacity_skip_reason_counts).unwrap_or_else(|_| "{}".to_string());
 
     debug!(
-        "DeepReview runtime diagnostics: queue_wait_count={}, queue_wait_total_ms={}, queue_wait_max_ms={}, provider_capacity_queue_count={}, provider_capacity_retry_count={}, provider_capacity_retry_success_count={}, capacity_skip_count={}, effective_parallel_min={}, effective_parallel_final={}, manual_queue_action_count={}, manual_retry_count={}, auto_retry_count={}, auto_retry_suppressed_reason_counts={}, shared_context_total_calls={}, shared_context_duplicate_calls={}, shared_context_duplicate_context_count={}",
+        "DeepReview runtime diagnostics: queue_wait_count={}, queue_wait_total_ms={}, queue_wait_max_ms={}, provider_capacity_queue_count={}, provider_capacity_retry_count={}, provider_capacity_retry_success_count={}, capacity_skip_count={}, provider_capacity_queue_reason_counts={}, provider_capacity_retry_reason_counts={}, provider_capacity_retry_success_reason_counts={}, capacity_skip_reason_counts={}, effective_parallel_min={}, effective_parallel_final={}, manual_queue_action_count={}, manual_retry_count={}, auto_retry_count={}, auto_retry_suppressed_reason_counts={}, shared_context_total_calls={}, shared_context_duplicate_calls={}, shared_context_duplicate_context_count={}",
         queue_wait_count,
         queue_wait_total_ms,
         queue_wait_max_ms,
@@ -517,6 +532,10 @@ pub(crate) fn log_deep_review_runtime_diagnostics(dialog_turn_id: Option<&str>) 
         provider_capacity_retry_count,
         provider_capacity_retry_success_count,
         capacity_skip_count,
+        provider_capacity_queue_reason_counts,
+        provider_capacity_retry_reason_counts,
+        provider_capacity_retry_success_reason_counts,
+        capacity_skip_reason_counts,
         effective_parallel_min
             .map(|value| value.to_string())
             .unwrap_or_else(|| "none".to_string()),

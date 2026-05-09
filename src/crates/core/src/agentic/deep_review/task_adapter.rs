@@ -1,14 +1,16 @@
 //! Deep Review-specific TaskTool adapter helpers.
 
 use crate::agentic::coordination::get_global_coordinator;
+use crate::agentic::deep_review::queue::extract_retry_after_seconds;
 use crate::agentic::deep_review_policy::{
     classify_deep_review_capacity_error, clear_deep_review_queue_control_for_tool,
     deep_review_active_reviewer_count, deep_review_effective_parallel_instances,
     deep_review_max_retries_per_role, deep_review_queue_control_snapshot,
-    record_deep_review_capacity_skip, record_deep_review_effective_concurrency_capacity_error,
-    record_deep_review_runtime_queue_wait, try_begin_deep_review_active_reviewer,
-    DeepReviewActiveReviewerGuard, DeepReviewCapacityQueueReason, DeepReviewConcurrencyPolicy,
-    DeepReviewExecutionPolicy, DeepReviewPolicyViolation,
+    record_deep_review_capacity_skip_for_reason,
+    record_deep_review_effective_concurrency_capacity_error, record_deep_review_runtime_queue_wait,
+    try_begin_deep_review_active_reviewer, DeepReviewActiveReviewerGuard,
+    DeepReviewCapacityQueueReason, DeepReviewConcurrencyPolicy, DeepReviewExecutionPolicy,
+    DeepReviewPolicyViolation,
 };
 use crate::agentic::events::{
     DeepReviewQueueReason, DeepReviewQueueState, DeepReviewQueueStatus, ErrorCategory,
@@ -394,18 +396,12 @@ pub(crate) fn queue_reason_to_event_reason(
 }
 
 pub(crate) fn queue_reason_to_snake_case(reason: DeepReviewCapacityQueueReason) -> &'static str {
-    match reason {
-        DeepReviewCapacityQueueReason::ProviderRateLimit => "provider_rate_limit",
-        DeepReviewCapacityQueueReason::ProviderConcurrencyLimit => "provider_concurrency_limit",
-        DeepReviewCapacityQueueReason::RetryAfter => "retry_after",
-        DeepReviewCapacityQueueReason::LocalConcurrencyCap => "local_concurrency_cap",
-        DeepReviewCapacityQueueReason::TemporaryOverload => "temporary_overload",
-    }
+    reason.as_snake_case()
 }
 
-pub(crate) fn capacity_reason_for_provider_error(
+pub(crate) fn capacity_decision_for_provider_error(
     error: &BitFunError,
-) -> Option<DeepReviewCapacityQueueReason> {
+) -> crate::agentic::deep_review::queue::DeepReviewCapacityQueueDecision {
     let detail = error.error_detail();
     let error_message = error.to_string();
     let code = detail.provider_code.as_deref().unwrap_or_default();
@@ -413,7 +409,14 @@ pub(crate) fn capacity_reason_for_provider_error(
         .provider_message
         .as_deref()
         .unwrap_or(error_message.as_str());
-    let decision = classify_deep_review_capacity_error(code, message, None);
+    classify_deep_review_capacity_error(code, message, extract_retry_after_seconds(&error_message))
+}
+
+pub(crate) fn capacity_reason_for_provider_error(
+    error: &BitFunError,
+) -> Option<DeepReviewCapacityQueueReason> {
+    let detail = error.error_detail();
+    let decision = capacity_decision_for_provider_error(error);
     if decision.queueable {
         return decision.reason;
     }
@@ -440,7 +443,7 @@ pub(crate) fn capacity_skip_result_for_provider_reason(
         reason,
         None,
     );
-    record_deep_review_capacity_skip(dialog_turn_id);
+    record_deep_review_capacity_skip_for_reason(dialog_turn_id, reason);
 
     let duration_ms = u64::try_from(duration_ms).unwrap_or(u64::MAX);
     let reason_code = queue_reason_to_snake_case(reason);
@@ -541,7 +544,7 @@ pub(crate) async fn wait_for_reviewer_capacity(
         let control_snapshot = deep_review_queue_control_snapshot(dialog_turn_id, tool_id);
         if control_snapshot.cancelled || (is_optional_reviewer && control_snapshot.skip_optional) {
             record_deep_review_runtime_queue_wait(dialog_turn_id, queue_elapsed_ms);
-            record_deep_review_capacity_skip(dialog_turn_id);
+            record_deep_review_capacity_skip_for_reason(dialog_turn_id, reason);
             clear_deep_review_queue_control_for_tool(dialog_turn_id, tool_id);
             emit_queue_state(
                 session_id,
@@ -627,7 +630,7 @@ pub(crate) async fn wait_for_reviewer_capacity(
                 decision.retry_after_seconds.map(Duration::from_secs),
             );
             record_deep_review_runtime_queue_wait(dialog_turn_id, queue_elapsed_ms);
-            record_deep_review_capacity_skip(dialog_turn_id);
+            record_deep_review_capacity_skip_for_reason(dialog_turn_id, reason);
             clear_deep_review_queue_control_for_tool(dialog_turn_id, tool_id);
             emit_queue_state(
                 session_id,

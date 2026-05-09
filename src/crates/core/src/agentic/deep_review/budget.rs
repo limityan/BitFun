@@ -101,6 +101,15 @@ impl Default for DeepReviewBudgetTracker {
 }
 
 impl DeepReviewBudgetTracker {
+    fn record_reason_count(
+        counts: &mut std::collections::BTreeMap<String, usize>,
+        reason: DeepReviewCapacityQueueReason,
+    ) {
+        *counts
+            .entry(reason.as_snake_case().to_string())
+            .or_insert(0) += 1;
+    }
+
     fn update_runtime_diagnostics(
         &self,
         parent_dialog_turn_id: &str,
@@ -139,35 +148,60 @@ impl DeepReviewBudgetTracker {
         });
     }
 
-    pub fn record_runtime_provider_capacity_queue(&self, parent_dialog_turn_id: &str) {
+    pub fn record_runtime_provider_capacity_queue(
+        &self,
+        parent_dialog_turn_id: &str,
+        reason: DeepReviewCapacityQueueReason,
+    ) {
         self.update_runtime_diagnostics(parent_dialog_turn_id, |diagnostics| {
             diagnostics.provider_capacity_queue_count =
                 diagnostics.provider_capacity_queue_count.saturating_add(1);
+            Self::record_reason_count(
+                &mut diagnostics.provider_capacity_queue_reason_counts,
+                reason,
+            );
         });
     }
 
-    pub fn record_runtime_provider_capacity_retry(&self, parent_dialog_turn_id: &str) {
+    pub fn record_runtime_provider_capacity_retry(
+        &self,
+        parent_dialog_turn_id: &str,
+        reason: DeepReviewCapacityQueueReason,
+    ) {
         self.update_runtime_diagnostics(parent_dialog_turn_id, |diagnostics| {
             diagnostics.provider_capacity_retry_count =
                 diagnostics.provider_capacity_retry_count.saturating_add(1);
+            Self::record_reason_count(
+                &mut diagnostics.provider_capacity_retry_reason_counts,
+                reason,
+            );
         });
     }
 
-    pub fn record_runtime_provider_capacity_retry_success(&self, parent_dialog_turn_id: &str) {
+    pub fn record_runtime_provider_capacity_retry_success(
+        &self,
+        parent_dialog_turn_id: &str,
+        reason: DeepReviewCapacityQueueReason,
+    ) {
         self.update_runtime_diagnostics(parent_dialog_turn_id, |diagnostics| {
             diagnostics.provider_capacity_retry_success_count = diagnostics
                 .provider_capacity_retry_success_count
                 .saturating_add(1);
+            Self::record_reason_count(
+                &mut diagnostics.provider_capacity_retry_success_reason_counts,
+                reason,
+            );
         });
     }
 
     pub fn record_runtime_capacity_skip(
         &self,
         parent_dialog_turn_id: &str,
-        _reason: DeepReviewCapacityQueueReason,
+        reason: DeepReviewCapacityQueueReason,
     ) {
         self.update_runtime_diagnostics(parent_dialog_turn_id, |diagnostics| {
             diagnostics.capacity_skip_count = diagnostics.capacity_skip_count.saturating_add(1);
+            Self::record_reason_count(&mut diagnostics.capacity_skip_reason_counts, reason);
         });
     }
 
@@ -406,7 +440,11 @@ impl DeepReviewBudgetTracker {
         budget.updated_at = now;
     }
 
-    pub fn record_capacity_skip(&self, parent_dialog_turn_id: &str) {
+    fn record_capacity_skip_inner(
+        &self,
+        parent_dialog_turn_id: &str,
+        reason: Option<DeepReviewCapacityQueueReason>,
+    ) {
         if parent_dialog_turn_id.trim().is_empty() {
             return;
         }
@@ -428,7 +466,25 @@ impl DeepReviewBudgetTracker {
             .runtime_diagnostics
             .capacity_skip_count
             .saturating_add(1);
+        if let Some(reason) = reason {
+            Self::record_reason_count(
+                &mut budget.runtime_diagnostics.capacity_skip_reason_counts,
+                reason,
+            );
+        }
         budget.updated_at = now;
+    }
+
+    pub fn record_capacity_skip(&self, parent_dialog_turn_id: &str) {
+        self.record_capacity_skip_inner(parent_dialog_turn_id, None);
+    }
+
+    pub fn record_capacity_skip_for_reason(
+        &self,
+        parent_dialog_turn_id: &str,
+        reason: DeepReviewCapacityQueueReason,
+    ) {
+        self.record_capacity_skip_inner(parent_dialog_turn_id, Some(reason));
     }
 
     pub fn begin_active_reviewer<'a>(

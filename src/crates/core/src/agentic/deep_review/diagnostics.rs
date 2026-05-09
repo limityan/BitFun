@@ -13,6 +13,10 @@ pub struct DeepReviewRuntimeDiagnostics {
     pub provider_capacity_retry_count: usize,
     pub provider_capacity_retry_success_count: usize,
     pub capacity_skip_count: usize,
+    pub provider_capacity_queue_reason_counts: BTreeMap<String, usize>,
+    pub provider_capacity_retry_reason_counts: BTreeMap<String, usize>,
+    pub provider_capacity_retry_success_reason_counts: BTreeMap<String, usize>,
+    pub capacity_skip_reason_counts: BTreeMap<String, usize>,
     pub effective_parallel_min: Option<usize>,
     pub effective_parallel_final: Option<usize>,
     pub manual_queue_action_count: usize,
@@ -33,6 +37,12 @@ impl DeepReviewRuntimeDiagnostics {
             && self.provider_capacity_retry_count == 0
             && self.provider_capacity_retry_success_count == 0
             && self.capacity_skip_count == 0
+            && self.provider_capacity_queue_reason_counts.is_empty()
+            && self.provider_capacity_retry_reason_counts.is_empty()
+            && self
+                .provider_capacity_retry_success_reason_counts
+                .is_empty()
+            && self.capacity_skip_reason_counts.is_empty()
             && self.effective_parallel_min.is_none()
             && self.effective_parallel_final.is_none()
             && self.manual_queue_action_count == 0

@@ -15,9 +15,9 @@ use crate::agentic::deep_review::constants::DEFAULT_MAX_RETRIES_PER_ROLE;
 pub use crate::agentic::deep_review::diagnostics::DeepReviewRuntimeDiagnostics;
 pub(crate) use crate::agentic::deep_review::queue::DeepReviewQueueControlTracker;
 pub use crate::agentic::deep_review::queue::{
-    classify_deep_review_capacity_error, DeepReviewCapacityQueueDecision,
-    DeepReviewCapacityQueueReason, DeepReviewQueueControlAction, DeepReviewQueueControlSnapshot,
-    DeepReviewReviewerQueueState, DeepReviewReviewerQueueStatus,
+    classify_deep_review_capacity_error, DeepReviewCapacityFailFastReason,
+    DeepReviewCapacityQueueDecision, DeepReviewCapacityQueueReason, DeepReviewQueueControlAction,
+    DeepReviewQueueControlSnapshot, DeepReviewReviewerQueueState, DeepReviewReviewerQueueStatus,
 };
 pub use crate::agentic::deep_review::shared_context::{
     DeepReviewSharedContextDuplicate, DeepReviewSharedContextMeasurementSnapshot,
@@ -109,22 +109,40 @@ pub fn record_deep_review_capacity_skip(parent_dialog_turn_id: &str) {
     GLOBAL_DEEP_REVIEW_BUDGET_TRACKER.record_capacity_skip(parent_dialog_turn_id)
 }
 
+pub fn record_deep_review_capacity_skip_for_reason(
+    parent_dialog_turn_id: &str,
+    reason: DeepReviewCapacityQueueReason,
+) {
+    GLOBAL_DEEP_REVIEW_BUDGET_TRACKER.record_capacity_skip_for_reason(parent_dialog_turn_id, reason)
+}
+
 pub fn record_deep_review_runtime_queue_wait(parent_dialog_turn_id: &str, queue_elapsed_ms: u64) {
     GLOBAL_DEEP_REVIEW_BUDGET_TRACKER
         .record_runtime_queue_wait(parent_dialog_turn_id, queue_elapsed_ms)
 }
 
-pub fn record_deep_review_runtime_provider_capacity_queue(parent_dialog_turn_id: &str) {
-    GLOBAL_DEEP_REVIEW_BUDGET_TRACKER.record_runtime_provider_capacity_queue(parent_dialog_turn_id)
-}
-
-pub fn record_deep_review_runtime_provider_capacity_retry(parent_dialog_turn_id: &str) {
-    GLOBAL_DEEP_REVIEW_BUDGET_TRACKER.record_runtime_provider_capacity_retry(parent_dialog_turn_id)
-}
-
-pub fn record_deep_review_runtime_provider_capacity_retry_success(parent_dialog_turn_id: &str) {
+pub fn record_deep_review_runtime_provider_capacity_queue(
+    parent_dialog_turn_id: &str,
+    reason: DeepReviewCapacityQueueReason,
+) {
     GLOBAL_DEEP_REVIEW_BUDGET_TRACKER
-        .record_runtime_provider_capacity_retry_success(parent_dialog_turn_id)
+        .record_runtime_provider_capacity_queue(parent_dialog_turn_id, reason)
+}
+
+pub fn record_deep_review_runtime_provider_capacity_retry(
+    parent_dialog_turn_id: &str,
+    reason: DeepReviewCapacityQueueReason,
+) {
+    GLOBAL_DEEP_REVIEW_BUDGET_TRACKER
+        .record_runtime_provider_capacity_retry(parent_dialog_turn_id, reason)
+}
+
+pub fn record_deep_review_runtime_provider_capacity_retry_success(
+    parent_dialog_turn_id: &str,
+    reason: DeepReviewCapacityQueueReason,
+) {
+    GLOBAL_DEEP_REVIEW_BUDGET_TRACKER
+        .record_runtime_provider_capacity_retry_success(parent_dialog_turn_id, reason)
 }
 
 pub fn record_deep_review_runtime_capacity_skip(
@@ -477,6 +495,14 @@ mod tests {
     fn deep_review_diagnostics_module_matches_policy_facade() {
         let mut suppressed = std::collections::BTreeMap::new();
         suppressed.insert("scope_not_reduced".to_string(), 2);
+        let mut provider_queue_reasons = std::collections::BTreeMap::new();
+        provider_queue_reasons.insert("provider_rate_limit".to_string(), 1);
+        let mut provider_retry_reasons = std::collections::BTreeMap::new();
+        provider_retry_reasons.insert("retry_after".to_string(), 1);
+        let mut provider_retry_success_reasons = std::collections::BTreeMap::new();
+        provider_retry_success_reasons.insert("retry_after".to_string(), 1);
+        let mut capacity_skip_reasons = std::collections::BTreeMap::new();
+        capacity_skip_reasons.insert("provider_concurrency_limit".to_string(), 1);
         let module_diagnostics =
             crate::agentic::deep_review::diagnostics::DeepReviewRuntimeDiagnostics {
                 queue_wait_count: 1,
@@ -486,6 +512,10 @@ mod tests {
                 provider_capacity_retry_count: 1,
                 provider_capacity_retry_success_count: 1,
                 capacity_skip_count: 1,
+                provider_capacity_queue_reason_counts: provider_queue_reasons,
+                provider_capacity_retry_reason_counts: provider_retry_reasons,
+                provider_capacity_retry_success_reason_counts: provider_retry_success_reasons,
+                capacity_skip_reason_counts: capacity_skip_reasons,
                 effective_parallel_min: Some(1),
                 effective_parallel_final: Some(2),
                 manual_queue_action_count: 1,
@@ -1200,6 +1230,12 @@ mod tests {
         assert_eq!(diagnostics.queue_wait_total_ms, 3_750);
         assert_eq!(diagnostics.queue_wait_max_ms, 2_500);
         assert_eq!(diagnostics.capacity_skip_count, 1);
+        assert_eq!(
+            diagnostics
+                .capacity_skip_reason_counts
+                .get("provider_concurrency_limit"),
+            Some(&1)
+        );
         assert_eq!(diagnostics.provider_capacity_queue_count, 0);
     }
 
@@ -1362,30 +1398,64 @@ mod tests {
             assert!(decision.queueable, "{code} should be queueable");
             assert_eq!(decision.reason, Some(expected_reason));
         }
+
+        let retry_after_decision = super::classify_deep_review_capacity_error(
+            "provider_error",
+            "Provider returned Retry-After: 45",
+            None,
+        );
+        assert_eq!(
+            retry_after_decision.reason,
+            Some(super::DeepReviewCapacityQueueReason::RetryAfter)
+        );
+        assert_eq!(retry_after_decision.retry_after_seconds, Some(45));
     }
 
     #[test]
     fn capacity_error_classifier_fails_fast_for_non_capacity_failures() {
         let non_queueable_cases = [
-            ("authentication_failed", "API key is invalid"),
+            (
+                "authentication_failed",
+                "API key is invalid",
+                super::DeepReviewCapacityFailFastReason::Authentication,
+            ),
             (
                 "provider_quota_exhausted",
                 "Quota exhausted for this billing period",
+                super::DeepReviewCapacityFailFastReason::BillingOrQuota,
             ),
-            ("billing_required", "Billing is not configured"),
-            ("invalid_model", "The requested model does not exist"),
-            ("user_cancelled", "User cancelled the operation"),
+            (
+                "billing_required",
+                "Billing is not configured",
+                super::DeepReviewCapacityFailFastReason::BillingOrQuota,
+            ),
+            (
+                "invalid_model",
+                "The requested model does not exist",
+                super::DeepReviewCapacityFailFastReason::InvalidModel,
+            ),
+            (
+                "user_cancelled",
+                "User cancelled the operation",
+                super::DeepReviewCapacityFailFastReason::UserCancellation,
+            ),
             (
                 "deep_review_subagent_not_allowed",
                 "Subagent is not allowed",
+                super::DeepReviewCapacityFailFastReason::InvalidReviewerTooling,
             ),
-            ("invalid_tooling", "Review agent is missing GetFileDiff"),
+            (
+                "invalid_tooling",
+                "Review agent is missing GetFileDiff",
+                super::DeepReviewCapacityFailFastReason::InvalidReviewerTooling,
+            ),
         ];
 
-        for (code, message) in non_queueable_cases {
+        for (code, message, expected_reason) in non_queueable_cases {
             let decision = super::classify_deep_review_capacity_error(code, message, None);
             assert!(!decision.queueable, "{code} should fail fast");
             assert_eq!(decision.reason, None);
+            assert_eq!(decision.fail_fast_reason, Some(expected_reason));
         }
     }
 

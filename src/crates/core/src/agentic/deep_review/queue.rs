@@ -14,12 +14,55 @@ pub enum DeepReviewCapacityQueueReason {
     TemporaryOverload,
 }
 
+impl DeepReviewCapacityQueueReason {
+    pub fn as_snake_case(self) -> &'static str {
+        match self {
+            Self::ProviderRateLimit => "provider_rate_limit",
+            Self::ProviderConcurrencyLimit => "provider_concurrency_limit",
+            Self::RetryAfter => "retry_after",
+            Self::LocalConcurrencyCap => "local_concurrency_cap",
+            Self::TemporaryOverload => "temporary_overload",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DeepReviewCapacityFailFastReason {
+    Authentication,
+    BillingOrQuota,
+    Permission,
+    InvalidModel,
+    PolicyViolation,
+    UserCancellation,
+    InvalidReviewerTooling,
+    Validation,
+    DeterministicProviderError,
+}
+
+impl DeepReviewCapacityFailFastReason {
+    pub fn as_snake_case(self) -> &'static str {
+        match self {
+            Self::Authentication => "authentication",
+            Self::BillingOrQuota => "billing_or_quota",
+            Self::Permission => "permission",
+            Self::InvalidModel => "invalid_model",
+            Self::PolicyViolation => "policy_violation",
+            Self::UserCancellation => "user_cancellation",
+            Self::InvalidReviewerTooling => "invalid_reviewer_tooling",
+            Self::Validation => "validation",
+            Self::DeterministicProviderError => "deterministic_provider_error",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DeepReviewCapacityQueueDecision {
     pub queueable: bool,
     pub reason: Option<DeepReviewCapacityQueueReason>,
     pub retry_after_seconds: Option<u64>,
+    pub fail_fast_reason: Option<DeepReviewCapacityFailFastReason>,
 }
 
 impl DeepReviewCapacityQueueDecision {
@@ -28,14 +71,16 @@ impl DeepReviewCapacityQueueDecision {
             queueable: true,
             reason: Some(reason),
             retry_after_seconds,
+            fail_fast_reason: None,
         }
     }
 
-    fn fail_fast() -> Self {
+    fn fail_fast(reason: DeepReviewCapacityFailFastReason) -> Self {
         Self {
             queueable: false,
             reason: None,
             retry_after_seconds: None,
+            fail_fast_reason: Some(reason),
         }
     }
 }
@@ -223,6 +268,31 @@ pub fn classify_deep_review_capacity_error(
     let code = code.trim().to_ascii_lowercase();
     let message = message.trim().to_ascii_lowercase();
     let combined = format!("{code} {message}");
+    let retry_after_seconds =
+        retry_after_seconds.or_else(|| extract_retry_after_seconds(&combined));
+
+    if contains_any(
+        &combined,
+        &["user_cancel", "user cancelled", "user canceled"],
+    ) {
+        return DeepReviewCapacityQueueDecision::fail_fast(
+            DeepReviewCapacityFailFastReason::UserCancellation,
+        );
+    }
+
+    if contains_any(
+        &combined,
+        &[
+            "invalid_tooling",
+            "subagent_not_allowed",
+            "review agent is missing",
+            "not allowed",
+        ],
+    ) {
+        return DeepReviewCapacityQueueDecision::fail_fast(
+            DeepReviewCapacityFailFastReason::InvalidReviewerTooling,
+        );
+    }
 
     if contains_any(
         &combined,
@@ -230,24 +300,83 @@ pub fn classify_deep_review_capacity_error(
             "auth",
             "api key",
             "unauthorized",
-            "permission",
+            "authentication",
+            "invalid api key",
+            "incorrect api key",
+        ],
+    ) {
+        return DeepReviewCapacityQueueDecision::fail_fast(
+            DeepReviewCapacityFailFastReason::Authentication,
+        );
+    }
+
+    if contains_any(
+        &combined,
+        &[
             "quota",
             "billing",
+            "balance",
             "exhausted",
+            "insufficient_quota",
+            "insufficient balance",
+            "not enough balance",
+        ],
+    ) {
+        return DeepReviewCapacityQueueDecision::fail_fast(
+            DeepReviewCapacityFailFastReason::BillingOrQuota,
+        );
+    }
+
+    if contains_any(
+        &combined,
+        &["permission", "forbidden", "not authorized", "no permission"],
+    ) {
+        return DeepReviewCapacityQueueDecision::fail_fast(
+            DeepReviewCapacityFailFastReason::Permission,
+        );
+    }
+
+    if contains_any(
+        &combined,
+        &[
             "invalid_model",
             "invalid model",
             "model does not exist",
-            "user_cancel",
-            "cancelled",
-            "canceled",
-            "invalid_tooling",
-            "subagent_not_allowed",
-            "not allowed",
-            "policy",
-            "validation",
+            "model not found",
+            "unsupported model",
         ],
     ) {
-        return DeepReviewCapacityQueueDecision::fail_fast();
+        return DeepReviewCapacityQueueDecision::fail_fast(
+            DeepReviewCapacityFailFastReason::InvalidModel,
+        );
+    }
+
+    if contains_any(
+        &combined,
+        &["policy", "content_filter", "content filter", "safety"],
+    ) {
+        return DeepReviewCapacityQueueDecision::fail_fast(
+            DeepReviewCapacityFailFastReason::PolicyViolation,
+        );
+    }
+
+    if contains_any(
+        &combined,
+        &[
+            "validation",
+            "invalid request",
+            "bad request",
+            "invalid parameter",
+            "invalid format",
+            "http 400",
+            "error 400",
+            "http 422",
+            "error 422",
+        ],
+    ) {
+        return DeepReviewCapacityQueueDecision::fail_fast(
+            DeepReviewCapacityFailFastReason::Validation,
+        );
     }
 
     if code == "deep_review_concurrency_cap_reached" {
@@ -304,9 +433,52 @@ pub fn classify_deep_review_capacity_error(
         );
     }
 
-    DeepReviewCapacityQueueDecision::fail_fast()
+    if contains_any(
+        &combined,
+        &[
+            "deterministic",
+            "unsupported",
+            "malformed",
+            "schema",
+            "tool error",
+        ],
+    ) {
+        return DeepReviewCapacityQueueDecision::fail_fast(
+            DeepReviewCapacityFailFastReason::DeterministicProviderError,
+        );
+    }
+
+    DeepReviewCapacityQueueDecision::fail_fast(
+        DeepReviewCapacityFailFastReason::DeterministicProviderError,
+    )
 }
 
 fn contains_any(value: &str, needles: &[&str]) -> bool {
     needles.iter().any(|needle| value.contains(needle))
+}
+
+pub fn extract_retry_after_seconds(value: &str) -> Option<u64> {
+    let value = value.to_ascii_lowercase();
+    for marker in [
+        "retry-after",
+        "retry_after",
+        "retry after",
+        "\"retry-after\"",
+        "\"retry_after\"",
+    ] {
+        let Some(start) = value.find(marker) else {
+            continue;
+        };
+        let tail = &value[start + marker.len()..];
+        let digits = tail
+            .chars()
+            .skip_while(|ch| !ch.is_ascii_digit())
+            .take_while(|ch| ch.is_ascii_digit())
+            .collect::<String>();
+        if let Ok(seconds) = digits.parse::<u64>() {
+            return Some(seconds);
+        }
+    }
+
+    None
 }
