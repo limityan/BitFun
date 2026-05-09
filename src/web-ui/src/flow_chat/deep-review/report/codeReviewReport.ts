@@ -985,6 +985,27 @@ function pushPreReviewSummarySection(
   lines.push('');
 }
 
+function pushEvidencePackSection(
+  lines: string[],
+  manifest: ReviewTeamRunManifest,
+): void {
+  const pack = manifest.evidencePack;
+  if (!pack) {
+    return;
+  }
+
+  lines.push(`### Evidence pack`);
+  lines.push(`- Source: ${pack.source}; privacy: ${pack.privacy.content}`);
+  lines.push(
+    `- Changed files: ${pack.changedFiles.length}; hunk hints: ${pack.hunkHints.length}; contract hints: ${pack.contractHints.length}; packet ids: ${pack.packetIds.length}`,
+  );
+  lines.push(
+    `- Omitted metadata: changed files ${pack.budget.omittedChangedFileCount}, hunk hints ${pack.budget.omittedHunkHintCount}, contract hints ${pack.budget.omittedContractHintCount}`,
+  );
+  lines.push('- Hints are orientation only and require tool confirmation before findings.');
+  lines.push('');
+}
+
 function pushSharedContextCacheSection(
   lines: string[],
   manifest: ReviewTeamRunManifest,
@@ -1066,6 +1087,7 @@ function pushRunManifestSection(
   );
   lines.push('');
   pushPreReviewSummarySection(lines, manifest);
+  pushEvidencePackSection(lines, manifest);
   pushSharedContextCacheSection(lines, manifest);
   pushIncrementalReviewCacheSection(lines, manifest);
 }

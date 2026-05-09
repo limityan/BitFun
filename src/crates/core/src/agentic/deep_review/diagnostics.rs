@@ -26,6 +26,7 @@ pub struct DeepReviewRuntimeDiagnostics {
     pub shared_context_total_calls: usize,
     pub shared_context_duplicate_calls: usize,
     pub shared_context_duplicate_context_count: usize,
+    pub shared_context_duplicate_savings_candidate_count: usize,
 }
 
 impl DeepReviewRuntimeDiagnostics {
@@ -52,6 +53,7 @@ impl DeepReviewRuntimeDiagnostics {
             && self.shared_context_total_calls == 0
             && self.shared_context_duplicate_calls == 0
             && self.shared_context_duplicate_context_count == 0
+            && self.shared_context_duplicate_savings_candidate_count == 0
     }
 
     pub(crate) fn observe_effective_parallel(&mut self, effective_parallel_instances: usize) {
@@ -73,5 +75,6 @@ impl DeepReviewRuntimeDiagnostics {
         self.shared_context_total_calls = total_calls;
         self.shared_context_duplicate_calls = duplicate_calls;
         self.shared_context_duplicate_context_count = duplicate_context_count;
+        self.shared_context_duplicate_savings_candidate_count = duplicate_calls;
     }
 }

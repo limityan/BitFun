@@ -1144,6 +1144,7 @@ mod tests {
         assert_eq!(diagnostics.shared_context_total_calls, 3);
         assert_eq!(diagnostics.shared_context_duplicate_calls, 1);
         assert_eq!(diagnostics.shared_context_duplicate_context_count, 1);
+        assert_eq!(diagnostics.shared_context_duplicate_savings_candidate_count, 1);
 
         let tool = CodeReviewTool::new();
         let mut context = tool_context(Some("DeepReview"));

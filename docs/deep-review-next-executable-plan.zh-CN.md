@@ -632,6 +632,9 @@ M3 不允许把现有 `shared_context_cache` 直接改名为 evidence pack。旧
 - 改动范围：diagnostics aggregate、report/export compact summary、docs note。
 - 必须验证：diagnostics tests、report tests、privacy scan。
 - 禁止事项：不得记录 file contents、diff text、tool result body 或 provider body。
+- 实现细化：runtime diagnostics 只允许记录聚合计数，例如 total duplicate discovery calls、duplicate context count、可节省重复读取候选数；不得记录重复读取的内容或 tool result body。
+- 实现细化：report/export 只允许展示 evidence pack 的 source、privacy boundary、changed file / hunk hint / contract hint / packet id 计数和 omitted metadata 计数；不得展开 `privacy.excludes`、source text、full diff、reviewer output 或 provider raw body。
+- 验收口径：M3-P7 完成后，应能在不读取任何内容型 payload 的情况下回答“evidence pack 是否减少了重复 discovery 的候选空间”，但不能声称已经实现跨 subagent 的 full tool-result cache。
 
 ### 测试要求
 
