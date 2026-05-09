@@ -224,6 +224,23 @@ The orchestrator is still source-agnostic. Git-backed changes, local workspace c
 - Summary-first behavior keeps every assigned file visible; it must not silently hide files from coverage metadata.
 - Hard prompt-byte clipping and byte-accurate enforcement remain deferred.
 
+## Completed Cost-Aware Scope And Shared Evidence Pack
+
+- Launch manifests include `DeepReviewScopeProfile`.
+- `quick` maps to `high_risk_only`.
+- `normal` maps to `risk_expanded`.
+- `deep` maps to `full_depth`.
+- Reduced-depth runs emit or infer `reduced_scope` reliability signals and must not claim full-depth coverage.
+- Changed-file coverage metadata remains visible for reduced-depth runs.
+- Launch manifests include metadata-first `DeepReviewEvidencePack` v1.
+- Evidence packs include version, source label, changed-file metadata, diff stats, domain/risk tags, packet ids, hunk hints, contract hints, budget, and privacy boundary.
+- Evidence packs are `metadata_only` and do not contain source text, full diff, model output, provider raw body, or full file contents.
+- Reviewer and judge prompts treat hunk/contract hints as orientation only; findings must be confirmed with `GetFileDiff`, `Read`, `Grep`, or read-only `Git`.
+- Rust manifest parsing validates evidence pack version, source, size limits, privacy boundary, and forbidden content keys.
+- Runtime diagnostics include a content-free duplicate discovery savings candidate count for later evidence-pack impact comparison.
+- Report/export utilities show only evidence pack aggregate counts, source, and privacy boundary.
+- Programmatic full tool-result cache remains unimplemented.
+
 ## Completed Consent, Recovery, And Settings UX
 
 ### First-Run And Launch UX
@@ -303,7 +320,7 @@ The source documents record focused and release-gate verification, including:
 - focused frontend tests for `reviewTeamService`, Deep Review action bar/store, queue events, and report utilities;
 - focused Rust tests for runtime diagnostics, cache behavior, retry admission, queue/capacity behavior, and report reliability.
 
-The latest M2 consolidation records focused web verification and static stale-claim checks. Full Rust verification is deferred to the combined milestone verification pass.
+The latest M3 consolidation records focused web verification and static stale-claim/privacy checks. Full Rust verification is deferred to the combined milestone verification pass.
 
 ## Completed Boundary Summary
 
@@ -326,7 +343,11 @@ Deep Review has moved from a prompt-only concept to a guarded runtime with:
 - packet fallback;
 - report reliability signals;
 - content-free duplicate-tool diagnostics;
+- cost-aware reduced-depth scope profiles;
+- metadata-only shared evidence packs;
+- content-free duplicate discovery savings diagnostics;
+- compact evidence-pack report/export summaries;
 - compact launch summary;
 - review-scoped capacity and retry settings.
 
-The completed boundary intentionally stops before backend-owned retry redispatch scheduling, backend batch/stagger scheduling, project-level cache, hard byte clipping, programmatic shared tool-result reuse, global subagent scheduling, and large-scale architecture refactoring.
+The completed boundary intentionally stops before backend-owned retry redispatch scheduling, backend batch/stagger scheduling, project-level cache, hard byte clipping, programmatic shared tool-result reuse, global subagent scheduling, and additional large-scale architecture refactoring.

@@ -24,7 +24,8 @@ The branch range contains unrelated product and packaging changes. This document
 
 | File | Current line count | Deep Review responsibility currently present | Refactor pressure |
 |---|---:|---|---|
-| `src/crates/core/src/agentic/deep_review_policy.rs` | 3426 | Roles, default team definition, strategy profiles, execution policy, concurrency policy, queue controls, effective cap learning, capacity classifier, budget tracker, diagnostics, shared-context measurement, incremental cache, tests | Very high. This is now a feature subsystem hidden in one file. |
+| `src/crates/core/src/agentic/deep_review/` | Split modules | Team definition, constants, manifest parsing, execution policy, concurrency policy, queue controls, budget tracking, diagnostics, shared-context measurement, incremental cache, report helpers, task adapter helpers | Current subsystem home. New work should prefer these modules over adding Deep Review logic to broad tool files. |
+| `src/crates/core/src/agentic/deep_review_policy.rs` | ~1483 | Compatibility facade, global tracker accessors, config loading, public re-exports, and legacy tests | Medium. The major subsystem extraction is complete, but this facade still needs gradual shrinkage as imports move to module paths. |
 | `src/crates/core/src/agentic/tools/implementations/task_tool.rs` | 2245 | Generic Task tool plus Deep Review reviewer cap waits, retry admission, packet/cache lookup, provider capacity skip, queue events, tests | Very high. Shared subagent execution is coupled to Deep Review behavior. |
 | `src/crates/core/src/agentic/tools/implementations/code_review_tool.rs` | 1894 | Code review submission plus Deep Review packet fallback, reliability signals, runtime diagnostics, cache write-through, report schema tests | High. Standard Code Review and Deep Review report behavior share one tool. |
 | `src/crates/core/src/agentic/tools/pipeline/tool_pipeline.rs` | 1363 | Generic tool pipeline plus Deep Review context propagation and duplicate `Read`/`GetFileDiff` measurement | Medium. Deep Review metadata leaks into a generic pipeline. |
@@ -34,7 +35,7 @@ The branch range contains unrelated product and packaging changes. This document
 
 | File | Current line count | Deep Review responsibility currently present | Refactor pressure |
 |---|---:|---|---|
-| `src/web-ui/src/shared/services/reviewTeamService.ts` | 3068 | Defaults, config persistence, backend role resolution, custom reviewer validation, strategy profiles, risk scoring, manifest building, work packets, cache plan, token budget, prompt block | Very high. This should become a directory with a stable facade. |
+| `src/web-ui/src/shared/services/review-team/` | Split modules | Defaults, strategy profiles, public types, and the review-team facade that builds manifests, work packets, token budget, scope profile, evidence pack, prompt block, and config helpers | Current subsystem home. More extraction is still useful, but the public import path is now backed by a directory. |
 | `src/web-ui/src/flow_chat/services/DeepReviewService.ts` | 645 | Slash parsing, target resolution, change stats, manifest runtime signals, launch cleanup, child session launch | Medium. Launch orchestration can be split from target/manifest helpers. |
 | `src/web-ui/src/flow_chat/components/btw/DeepReviewActionBar.tsx` | 1279 | Shared review action bar plus Deep Review queue controls, interruption recovery, diagnostics, remediation, settings actions | Medium-high. It is under 1500 lines but is already dense. |
 | `src/web-ui/src/flow_chat/utils/codeReviewReport.ts` | 870 | Report normalization, reliability notices, manifest rendering, markdown export | Medium. More growth will make report semantics hard to audit. |
@@ -45,7 +46,7 @@ The branch range contains unrelated product and packaging changes. This document
 
 ### 1. Deep Review Is A Subsystem, But Backend Code Is Still File-Oriented
 
-`deep_review_policy.rs` now contains independent concepts that deserve separate modules:
+`deep_review_policy.rs` used to contain independent concepts that now live mostly under `agentic/deep_review/`:
 
 - role and team definition
 - manifest parsing
@@ -58,7 +59,7 @@ The branch range contains unrelated product and packaging changes. This document
 - shared-context measurement
 - incremental cache
 
-Keeping these in one file increases merge risk and makes future contributors guess whether a new helper belongs in policy, queueing, cache, or diagnostics.
+The remaining facade still increases merge risk when new logic lands there. Future work should treat `deep_review_policy.rs` as compatibility glue and add behavior to the narrower modules instead.
 
 ### 2. Shared Subagent Execution Has Deep Review Branches
 
@@ -84,7 +85,7 @@ Strategy levels, execution policy fields, concurrency fields, retry limits, and 
 
 ### Backend Module Layout
 
-Create a Deep Review subsystem directory under core:
+The backend now has a Deep Review subsystem directory under core:
 
 ```text
 src/crates/core/src/agentic/deep_review/
@@ -95,29 +96,31 @@ src/crates/core/src/agentic/deep_review/
   execution_policy.rs
   concurrency_policy.rs
   queue.rs
-  retry.rs
   diagnostics.rs
   shared_context.rs
   incremental_cache.rs
   report.rs
-  tests/
+  task_adapter.rs
+  tool_context.rs
+  tool_measurement.rs
 ```
 
-Responsibilities:
+Current responsibilities:
 
 - `constants.rs`: agent type constants and role families.
 - `team_definition.rs`: default review team definition and strategy profile data.
-- `manifest.rs`: typed accessors for `deep_review_run_manifest`, packet lookup, strategy/concurrency/cache/token budget field parsing.
+- `manifest.rs`: typed accessors for `deep_review_run_manifest`, scope profile parsing, evidence pack validation, and manifest gating.
 - `execution_policy.rs`: timeouts, file split thresholds, retry limit config, risk helper.
 - `concurrency_policy.rs`: configured cap and effective-cap calculations.
 - `queue.rs`: queue state, queue controls, capacity error classification, local/provider queue decisions.
-- `retry.rs`: structured retry coverage validation, retry scope prompt block, retry budget helpers.
 - `diagnostics.rs`: aggregate runtime diagnostics, final low-frequency logging data.
 - `shared_context.rs`: duplicate `Read`/`GetFileDiff` measurement and future evidence-pack metadata helpers.
 - `incremental_cache.rs`: per-session packet cache data model and serialization.
 - `report.rs`: Deep Review-specific reliability signal and packet metadata helpers used by `CodeReviewTool`.
+- `task_adapter.rs`: Deep Review-specific TaskTool adapter helpers.
+- `tool_context.rs` / `tool_measurement.rs`: context detection and content-free tool measurement helpers.
 
-The existing `src/crates/core/src/agentic/deep_review_policy.rs` should become a compatibility facade during migration, then shrink to re-exports or be removed after imports are updated.
+The existing `src/crates/core/src/agentic/deep_review_policy.rs` is now a compatibility facade with global tracker accessors and re-exports. It should continue shrinking as call sites move to `agentic::deep_review::*`, but the current facade remains intentionally available for compatibility.
 
 ### Generic Subagent Runtime Boundary
 
@@ -173,25 +176,14 @@ This keeps the public tool behavior unchanged while making feature-specific code
 
 ### Frontend Module Layout
 
-Split `reviewTeamService.ts` into a directory with a facade:
+The frontend review team service has been split into a directory with a facade:
 
 ```text
 src/web-ui/src/shared/services/review-team/
   index.ts
   types.ts
   defaults.ts
-  config.ts
-  backendDefinition.ts
   strategy.ts
-  targetClassifier.ts
-  subagentCapabilities.ts
-  manifestBuilder.ts
-  workPackets.ts
-  tokenBudget.ts
-  risk.ts
-  promptBlock.ts
-  cachePlan.ts
-  preReviewSummary.ts
 ```
 
 Keep the current import path working:
@@ -200,7 +192,7 @@ Keep the current import path working:
 src/web-ui/src/shared/services/reviewTeamService.ts
 ```
 
-The old file should become a facade exporting from `./review-team`. This preserves callers and allows incremental migration.
+The compatibility import path now exports from `./review-team`. Further splits such as `manifestBuilder.ts`, `workPackets.ts`, `tokenBudget.ts`, `promptBlock.ts`, `scopeProfile.ts`, and `evidencePack.ts` remain follow-up no-behavior-change refactors.
 
 ### Flow Chat Deep Review Layout
 

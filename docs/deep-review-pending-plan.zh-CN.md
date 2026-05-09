@@ -39,7 +39,7 @@
 
 ### Round 1：短 Provider Capacity Queue
 
-状态：待实现。
+状态：已实现并带防护。继续保持 Deep Review-scoped，不能升级为通用 provider/adaptive scheduler。
 
 目标：当 provider 返回窄分类的 transient capacity error 时，Deep Review 应短暂等待并重试一次，然后再报告 `capacity_skipped`。
 
@@ -94,7 +94,7 @@
 
 ### Round 2：显式 Retry Action 与有界自动 Retry 偏好
 
-状态：待实现。
+状态：已实现并带防护；backend-owned automatic redispatch scheduling 仍延期。
 
 目标：为 unresolved reviewer slice 提供清晰 retry action，同时只有用户显式 opt-in 后才允许小范围自动 retry。
 
@@ -165,7 +165,7 @@
 
 ### Round 3：成本感知审核范围
 
-状态：待实现。
+状态：已实现并带防护；后续只保留验证、观测和文案收口。
 
 目标：在大变更或慢模型场景下降低审核时间和 Token 占用，让 quick/default 优先关注高风险证据，并保持 `deep` 为 full-depth 选项。
 
@@ -228,7 +228,7 @@ Quick/default 中仍必须覆盖的高风险类别：
 
 ### Round 4：Shared Evidence Pack
 
-状态：待实现。
+状态：已实现并带防护；programmatic full tool-result cache 仍延期。
 
 目标：让 reviewers 从紧凑共享事实开始，减少重复发现相同文件、hunk、contract hint 所消耗的时间和 Token。
 
@@ -236,10 +236,13 @@ Quick/default 中仍必须覆盖的高风险类别：
 
 ```ts
 type DeepReviewEvidencePack = {
+  version: 1;
+  source: 'target_manifest';
   changedFiles: string[];
   diffStat: {
     fileCount: number;
-    totalChangedLines: number;
+    totalChangedLines?: number;
+    lineCountSource: 'unknown' | 'diff_stat' | 'estimated';
   };
   domainTags: string[];
   riskFocusTags: string[];
@@ -247,12 +250,31 @@ type DeepReviewEvidencePack = {
   hunkHints: Array<{
     filePath: string;
     changedLineCount: number;
+    lineCountSource: 'unknown' | 'diff_stat' | 'estimated';
   }>;
   contractHints: Array<{
     kind: 'i18n_key' | 'tauri_command' | 'api_contract' | 'config_key';
-    value: string;
     filePath: string;
+    source: 'path_classifier';
   }>;
+  budget: {
+    maxChangedFiles: number;
+    maxHunkHints: number;
+    maxContractHints: number;
+    omittedChangedFileCount: number;
+    omittedHunkHintCount: number;
+    omittedContractHintCount: number;
+  };
+  privacy: {
+    content: 'metadata_only';
+    excludes: [
+      'source_text',
+      'full_diff',
+      'model_output',
+      'provider_raw_body',
+      'full_file_contents',
+    ];
+  };
 };
 ```
 
@@ -278,10 +300,10 @@ type DeepReviewEvidencePack = {
 
 验证：
 
-- Manifest tests 覆盖 evidence pack structure。
-- 测试 pack 不存储完整源码或 diff。
-- Prompt tests 或轻量断言证明 reviewer 会先使用 evidence。
-- 在设计 tool-result cache 前用真实运行 diagnostics 做比较。
+- Manifest tests 覆盖 evidence pack structure、source label、size budget 和 privacy boundary。
+- 测试 pack 不存储完整源码、完整 diff、model output、provider raw body 或 full file contents。
+- Prompt tests 或轻量断言证明 reviewer 会先使用 evidence，但必须用工具确认 stale hints。
+- Diagnostics 保留 content-free duplicate measurement，并新增可节省重复 discovery 的聚合候选计数。
 
 退出标准：
 
@@ -291,7 +313,7 @@ type DeepReviewEvidencePack = {
 
 ### Round 5：文档对齐与 Release Gate
 
-状态：在上述功能轮次后执行。
+状态：provider queue、retry controls、cost-aware scope 和 evidence pack 完成后的 active release gate。
 
 目标：每个功能闭环后保持文档与代码一致。
 
@@ -374,7 +396,7 @@ git diff --check
 - prompt-driven orchestration；
 - TaskTool hard guardrails；
 - local-cap queue controls；
-- future short provider capacity queue。
+- Deep Review-scoped 短 provider capacity queue。
 
 当前计划中不把 orchestrator 替换为确定性后端 workflow engine。
 
@@ -390,7 +412,7 @@ git diff --check
 
 ## 架构重构计划
 
-状态：待实现。允许行为变化：无，除非明确列出并获得批准。
+状态：部分实现。后端 Deep Review 模块与前端 review-team facade 已抽取；剩余 refactor follow-up 默认不允许行为变化，除非明确列出并获得批准。
 
 ### 重构目标
 

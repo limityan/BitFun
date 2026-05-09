@@ -17,6 +17,18 @@ This inventory lists the shared areas touched by the current Deep Review work wh
 | Report utilities | Shared code review report helpers render manifest/cache/token-budget sections | Standard Code Review exports can become noisy or show irrelevant Deep Review sections | Keep manifest sections optional and Deep Review-gated. |
 | Review settings | Adds Deep Review capacity/retry settings under Review config | Users may confuse Deep Review reviewer concurrency with global subagent concurrency | Label settings as Review Team scoped; keep global `ai.subagent_max_concurrency` out of normal Review settings. |
 
+## Latest M1-M3 Implementation Impact
+
+| Shared file or area touched | Change type | Non-DeepReview behavior risk | Regression evidence |
+|---|---|---|---|
+| `src/crates/core/src/agentic/tools/implementations/task_tool.rs` | Deep Review adapter extraction, queue/capacity handling, retry admission and packet/cache gates | Normal Task could accidentally enter Deep Review queue/retry/cache behavior | Rust non-DeepReview Task and Deep Review focused tests were added; final cargo pass is deferred to the combined release gate. |
+| `src/crates/core/src/agentic/tools/implementations/code_review_tool.rs` | Deep Review packet metadata, reliability signals, cache write-through, evidence-pack validation signal | Standard Code Review could receive Deep Review-only report metadata | Rust report tests cover standard submission and Deep Review enrichment boundaries; final cargo pass is deferred to the combined release gate. |
+| `src/crates/core/src/agentic/deep_review/*` | Deep Review subsystem ownership for policy, queue, diagnostics, manifest, report, task adapter and cache | Future contributors could bypass explicit Deep Review gates | Module-level tests and facade compatibility tests were added; final cargo pass is deferred to the combined release gate. |
+| `src/web-ui/src/shared/services/review-team/*` | Review Team facade now builds scope profile, evidence pack, work packets, token budget and prompt block | Shared frontend service could change standard review/team behavior or leak content into prompt metadata | `pnpm --dir src/web-ui exec vitest run src/shared/services/reviewTeamService.test.ts`; `pnpm run type-check:web`; `pnpm run lint:web`. |
+| `src/web-ui/src/flow_chat/deep-review/report/codeReviewReport.ts` and export helpers | Deep Review markdown export includes manifest, scope profile, evidence pack and reliability summaries | Standard Code Review export could include Deep Review-only manifest/cache/evidence sections | `pnpm --dir src/web-ui exec vitest run src/flow_chat/utils/codeReviewReport.test.ts`; export privacy grep found no content-field output in the report formatter. |
+| `src/web-ui/src/flow_chat/tool-cards/*` and consent/action surfaces | Reduced-depth and retry/queue notices remain compact and Deep Review scoped | Standard Code Review UI could show Deep Review controls or dense internals | Focused component tests for tool card, consent dialog and action-bar surfaces; full web test suite remains part of final release gate. |
+| `src/web-ui/src/locales/{en-US,zh-CN,zh-TW}/flow-chat.json` | Queue/retry/reduced-depth/evidence-facing copy | Missing locale could expose raw keys or inconsistent UX | `pnpm --dir src/web-ui exec vitest run src/shared/services/reviewTeamLocaleCompleteness.test.ts`; `pnpm run lint:web`; `pnpm run type-check:web`. |
+
 ## Safe Refactor Rules
 
 1. Generic subagent runtime modules must not import Deep Review modules.

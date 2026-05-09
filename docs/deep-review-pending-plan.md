@@ -162,7 +162,7 @@ Exit criteria:
 
 ### Round 3: Cost-Aware Review Scope
 
-Status: Pending implementation.
+Status: Implemented with guardrails; remaining work is release-gate verification, observability, and wording alignment.
 
 Goal: Reduce review time and token use on large or slow-model changes by making quick/default strategies focus first on high-risk evidence, while keeping `deep` as the full-depth option.
 
@@ -225,7 +225,7 @@ Exit criteria:
 
 ### Round 4: Shared Evidence Pack
 
-Status: Pending implementation.
+Status: Implemented with guardrails; programmatic full tool-result cache remains deferred.
 
 Goal: Let reviewers start from compact shared facts so they spend less time and fewer tokens rediscovering the same files, hunks, and contract hints.
 
@@ -233,10 +233,13 @@ Proposed manifest shape:
 
 ```ts
 type DeepReviewEvidencePack = {
+  version: 1;
+  source: 'target_manifest';
   changedFiles: string[];
   diffStat: {
     fileCount: number;
-    totalChangedLines: number;
+    totalChangedLines?: number;
+    lineCountSource: 'unknown' | 'diff_stat' | 'estimated';
   };
   domainTags: string[];
   riskFocusTags: string[];
@@ -244,12 +247,31 @@ type DeepReviewEvidencePack = {
   hunkHints: Array<{
     filePath: string;
     changedLineCount: number;
+    lineCountSource: 'unknown' | 'diff_stat' | 'estimated';
   }>;
   contractHints: Array<{
     kind: 'i18n_key' | 'tauri_command' | 'api_contract' | 'config_key';
-    value: string;
     filePath: string;
+    source: 'path_classifier';
   }>;
+  budget: {
+    maxChangedFiles: number;
+    maxHunkHints: number;
+    maxContractHints: number;
+    omittedChangedFileCount: number;
+    omittedHunkHintCount: number;
+    omittedContractHintCount: number;
+  };
+  privacy: {
+    content: 'metadata_only';
+    excludes: [
+      'source_text',
+      'full_diff',
+      'model_output',
+      'provider_raw_body',
+      'full_file_contents',
+    ];
+  };
 };
 ```
 
@@ -275,10 +297,10 @@ Risks:
 
 Verification:
 
-- Manifest tests for evidence pack structure.
-- Tests proving no full source/diff content is stored in the pack.
-- Prompt tests or snapshot-light assertions proving reviewers are instructed to start from evidence.
-- Diagnostics comparison after real runs before any tool-result cache is designed.
+- Manifest tests for evidence pack structure, source label, size budget, and privacy boundary.
+- Tests proving no full source, full diff, model output, provider raw body, or full file contents are stored in the pack.
+- Prompt tests or snapshot-light assertions proving reviewers start from evidence but must verify stale hints with tools.
+- Diagnostics keep content-free duplicate measurement and include an aggregate duplicate discovery savings candidate count.
 
 Exit criteria:
 
@@ -288,7 +310,7 @@ Exit criteria:
 
 ### Round 5: Documentation Reconciliation And Release Gate
 
-Status: Active release gate for completed provider queue and retry-control rounds.
+Status: Active release gate for completed provider queue, retry-control, cost-aware scope, and evidence-pack rounds.
 
 Goal: Keep documents and code aligned after each functional close.
 
@@ -371,7 +393,7 @@ Current boundary:
 - prompt-driven orchestration;
 - TaskTool hard guardrails;
 - local-cap queue controls;
-- future short provider capacity queue.
+- Deep Review-scoped short provider capacity queue.
 
 Do not replace the orchestrator with a deterministic backend workflow engine in the current plan.
 
@@ -387,7 +409,7 @@ Do not let backend risk scoring override the user's selected strategy until meas
 
 ## Architecture Refactor Plan
 
-Status: Pending implementation. Behavior change allowed: none unless explicitly called out and approved.
+Status: Partially implemented. Backend Deep Review modules and the frontend review-team facade have been extracted; remaining refactor follow-ups are no-behavior-change unless explicitly called out and approved.
 
 ### Refactor Goals
 
