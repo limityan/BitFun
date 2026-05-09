@@ -210,7 +210,13 @@ Deep Review 当前已经不是纯 prompt 概念，而是带运行时护栏的 pr
 **M1-P3 Queue/retry/cache/diagnostics extraction**
 
 - 前置检查：按 queue、retry、diagnostics、shared_context、incremental_cache 建立迁移清单。
-- 改动范围：每次只移动一个模块族；优先 `pub(crate)`，只在现有调用需要时扩大可见性。
+- 内部提交顺序：
+  - M1-P3a：抽离 `diagnostics.rs` 与只读 runtime diagnostics 数据结构，不迁移 budget tracker。
+  - M1-P3b：抽离 `concurrency_policy.rs` 与 effective concurrency state，不迁移 provider queue control。
+  - M1-P3c：抽离 `queue.rs` 的 capacity classifier、reviewer queue state、queue control tracker，不新增 short queue 行为。
+  - M1-P3d：抽离 `shared_context.rs` 与 `incremental_cache.rs`，保持现有 cache fingerprint / packet key 语义。
+  - M1-P3e：抽离 budget/retry admission helpers 到 `retry.rs` 或 `budget.rs`，旧 facade 只保留 compatibility wrapper。
+- 改动范围：每次只移动一个内部 slice；优先 `pub(crate)`，只在现有调用需要时扩大可见性。
 - 必须验证：capacity queue tests、retry admission tests、cache tests、diagnostics tests。
 - 禁止事项：不得新增 provider short queue 行为，不得改变默认 concurrency/retry/cache 语义。
 
