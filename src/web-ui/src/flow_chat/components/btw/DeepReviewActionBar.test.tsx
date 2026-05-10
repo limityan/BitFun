@@ -492,10 +492,24 @@ describeWithJsdom('DeepReviewActionBar', () => {
         subagentType: 'ReviewSecurity',
         dialogTurnId: 'turn-queue-1',
         status: 'queued_for_capacity',
-        queuedReviewerCount: 1,
+        queuedReviewerCount: 2,
         activeReviewerCount: 1,
         optionalReviewerCount: 1,
         controlMode: 'backend',
+        waitingReviewers: [
+          {
+            toolId: 'task-queue-1',
+            subagentType: 'ReviewSecurity',
+            displayName: 'Security reviewer',
+            status: 'queued_for_capacity',
+          },
+          {
+            toolId: 'task-queue-2',
+            subagentType: 'ReviewFrontend',
+            displayName: 'Frontend reviewer',
+            status: 'queued_for_capacity',
+          },
+        ],
       },
     });
 
@@ -512,10 +526,17 @@ describeWithJsdom('DeepReviewActionBar', () => {
       await Promise.resolve();
     });
 
+    expect(controlDeepReviewQueueMock).toHaveBeenCalledTimes(2);
     expect(controlDeepReviewQueueMock).toHaveBeenCalledWith({
       sessionId: 'child-session',
       dialogTurnId: 'turn-queue-1',
       toolId: 'task-queue-1',
+      action: 'pause',
+    });
+    expect(controlDeepReviewQueueMock).toHaveBeenCalledWith({
+      sessionId: 'child-session',
+      dialogTurnId: 'turn-queue-1',
+      toolId: 'task-queue-2',
       action: 'pause',
     });
     expect((useReviewActionBarStore.getState() as unknown as {
@@ -560,6 +581,65 @@ describeWithJsdom('DeepReviewActionBar', () => {
     expect(notificationService.error).toHaveBeenCalledWith(
       expect.stringContaining('use Stop to interrupt the review'),
     );
+  });
+
+  it('reports partial backend queue control failures without claiming full success', async () => {
+    const { DeepReviewActionBar } = await import('./DeepReviewActionBar');
+    const { notificationService } = await import('@/shared/notification-system');
+    controlDeepReviewQueueMock
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('tool already running'));
+
+    useReviewActionBarStore.getState().showCapacityQueueBar({
+      childSessionId: 'child-session',
+      parentSessionId: 'parent-session',
+      capacityQueueState: {
+        toolId: 'task-queue-1',
+        subagentType: 'ReviewSecurity',
+        dialogTurnId: 'turn-queue-1',
+        status: 'queued_for_capacity',
+        queuedReviewerCount: 2,
+        controlMode: 'backend',
+        waitingReviewers: [
+          {
+            toolId: 'task-queue-1',
+            subagentType: 'ReviewSecurity',
+            displayName: 'Security reviewer',
+            status: 'queued_for_capacity',
+          },
+          {
+            toolId: 'task-queue-2',
+            subagentType: 'ReviewFrontend',
+            displayName: 'Frontend reviewer',
+            status: 'queued_for_capacity',
+          },
+        ],
+      },
+    });
+
+    await act(async () => {
+      root.render(<DeepReviewActionBar />);
+    });
+
+    const pauseButton = Array.from(container.querySelectorAll('button'))
+      .find((button) => button.textContent?.includes('Pause queue'));
+    expect(pauseButton).toBeTruthy();
+
+    await act(async () => {
+      pauseButton!.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(controlDeepReviewQueueMock).toHaveBeenCalledTimes(2);
+    expect(notificationService.error).toHaveBeenCalledWith(
+      expect.stringContaining('1 of 2 reviewers failed'),
+    );
+    expect(notificationService.error).toHaveBeenCalledWith(
+      expect.stringContaining('tool already running'),
+    );
+    expect((useReviewActionBarStore.getState() as unknown as {
+      capacityQueueState: { status: string };
+    }).capacityQueueState.status).toBe('queued_for_capacity');
   });
 
   it('shows the settings update reason when run-slower fails', async () => {

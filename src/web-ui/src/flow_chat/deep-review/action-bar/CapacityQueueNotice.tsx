@@ -64,6 +64,12 @@ const CAPACITY_QUEUE_REASON_DETAIL_KEYS: Record<DeepReviewCapacityQueueReason, {
   },
 };
 
+function reviewerLabel(
+  reviewer: NonNullable<DeepReviewCapacityQueueState['waitingReviewers']>[number],
+): string {
+  return reviewer.displayName || reviewer.subagentType || 'Reviewer';
+}
+
 export const CapacityQueueNotice: React.FC<CapacityQueueNoticeProps> = ({
   capacityQueueState,
   supportsInlineQueueControls,
@@ -91,6 +97,7 @@ export const CapacityQueueNotice: React.FC<CapacityQueueNoticeProps> = ({
   const capacityQueueMaxWaitLabel = capacityQueueState.maxQueueWaitSeconds !== undefined
     ? formatElapsedTime(capacityQueueState.maxQueueWaitSeconds * 1000)
     : null;
+  const waitingReviewers = capacityQueueState.waitingReviewers ?? [];
 
   return (
     <div className="deep-review-action-bar__capacity-queue" aria-live="polite">
@@ -148,6 +155,60 @@ export const CapacityQueueNotice: React.FC<CapacityQueueNoticeProps> = ({
                 defaultValue: 'Your active session is busy. Pause Deep Review or continue later.',
               })}
             </span>
+          )}
+          {waitingReviewers.length > 0 && (
+            <div className="deep-review-action-bar__capacity-queue-reviewers">
+              <span className="deep-review-action-bar__capacity-queue-reviewers-title">
+                {t('deepReviewActionBar.capacityQueue.waitingReviewersTitle', {
+                  defaultValue: 'Waiting reviewers',
+                })}
+              </span>
+              <div className="deep-review-action-bar__capacity-queue-reviewer-list">
+                {waitingReviewers.map((reviewer) => {
+                  const label = reviewerLabel(reviewer);
+                  const reviewerElapsed = reviewer.queueElapsedMs !== undefined
+                    ? formatElapsedTime(reviewer.queueElapsedMs)
+                    : null;
+                  const statusLabel = reviewer.status === 'paused_by_user'
+                    ? t('deepReviewActionBar.capacityQueue.reviewerStatusPaused', {
+                      defaultValue: 'Paused',
+                    })
+                    : t('deepReviewActionBar.capacityQueue.reviewerStatusQueued', {
+                      defaultValue: 'Waiting',
+                    });
+                  return (
+                    <span
+                      key={reviewer.toolId || reviewer.subagentType || label}
+                      className="deep-review-action-bar__capacity-queue-reviewer"
+                    >
+                      <span className="deep-review-action-bar__capacity-queue-reviewer-name">
+                        {label}
+                      </span>
+                      <span className="deep-review-action-bar__capacity-queue-reviewer-meta">
+                        {statusLabel}
+                        {reviewer.optional && (
+                          <>
+                            {' / '}
+                            {t('deepReviewActionBar.capacityQueue.optionalReviewer', {
+                              defaultValue: 'Optional',
+                            })}
+                          </>
+                        )}
+                        {reviewerElapsed && (
+                          <>
+                            {' / '}
+                            {t('deepReviewActionBar.capacityQueue.elapsed', {
+                              elapsed: reviewerElapsed,
+                              defaultValue: `Waited ${reviewerElapsed}`,
+                            })}
+                          </>
+                        )}
+                      </span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
           )}
           {!supportsInlineQueueControls && (
             <span className="deep-review-action-bar__capacity-queue-detail">

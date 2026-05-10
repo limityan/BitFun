@@ -277,6 +277,73 @@ describe('deepReviewActionBarStore', () => {
       expect(state.queuedReviewerCount).toBe(1);
       expect(state.optionalReviewerCount).toBe(0);
     });
+
+    it('merges reviewer queue events and closes the queue when the last reviewer leaves', () => {
+      bar().showCapacityQueueBar({
+        childSessionId: 'child-1',
+        parentSessionId: 'parent-1',
+        capacityQueueState: {
+          toolId: 'task-security',
+          subagentType: 'ReviewSecurity',
+          status: 'queued_for_capacity',
+          reason: 'local_concurrency_cap',
+          queuedReviewerCount: 1,
+          waitingReviewers: [{
+            toolId: 'task-security',
+            subagentType: 'ReviewSecurity',
+            displayName: 'Security reviewer',
+            status: 'queued_for_capacity',
+            reason: 'local_concurrency_cap',
+          }],
+        },
+      });
+
+      bar().applyCapacityQueueState({
+        toolId: 'task-frontend',
+        subagentType: 'ReviewFrontend',
+        status: 'queued_for_capacity',
+        reason: 'launch_batch_blocked',
+        queuedReviewerCount: 1,
+        waitingReviewers: [{
+          toolId: 'task-frontend',
+          subagentType: 'ReviewFrontend',
+          displayName: 'Frontend reviewer',
+          status: 'queued_for_capacity',
+          reason: 'launch_batch_blocked',
+        }],
+      });
+
+      expect(bar().capacityQueueState?.queuedReviewerCount).toBe(2);
+      expect(bar().capacityQueueState?.waitingReviewers?.map((reviewer) => reviewer.displayName)).toEqual([
+        'Security reviewer',
+        'Frontend reviewer',
+      ]);
+
+      bar().applyCapacityQueueState({
+        toolId: 'task-security',
+        subagentType: 'ReviewSecurity',
+        status: 'running',
+        queuedReviewerCount: 0,
+        waitingReviewers: [],
+      });
+
+      expect(bar().capacityQueueState?.queuedReviewerCount).toBe(1);
+      expect(bar().capacityQueueState?.waitingReviewers?.map((reviewer) => reviewer.displayName)).toEqual([
+        'Frontend reviewer',
+      ]);
+      expect(bar().phase).toBe('review_waiting_capacity');
+
+      bar().applyCapacityQueueState({
+        toolId: 'task-frontend',
+        subagentType: 'ReviewFrontend',
+        status: 'capacity_skipped',
+        queuedReviewerCount: 0,
+        waitingReviewers: [],
+      });
+
+      expect(bar().capacityQueueState).toBeNull();
+      expect(bar().phase).toBe('idle');
+    });
   });
 
   describe('toggleRemediation with completed items', () => {
