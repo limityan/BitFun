@@ -53,7 +53,9 @@ const REQUIRED_ACTION_BAR_KEYS = [
   'deepReviewActionBar.capacityQueue.reasonDetails.temporaryOverload',
   'deepReviewActionBar.capacityQueue.runSlowerSaved',
   'deepReviewActionBar.capacityQueue.runSlowerFailed',
+  'deepReviewActionBar.capacityQueue.runSlowerFailedWithReason',
   'deepReviewActionBar.capacityQueue.controlFailed',
+  'deepReviewActionBar.capacityQueue.controlFailedWithReason',
   'reviewActionBar.noIssuesFound',
 ];
 
