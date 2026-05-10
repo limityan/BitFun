@@ -409,7 +409,7 @@ Do not let backend risk scoring override the user's selected strategy until meas
 
 ## Architecture Refactor Plan
 
-Status: Partially implemented. Backend Deep Review modules, Flow Chat compatibility facades, and the frontend review-team directory have been extracted. The latest no-behavior-change frontend pass split review-team pure helpers for path metadata, risk, work packets, token budget, scope profile, evidence pack, cache plans, pre-review summary, manifest-member projection, and prompt block formatting. Remaining refactor follow-ups are no-behavior-change unless explicitly called out and approved.
+Status: Partially implemented. Backend Deep Review modules, Flow Chat compatibility facades, and the frontend review-team directory have been extracted. The latest no-behavior-change frontend passes split review-team pure helpers and Flow Chat Deep Review helpers for launch parsing/targeting/prompt/errors, report reliability/manifest/section/markdown formatting, and action-bar capacity/header/formatting components. Remaining refactor follow-ups are no-behavior-change unless explicitly called out and approved.
 
 ### Refactor Goals
 
@@ -433,9 +433,9 @@ Status: Partially implemented. Backend Deep Review modules, Flow Chat compatibil
 | `src/crates/core/src/agentic/tools/pipeline/tool_pipeline.rs` | Generic tool pipeline carries Deep Review context propagation and duplicate read/diff measurement. |
 | `src/crates/events/src/agentic.rs` | Shared event crate contains Deep Review queue event payload. |
 | `src/web-ui/src/shared/services/reviewTeamService.ts` / `src/web-ui/src/shared/services/review-team/` | `reviewTeamService.ts` is now a two-line facade. The directory owns focused pure helper modules plus `index.ts` for side-effectful config/backend loading, default team assembly, and final manifest assembly. |
-| `src/web-ui/src/flow_chat/services/DeepReviewService.ts` | Slash parsing, target resolution, stats, runtime signals, launch cleanup, and child-session launch are coupled. |
-| `src/web-ui/src/flow_chat/components/btw/DeepReviewActionBar.tsx` | Queue controls, recovery, remediation, diagnostics, and review actions are dense in one component path. |
-| `src/web-ui/src/flow_chat/utils/codeReviewReport.ts` | Report normalization, reliability notices, manifest rendering, and markdown export are growing together. |
+| `src/web-ui/src/flow_chat/services/DeepReviewService.ts` / `src/web-ui/src/flow_chat/deep-review/launch/DeepReviewService.ts` | Old path is a facade; launch orchestration keeps child-session launch and runtime manifest signals while command parsing, target resolution, launch prompt formatting, and launch errors are split. |
+| `src/web-ui/src/flow_chat/components/btw/DeepReviewActionBar.tsx` / `src/web-ui/src/flow_chat/deep-review/action-bar/DeepReviewActionBar.tsx` | Old path is a facade; capacity queue notice, action header, and formatting are split, while recovery/remediation/diagnostics remain in the main action-bar path for now. |
+| `src/web-ui/src/flow_chat/utils/codeReviewReport.ts` / `src/web-ui/src/flow_chat/deep-review/report/codeReviewReport.ts` | Old path is a facade; retry-slice helpers and types stay in the core report module while reliability notices, manifest rendering, section normalization, and markdown export are split. |
 
 ### Target Backend Layout
 
@@ -577,16 +577,18 @@ src/web-ui/src/flow_chat/deep-review/
     commandParser.ts
     targetResolver.ts
     launchPrompt.ts
-    launchSession.ts
     launchErrors.ts
+    DeepReviewService.ts
   action-bar/
     CapacityQueueNotice.tsx
-    InterruptionRecoveryPanel.tsx
-    RemediationControls.tsx
     ReviewActionHeader.tsx
+    actionBarFormatting.ts
+    DeepReviewActionBar.tsx
   report/
+    codeReviewReport.ts
     reliabilityNotices.ts
     manifestSections.ts
+    reportSections.ts
     markdown.ts
 ```
 
@@ -697,11 +699,14 @@ Behavior change allowed: none.
 
 #### Refactor Round 6: Flow Chat Deep Review Decomposition
 
+Status: stable first pass complete. Public facades remain unchanged; deeper action-bar extraction for interruption recovery or remediation controls is optional future no-behavior cleanup and should not be combined with behavior changes.
+
 Actions:
 
-- Split command parsing, target resolution, manifest runtime signals, launch cleanup, and child-session launch.
-- Split queue notice, interruption recovery, remediation controls, and review action layout.
-- Split reliability notices, manifest markdown, and report normalization.
+- Completed: split command parsing, target resolution, launch prompt formatting, launch errors, and the remaining launch orchestrator.
+- Completed: split capacity queue notice, review action header, and elapsed-time formatting.
+- Completed: split reliability notices, manifest markdown, report section normalization, and markdown export.
+- Optional follow-up: split interruption recovery and remediation controls as separate no-behavior component moves if action-bar density becomes a maintenance blocker.
 
 Verification:
 

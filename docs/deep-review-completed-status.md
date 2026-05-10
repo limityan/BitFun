@@ -14,7 +14,7 @@ This consolidation covers the following current Deep Review documents and compan
 | `docs/deep-review-phase2-plan.md` | Phase 2 implementation status for strategy, concurrency, retry, cache, token budget, and report reliability work. |
 | `docs/deep-review-phase2-addendum.md` | Truth model, status wording, risk register, completed rounds, and deferred boundaries. |
 | `docs/deep-review-phase3-followup-plan.md` | Latest product decisions and the current Phase 3 split between implemented diagnostics/settings/provider queue/retry controls and pending cost scope work. |
-| `docs/deep-review-architecture-refactor-plan.md` | Architecture refactor goals and module boundaries. Backend module extraction, Flow Chat compatibility facades, and the frontend review-team pure-helper split are implemented; broader shared-runtime refactors remain bounded by that plan. |
+| `docs/deep-review-architecture-refactor-plan.md` | Architecture refactor goals and module boundaries. Backend module extraction, Flow Chat compatibility facades, frontend review-team pure-helper split, and the stable first Flow Chat launch/action-bar/report split are implemented; broader shared-runtime refactors remain bounded by that plan. |
 | `docs/deep-review-nondeepreview-impact-inventory.md` | Shared-runtime impact rules that are already documented and must continue to constrain future work. |
 | `docs/superpowers/plans/2026-05-09-deep-review-phase3-execution-plan.md` | Round-level execution status and verification history for Phase 3. |
 | `docs/superpowers/specs/deep-review-design.md` and `docs/superpowers/plans/deep-review-phase2-plan.md` | Local companion copies checked for drift; they duplicate the main design and Phase 2 plan shape and do not add a different current boundary. |
@@ -348,7 +348,8 @@ Deep Review has moved from a prompt-only concept to a guarded runtime with:
 - content-free duplicate discovery savings diagnostics;
 - compact evidence-pack report/export summaries;
 - compact launch summary;
-- review-scoped capacity and retry settings.
-- no-behavior frontend review-team helper extraction with stable `reviewTeamService.ts` facade.
+- review-scoped capacity and retry settings;
+- no-behavior frontend review-team helper extraction with stable `reviewTeamService.ts` facade;
+- no-behavior Flow Chat Deep Review helper extraction with stable `DeepReviewService.ts`, `DeepReviewActionBar.tsx`, and `codeReviewReport.ts` facades.
 
 The completed boundary intentionally stops before backend-owned retry redispatch scheduling, backend batch/stagger scheduling, project-level cache, hard byte clipping, programmatic shared tool-result reuse, global subagent scheduling, and additional shared-runtime architecture behavior changes.
