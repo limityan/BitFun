@@ -35,7 +35,7 @@ The branch range contains unrelated product and packaging changes. This document
 
 | File | Current line count | Deep Review responsibility currently present | Refactor pressure |
 |---|---:|---|---|
-| `src/web-ui/src/shared/services/review-team/` | Split modules | Defaults, strategy profiles, public types, and the review-team facade that builds manifests, work packets, token budget, scope profile, evidence pack, prompt block, and config helpers | Current subsystem home. More extraction is still useful, but the public import path is now backed by a directory. |
+| `src/web-ui/src/shared/services/review-team/` | Split modules | Defaults, strategy profiles, public types, path metadata, risk scoring, work packets, token budget, scope profile, evidence pack, cache plans, pre-review summary, prompt block formatting, manifest-member projection, and the review-team service facade | Current subsystem home. The public import path is backed by a directory; new pure behavior should land in the narrow helper module instead of growing `index.ts`. |
 | `src/web-ui/src/flow_chat/services/DeepReviewService.ts` | 645 | Slash parsing, target resolution, change stats, manifest runtime signals, launch cleanup, child session launch | Medium. Launch orchestration can be split from target/manifest helpers. |
 | `src/web-ui/src/flow_chat/components/btw/DeepReviewActionBar.tsx` | 1279 | Shared review action bar plus Deep Review queue controls, interruption recovery, diagnostics, remediation, settings actions | Medium-high. It is under 1500 lines but is already dense. |
 | `src/web-ui/src/flow_chat/utils/codeReviewReport.ts` | 870 | Report normalization, reliability notices, manifest rendering, markdown export | Medium. More growth will make report semantics hard to audit. |
@@ -184,6 +184,16 @@ src/web-ui/src/shared/services/review-team/
   types.ts
   defaults.ts
   strategy.ts
+  pathMetadata.ts
+  manifestMembers.ts
+  workPackets.ts
+  tokenBudget.ts
+  risk.ts
+  scopeProfile.ts
+  evidencePack.ts
+  cachePlan.ts
+  preReviewSummary.ts
+  promptBlock.ts
 ```
 
 Keep the current import path working:
@@ -192,7 +202,7 @@ Keep the current import path working:
 src/web-ui/src/shared/services/reviewTeamService.ts
 ```
 
-The compatibility import path now exports from `./review-team`. Further splits such as `manifestBuilder.ts`, `workPackets.ts`, `tokenBudget.ts`, `promptBlock.ts`, `scopeProfile.ts`, and `evidencePack.ts` remain follow-up no-behavior-change refactors.
+The compatibility import path now exports from `./review-team`. Pure helper extraction is complete for path metadata, member projection, work packets, token budget, risk, scope profile, evidence pack, cache plan, pre-review summary, and prompt block formatting. Keep side-effectful config/backend loading and the public manifest assembly path in `index.ts` unless a later no-behavior-change round adds a narrower adapter with equivalent facade tests.
 
 ### Flow Chat Deep Review Layout
 
@@ -351,11 +361,10 @@ Goal: shrink `reviewTeamService.ts` and make review team responsibilities discov
 
 Actions:
 
-- Create `src/web-ui/src/shared/services/review-team/`.
-- Move type definitions first.
-- Move pure helpers next: strategy, risk, work packets, token budget, cache plan, pre-review summary.
-- Move config persistence and backend definition loading separately.
-- Keep `reviewTeamService.ts` as a facade so existing imports remain stable.
+- Completed: `src/web-ui/src/shared/services/reviewTeamService.ts` is a compatibility facade over `./review-team`.
+- Completed: type definitions, defaults, strategy profiles, path metadata, risk, work packets, token budget, scope profile, evidence pack, cache plan, pre-review summary, manifest-member projection, and prompt formatting are split into focused modules.
+- Keep `review-team/index.ts` as the side-effectful service facade for config persistence, backend definition loading, default team assembly, and final manifest assembly.
+- Add future review-team behavior to the narrow helper module first; only grow `index.ts` for API-facing orchestration or adapter calls.
 
 Verification:
 
@@ -423,9 +432,9 @@ Behavior change allowed: none.
 ### Frontend
 
 - `review-team/types.ts` must be dependency-light and should not import API adapters.
-- `review-team/config.ts` may import config API.
-- `review-team/backendDefinition.ts` may import agent API.
-- `review-team/manifestBuilder.ts` may import target classification, strategy, work packets, token budget, and cache plan.
+- `review-team/index.ts` may import config and agent APIs because it remains the service facade for persisted config, backend default definition loading, and final manifest assembly.
+- Pure helper modules such as `risk.ts`, `workPackets.ts`, `tokenBudget.ts`, `cachePlan.ts`, `preReviewSummary.ts`, `scopeProfile.ts`, `evidencePack.ts`, `manifestMembers.ts`, and `promptBlock.ts` must not import API adapters or call the facade.
+- Helper dependencies must stay one-way: prompt formatting consumes an already-built manifest, work packets may consume member projection, and no helper should import `index.ts`.
 - Flow Chat launch modules may import the review-team facade, not internal modules unless there is a clear reason.
 - UI components must not call Tauri APIs directly.
 

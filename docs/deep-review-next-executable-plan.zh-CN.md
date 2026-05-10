@@ -145,23 +145,23 @@ Deep Review 当前已经不是纯 prompt 概念，而是带运行时护栏的 pr
 
 6. 前端 Review Team 服务拆分。
    - 新建 `src/web-ui/src/shared/services/review-team/`。
-   - 目标模块：
+   - 当前已落地模块：
      - `index.ts`
      - `types.ts`
      - `defaults.ts`
-     - `config.ts`
-     - `backendDefinition.ts`
      - `strategy.ts`
-     - `targetClassifier.ts`
-     - `subagentCapabilities.ts`
-     - `manifestBuilder.ts`
+     - `pathMetadata.ts`
+     - `manifestMembers.ts`
      - `workPackets.ts`
      - `tokenBudget.ts`
      - `risk.ts`
-     - `promptBlock.ts`
+     - `scopeProfile.ts`
+     - `evidencePack.ts`
      - `cachePlan.ts`
      - `preReviewSummary.ts`
-   - `src/web-ui/src/shared/services/reviewTeamService.ts` 保留为 facade，确保现有 import path 不变。
+     - `promptBlock.ts`
+   - `src/web-ui/src/shared/services/reviewTeamService.ts` 已保留为 facade，确保现有 import path 不变。
+   - `index.ts` 保留 side-effectful config/backend loading、default team assembly 和 final manifest assembly；纯 helper 不得反向 import `index.ts`。
 
 7. Flow Chat Deep Review 拆分。
    - 新建 `src/web-ui/src/flow_chat/deep-review/launch/`，承载 command parsing、target resolution、launch prompt、child-session launch、launch errors。
@@ -180,7 +180,7 @@ Deep Review 当前已经不是纯 prompt 概念，而是带运行时护栏的 pr
 | M1-P4 TaskTool adapter | 将 Deep Review TaskTool 分支收敛到 adapter | `deep_review/task_adapter.rs`、`task_tool.rs` | 无 | Deep Review TaskTool tests；普通 Task regression | `task_tool.rs` 只保留 context-gated adapter 调用；普通 Task 不进入 queue/retry/cache。 |
 | M1-P5 CodeReviewTool report adapter | 隔离 Deep Review report enrichments | `deep_review/report.rs`、`code_review_tool.rs` | 无 | Deep Review report tests；标准 Code Review regression | 标准 Code Review 不出现 packet/cache/queue reliability signals。 |
 | M1-P6 Event and tool-pipeline containment | 收敛 event conversion 与 duplicate measurement hook | `tool_pipeline.rs`、`tools/framework.rs`、`src/crates/events/src/agentic.rs` | 无 | event serialization test；tool pipeline non-DeepReview test | `DeepReviewQueueStateChanged` contract 稳定；measurement 仍 Deep Review-gated。 |
-| M1-P7 Frontend review-team facade split | 拆分 `reviewTeamService.ts` 但保留 import path | `src/web-ui/src/shared/services/review-team/*`、`reviewTeamService.ts` | 无 | `reviewTeamService.test.ts`；`type-check:web` | facade 只 re-export / thin adapter；内部模块无循环依赖。 |
+| M1-P7 Frontend review-team facade split | 已完成：拆分 `reviewTeamService.ts` 并抽离 review-team 纯 helper | `src/web-ui/src/shared/services/review-team/*`、`reviewTeamService.ts` | 无 | `reviewTeamService.test.ts`；`type-check:web` | old facade 只 re-export；pure helpers 无 API adapter 和反向 facade import。 |
 | M1-P8 Flow Chat split | 拆分 launch、action bar、report helpers | `src/web-ui/src/flow_chat/deep-review/*`、`DeepReviewService.ts`、`DeepReviewActionBar.tsx`、`codeReviewReport.ts` | 无 | focused Flow Chat tests；lint；type-check | public exports 不变；标准 Code Review action bar 不受影响。 |
 | M1-P9 Ownership cleanup | 清理重复定义、补模块说明、更新文档 | new modules、Deep Review docs | 无 | `rg -n "TODO|TBD|temporary|copy of|duplicate"`；focused tests | ownership 清晰；源文档只更新 ownership，不声称新行为。 |
 
@@ -244,9 +244,10 @@ Deep Review 当前已经不是纯 prompt 概念，而是带运行时护栏的 pr
 **M1-P7 Frontend review-team facade split**
 
 - 前置检查：用 `rg -n "reviewTeamService"` 列出 import 点；先创建 `review-team/` 目录和 `index.ts`。
-- 改动范围：按 types -> defaults -> pure helpers -> config/backendDefinition -> manifestBuilder/promptBlock 顺序迁移。
+- 当前状态：`reviewTeamService.ts` 已成为 facade；`types/defaults/strategy/pathMetadata/manifestMembers/workPackets/tokenBudget/risk/scopeProfile/evidencePack/cachePlan/preReviewSummary/promptBlock` 已按责任拆出。
+- 保留边界：`index.ts` 继续承载 config/backend loading、default team assembly 和 final manifest assembly；后续如果继续拆 side-effect adapter，必须保持相同 facade tests 且不改变行为。
 - 必须验证：`reviewTeamService.test.ts`、`reviewTeamLocaleCompleteness.test.ts`、`pnpm run type-check:web`。
-- 禁止事项：facade 不得继续新增业务逻辑；helpers 不得反向 import `manifestBuilder.ts`。
+- 禁止事项：old facade 不得新增业务逻辑；pure helpers 不得反向 import `index.ts` 或调用 API adapter。
 
 **M1-P8 Flow Chat split**
 

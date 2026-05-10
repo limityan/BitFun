@@ -409,7 +409,7 @@ Do not let backend risk scoring override the user's selected strategy until meas
 
 ## Architecture Refactor Plan
 
-Status: Partially implemented. Backend Deep Review modules and the frontend review-team facade have been extracted; remaining refactor follow-ups are no-behavior-change unless explicitly called out and approved.
+Status: Partially implemented. Backend Deep Review modules, Flow Chat compatibility facades, and the frontend review-team directory have been extracted. The latest no-behavior-change frontend pass split review-team pure helpers for path metadata, risk, work packets, token budget, scope profile, evidence pack, cache plans, pre-review summary, manifest-member projection, and prompt block formatting. Remaining refactor follow-ups are no-behavior-change unless explicitly called out and approved.
 
 ### Refactor Goals
 
@@ -432,7 +432,7 @@ Status: Partially implemented. Backend Deep Review modules and the frontend revi
 | `src/crates/core/src/agentic/tools/implementations/code_review_tool.rs` | Standard Code Review and Deep Review report logic are mixed with packet fallback, reliability, diagnostics, and cache write-through. |
 | `src/crates/core/src/agentic/tools/pipeline/tool_pipeline.rs` | Generic tool pipeline carries Deep Review context propagation and duplicate read/diff measurement. |
 | `src/crates/events/src/agentic.rs` | Shared event crate contains Deep Review queue event payload. |
-| `src/web-ui/src/shared/services/reviewTeamService.ts` | Config, backend definition, validation, strategy, risk, manifest, work packets, cache plan, token budget, and prompt block are in one large file. |
+| `src/web-ui/src/shared/services/reviewTeamService.ts` / `src/web-ui/src/shared/services/review-team/` | `reviewTeamService.ts` is now a two-line facade. The directory owns focused pure helper modules plus `index.ts` for side-effectful config/backend loading, default team assembly, and final manifest assembly. |
 | `src/web-ui/src/flow_chat/services/DeepReviewService.ts` | Slash parsing, target resolution, stats, runtime signals, launch cleanup, and child-session launch are coupled. |
 | `src/web-ui/src/flow_chat/components/btw/DeepReviewActionBar.tsx` | Queue controls, recovery, remediation, diagnostics, and review actions are dense in one component path. |
 | `src/web-ui/src/flow_chat/utils/codeReviewReport.ts` | Report normalization, reliability notices, manifest rendering, and markdown export are growing together. |
@@ -538,18 +538,17 @@ src/web-ui/src/shared/services/review-team/
   index.ts
   types.ts
   defaults.ts
-  config.ts
-  backendDefinition.ts
   strategy.ts
-  targetClassifier.ts
-  subagentCapabilities.ts
-  manifestBuilder.ts
+  pathMetadata.ts
+  manifestMembers.ts
   workPackets.ts
   tokenBudget.ts
   risk.ts
-  promptBlock.ts
+  scopeProfile.ts
+  evidencePack.ts
   cachePlan.ts
   preReviewSummary.ts
+  promptBlock.ts
 ```
 
 Keep this import path working:
@@ -563,10 +562,9 @@ The old file should become a facade exporting from `./review-team`.
 Dependency rules:
 
 - `types.ts` must be dependency-light and should not import implementation modules.
-- `config.ts` may import config APIs.
-- `backendDefinition.ts` may import agent APIs.
-- `manifestBuilder.ts` may import pure helpers.
-- Pure helpers must not import `manifestBuilder.ts`.
+- `index.ts` may import config and agent APIs because it is the service facade for persisted config, backend default definition loading, default team assembly, and final manifest assembly.
+- Pure helper modules must not import API adapters or `index.ts`.
+- Prompt formatting consumes an already-built manifest and must not make launch policy decisions.
 - Flow Chat launch modules should import the facade unless a tighter boundary is justified.
 
 ### Target Flow Chat Deep Review Layout
@@ -685,11 +683,10 @@ Deferred behavior change:
 
 Actions:
 
-- Create `src/web-ui/src/shared/services/review-team/`.
-- Move types first.
-- Move pure helpers next: strategy, risk, work packets, token budget, cache plan, pre-review summary.
-- Move config persistence and backend definition loading separately.
-- Keep `reviewTeamService.ts` as facade.
+- Completed: `src/web-ui/src/shared/services/reviewTeamService.ts` exports from `./review-team`.
+- Completed: `types.ts`, `defaults.ts`, `strategy.ts`, `pathMetadata.ts`, `manifestMembers.ts`, `workPackets.ts`, `tokenBudget.ts`, `risk.ts`, `scopeProfile.ts`, `evidencePack.ts`, `cachePlan.ts`, `preReviewSummary.ts`, and `promptBlock.ts` are separated under `review-team/`.
+- Keep config persistence, backend definition loading, default team assembly, and final manifest assembly in `review-team/index.ts` until a later adapter-only split has equivalent tests and no API drift.
+- Add new pure behavior to narrow helper modules first; do not grow `index.ts` with new policy logic.
 
 Verification:
 
