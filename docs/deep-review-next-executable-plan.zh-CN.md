@@ -182,7 +182,7 @@ Deep Review 当前已经不是纯 prompt 概念，而是带运行时护栏的 pr
 | M1-P6 Event and tool-pipeline containment | 收敛 event conversion 与 duplicate measurement hook | `tool_pipeline.rs`、`tools/framework.rs`、`src/crates/events/src/agentic.rs` | 无 | event serialization test；tool pipeline non-DeepReview test | `DeepReviewQueueStateChanged` contract 稳定；measurement 仍 Deep Review-gated。 |
 | M1-P7 Frontend review-team facade split | 已完成：拆分 `reviewTeamService.ts` 并抽离 review-team 纯 helper | `src/web-ui/src/shared/services/review-team/*`、`reviewTeamService.ts` | 无 | `reviewTeamService.test.ts`；`type-check:web` | old facade 只 re-export；pure helpers 无 API adapter 和反向 facade import。 |
 | M1-P8 Flow Chat split | 已完成：拆分 launch、action bar、report helpers 的稳定第一层 | `src/web-ui/src/flow_chat/deep-review/*`、`DeepReviewService.ts`、`DeepReviewActionBar.tsx`、`codeReviewReport.ts` | 无 | focused Flow Chat tests；lint；type-check | public exports 不变；标准 Code Review action bar 不受影响；action-bar 的 interruption/remediation 深层拆分可作为后续 no-behavior cleanup。 |
-| M1-P9 Ownership cleanup | 清理重复定义、补模块说明、更新文档 | new modules、Deep Review docs | 无 | `rg -n "TODO|TBD|temporary|copy of|duplicate"`；focused tests | ownership 清晰；源文档只更新 ownership，不声称新行为。 |
+| M1-P9 Ownership cleanup | 已完成：清理重复定义风险、补 Flow Chat 模块 ownership 说明、更新文档 | new modules、Deep Review docs | 无 | placeholder scan；focused web tests；`git diff --check` | ownership 清晰；源文档只更新 ownership，不声称新行为。 |
 
 #### M1 子计划执行卡片
 
@@ -260,6 +260,7 @@ Deep Review 当前已经不是纯 prompt 概念，而是带运行时护栏的 pr
 **M1-P9 Ownership cleanup**
 
 - 前置检查：确认 M1-P1 到 M1-P8 均已合入并验证。
+- 当前状态：`src/web-ui/src/flow_chat/deep-review/README.md` 已补充 launch/action-bar/report ownership、facade 保留规则、Deep Review gating、隐私边界和 focused verification；placeholder scan 没有发现真实 TODO/TBD 残留，命中项仅为业务词 `temporary_overload` 和文档里的 duplicate measurement 表述。
 - 改动范围：删除重复导出、补模块级说明、更新 ownership 文档。
 - 必须验证：placeholder scan、focused Rust/web tests、`git diff --check`。
 - 禁止事项：不得借 cleanup 引入行为变化。

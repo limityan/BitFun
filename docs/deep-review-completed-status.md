@@ -350,6 +350,7 @@ Deep Review has moved from a prompt-only concept to a guarded runtime with:
 - compact launch summary;
 - review-scoped capacity and retry settings;
 - no-behavior frontend review-team helper extraction with stable `reviewTeamService.ts` facade;
-- no-behavior Flow Chat Deep Review helper extraction with stable `DeepReviewService.ts`, `DeepReviewActionBar.tsx`, and `codeReviewReport.ts` facades.
+- no-behavior Flow Chat Deep Review helper extraction with stable `DeepReviewService.ts`, `DeepReviewActionBar.tsx`, and `codeReviewReport.ts` facades;
+- Flow Chat Deep Review ownership documentation covering launch, action-bar, report, facade, privacy, and focused verification boundaries.
 
 The completed boundary intentionally stops before backend-owned retry redispatch scheduling, backend batch/stagger scheduling, project-level cache, hard byte clipping, programmatic shared tool-result reuse, global subagent scheduling, and additional shared-runtime architecture behavior changes.

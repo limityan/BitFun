@@ -231,6 +231,8 @@ src/web-ui/src/flow_chat/deep-review/
 
 Keep current public exports from `DeepReviewService.ts`, `DeepReviewActionBar.tsx`, and `codeReviewReport.ts` during migration. A future no-behavior cleanup may still split interruption recovery and remediation controls if the action-bar file grows again; that work should not be bundled with behavior changes.
 
+Ownership notes now live in `src/web-ui/src/flow_chat/deep-review/README.md`. Keep that README aligned whenever launch, action-bar, or report responsibilities move.
+
 ## Proposed Execution Rounds
 
 ### Round 0: Baseline And Guardrails
@@ -410,12 +412,14 @@ Behavior change allowed: none.
 
 Goal: document module boundaries without adding noisy comments.
 
+Current status: Flow Chat ownership cleanup is complete for the current frontend split. The subsystem README records module boundaries, facade guardrails, Deep Review gating, privacy constraints, and focused verification. Backend ownership cleanup can continue in later no-behavior Rust rounds when those files are next touched.
+
 Actions:
 
-- Add module-level Rust docs for new `deep_review` modules where responsibilities are not obvious.
-- Add concise TypeScript file headers only for facades and boundary modules.
-- Remove duplicated constants or status wording after the extraction.
-- Update `docs/deep-review-design.md` and related phase docs only if the refactor changes file ownership, not product behavior.
+- Completed for Flow Chat: add subsystem-level TypeScript ownership documentation without adding noisy per-file comments.
+- Completed for Flow Chat: update Deep Review plan/status docs to reflect the real first-pass split and optional action-bar follow-ups.
+- Future backend cleanup: add module-level Rust docs for `deep_review` modules where responsibilities are not obvious when those modules are next changed.
+- Future no-behavior cleanup: remove duplicated constants or status wording only when a focused scan finds real duplication, not business terms such as capacity `temporary_overload`.
 
 Verification:
 

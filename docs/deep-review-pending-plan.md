@@ -598,6 +598,8 @@ Keep current public exports from:
 - `DeepReviewActionBar.tsx`
 - `codeReviewReport.ts`
 
+Flow Chat ownership notes live in `src/web-ui/src/flow_chat/deep-review/README.md` and should be updated when responsibilities move.
+
 ### Refactor Execution Rounds
 
 #### Refactor Round 0: Baseline And Guardrails
@@ -718,12 +720,14 @@ Behavior change allowed: none.
 
 #### Refactor Round 7: Documentation, Comments, And Ownership Cleanup
 
+Status: Flow Chat ownership cleanup is complete for the current frontend split. Backend module docs remain an optional no-behavior cleanup for future Rust-focused rounds.
+
 Actions:
 
-- Add module-level Rust docs where boundaries are not obvious.
-- Add concise TypeScript headers only for facades and boundary modules.
-- Remove duplicated constants and wording after extraction.
-- Update docs only when file ownership changes.
+- Completed for Flow Chat: add subsystem-level ownership notes covering launch, action-bar, report, facade guardrails, Deep Review gating, privacy constraints, and focused verification.
+- Completed for Flow Chat: update status/planning docs without claiming new product behavior.
+- Future backend cleanup: add module-level Rust docs where boundaries are not obvious.
+- Future no-behavior cleanup: remove duplicated constants and wording only when a focused scan finds real duplication.
 
 Verification:
 
