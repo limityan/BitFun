@@ -154,7 +154,7 @@ The orchestrator is still source-agnostic. Git-backed changes, local workspace c
 - Provider queue/retry/success counts and provider reason counts are aggregate diagnostics.
 - Provider queue time remains separated from reviewer runtime timeout.
 - Generic runtime containment has a first no-behavior primitive: `agentic/subagent_runtime/queue_timing.rs` owns queue wait / pause timing only.
-- Backend batch/stagger scheduling is pending.
+- Full backend batch/stagger scheduling is pending; a narrow launch-batch overlap guard now queues later batches with `launch_batch_blocked` while an earlier reviewer batch is still active.
 - User-facing effective-cap override controls are pending.
 - Deep Review queueing is not global subagent queueing.
 
@@ -354,4 +354,4 @@ Deep Review has moved from a prompt-only concept to a guarded runtime with:
 - no-behavior Flow Chat Deep Review helper extraction with stable `DeepReviewService.ts`, `DeepReviewActionBar.tsx`, and `codeReviewReport.ts` facades;
 - Flow Chat Deep Review ownership documentation covering launch, action-bar, report, facade, privacy, and focused verification boundaries.
 
-The completed boundary intentionally stops before backend-owned retry redispatch scheduling, backend batch/stagger scheduling, project-level cache, hard byte clipping, programmatic shared tool-result reuse, global subagent scheduling, and additional shared-runtime architecture behavior changes.
+The completed boundary intentionally stops before backend-owned retry redispatch scheduling, full backend batch/stagger scheduling, project-level cache, hard byte clipping, programmatic shared tool-result reuse, global subagent scheduling, and additional shared-runtime architecture behavior changes. The current launch-batch guard is only an overlap safety net, not a complete dispatcher.

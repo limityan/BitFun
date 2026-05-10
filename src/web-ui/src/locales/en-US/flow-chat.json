@@ -646,6 +646,7 @@
         "providerConcurrencyLimit": "provider concurrency limit",
         "retryAfter": "provider retry-after",
         "localConcurrencyCap": "local reviewer capacity",
+        "launchBatchBlocked": "previous launch batch still running",
         "temporaryOverload": "temporary provider overload"
       },
       "sessionBusy": "Your active session is busy. Pause Deep Review or continue later.",

@@ -93,6 +93,7 @@ pub enum DeepReviewQueueReason {
     ProviderConcurrencyLimit,
     RetryAfter,
     LocalConcurrencyCap,
+    LaunchBatchBlocked,
     TemporaryOverload,
 }
 

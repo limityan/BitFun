@@ -44,6 +44,7 @@ const REQUIRED_ACTION_BAR_KEYS = [
   'deepReviewActionBar.capacityQueue.skipOptionalQueued',
   'deepReviewActionBar.capacityQueue.runSlowerNextTime',
   'deepReviewActionBar.capacityQueue.openReviewSettings',
+  'deepReviewActionBar.capacityQueue.reasons.launchBatchBlocked',
   'deepReviewActionBar.capacityQueue.runSlowerSaved',
   'deepReviewActionBar.capacityQueue.runSlowerFailed',
   'deepReviewActionBar.capacityQueue.controlFailed',
