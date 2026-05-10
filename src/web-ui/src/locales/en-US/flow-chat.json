@@ -667,7 +667,9 @@
       "openReviewSettings": "Open Review settings",
       "runSlowerSaved": "Next Deep Review will use up to {{count}} parallel reviewers.",
       "runSlowerFailed": "Failed to update Review settings.",
-      "controlFailed": "Queue control failed. Please try again or stop the review."
+      "runSlowerFailedWithReason": "Failed to update Review settings: {{reason}}. Open Review settings and lower Review Team max parallel reviewers manually.",
+      "controlFailed": "Queue control failed. Please try again or stop the review.",
+      "controlFailedWithReason": "Queue control failed: {{reason}}. Try again, or use Stop to interrupt the review if the queue is stuck."
     },
     "degradation": {
       "reduceReviewers": "Run with core reviewers only",

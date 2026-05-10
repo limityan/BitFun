@@ -523,6 +523,83 @@ describeWithJsdom('DeepReviewActionBar', () => {
     }).capacityQueueState.status).toBe('paused_by_user');
   });
 
+  it('shows the backend reason when queue control fails', async () => {
+    const { DeepReviewActionBar } = await import('./DeepReviewActionBar');
+    const { notificationService } = await import('@/shared/notification-system');
+    controlDeepReviewQueueMock.mockRejectedValueOnce(new Error('backend queue already closed'));
+
+    useReviewActionBarStore.getState().showCapacityQueueBar({
+      childSessionId: 'child-session',
+      parentSessionId: 'parent-session',
+      capacityQueueState: {
+        toolId: 'task-queue-1',
+        subagentType: 'ReviewSecurity',
+        dialogTurnId: 'turn-queue-1',
+        status: 'queued_for_capacity',
+        queuedReviewerCount: 1,
+        controlMode: 'backend',
+      },
+    });
+
+    await act(async () => {
+      root.render(<DeepReviewActionBar />);
+    });
+
+    const pauseButton = Array.from(container.querySelectorAll('button'))
+      .find((button) => button.textContent?.includes('Pause queue'));
+    expect(pauseButton).toBeTruthy();
+
+    await act(async () => {
+      pauseButton!.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(notificationService.error).toHaveBeenCalledWith(
+      expect.stringContaining('backend queue already closed'),
+    );
+    expect(notificationService.error).toHaveBeenCalledWith(
+      expect.stringContaining('use Stop to interrupt the review'),
+    );
+  });
+
+  it('shows the settings update reason when run-slower fails', async () => {
+    const { DeepReviewActionBar } = await import('./DeepReviewActionBar');
+    const { notificationService } = await import('@/shared/notification-system');
+    lowerDefaultReviewTeamMaxParallelReviewersMock.mockRejectedValueOnce(
+      new Error('config store unavailable'),
+    );
+
+    useReviewActionBarStore.getState().showCapacityQueueBar({
+      childSessionId: 'child-session',
+      parentSessionId: 'parent-session',
+      capacityQueueState: {
+        status: 'queued_for_capacity',
+        reason: 'local_concurrency_cap',
+        queuedReviewerCount: 1,
+      },
+    });
+
+    await act(async () => {
+      root.render(<DeepReviewActionBar />);
+    });
+
+    const runSlowerButton = Array.from(container.querySelectorAll('button'))
+      .find((button) => button.textContent?.includes('Run slower next time'));
+    expect(runSlowerButton).toBeTruthy();
+
+    await act(async () => {
+      runSlowerButton!.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(notificationService.error).toHaveBeenCalledWith(
+      expect.stringContaining('config store unavailable'),
+    );
+    expect(notificationService.error).toHaveBeenCalledWith(
+      expect.stringContaining('Open Review settings'),
+    );
+  });
+
   it('starts a structured retry turn for explicit incomplete Deep Review slices', async () => {
     const { DeepReviewActionBar } = await import('./DeepReviewActionBar');
 

@@ -667,7 +667,9 @@
       "openReviewSettings": "開啟審核設定",
       "runSlowerSaved": "下次 Deep Review 最多會使用 {{count}} 個並行審核員。",
       "runSlowerFailed": "更新審核設定失敗。",
-      "controlFailed": "\u4f47\u5217\u63a7\u5236\u5931\u6557\uff0c\u8acb\u91cd\u8a66\u6216\u505c\u6b62\u5be9\u6838\u3002"
+      "runSlowerFailedWithReason": "更新審核設定失敗：{{reason}}。可以開啟審核設定並手動降低 Review Team 最大並行審核員數量。",
+      "controlFailed": "\u4f47\u5217\u63a7\u5236\u5931\u6557\uff0c\u8acb\u91cd\u8a66\u6216\u505c\u6b62\u5be9\u6838\u3002",
+      "controlFailedWithReason": "佇列控制失敗：{{reason}}。請重試；如果佇列卡住，可以使用停止來中斷審核。"
     },
     "degradation": {
       "reduceReviewers": "僅運行核心 reviewer",

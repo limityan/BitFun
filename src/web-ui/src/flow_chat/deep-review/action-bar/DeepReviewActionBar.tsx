@@ -58,6 +58,16 @@ function openSettingsTab(tab: ConfigTab) {
   useSceneStore.getState().openScene('settings');
 }
 
+function normalizeActionErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+  if (typeof error === 'string' && error.trim()) {
+    return error.trim();
+  }
+  return 'unknown error';
+}
+
 const stopNestedScrollPropagation = (event: React.WheelEvent | React.TouchEvent) => {
   event.stopPropagation();
   if ('nativeEvent' in event && typeof event.nativeEvent.stopImmediatePropagation === 'function') {
@@ -147,7 +157,7 @@ export const ReviewActionBar: React.FC = () => {
 
     if (!childSessionId || !capacityQueueState.dialogTurnId || !capacityQueueState.toolId) {
       notificationService.error(t('deepReviewActionBar.capacityQueue.controlFailed', {
-        defaultValue: 'Queue control is unavailable for this reviewer.',
+        defaultValue: 'Queue control is unavailable because this reviewer is missing session, turn, or tool identifiers. Use Stop to interrupt the review, or wait for the queue state to refresh.',
       }));
       return;
     }
@@ -162,8 +172,9 @@ export const ReviewActionBar: React.FC = () => {
       applyLocalAction();
     } catch (error) {
       log.warn('Failed to control DeepReview capacity queue', error);
-      notificationService.error(t('deepReviewActionBar.capacityQueue.controlFailed', {
-        defaultValue: 'Queue control failed. Please try again or stop the review.',
+      notificationService.error(t('deepReviewActionBar.capacityQueue.controlFailedWithReason', {
+        reason: normalizeActionErrorMessage(error),
+        defaultValue: 'Queue control failed: {{reason}}. Try again, or use Stop to interrupt the review if the queue is stuck.',
       }));
     }
   }, [capacityQueueState, childSessionId, t]);
@@ -177,8 +188,9 @@ export const ReviewActionBar: React.FC = () => {
       }));
     } catch (error) {
       log.warn('Failed to lower DeepReview max parallel reviewers', error);
-      notificationService.error(t('deepReviewActionBar.capacityQueue.runSlowerFailed', {
-        defaultValue: 'Failed to update Review settings.',
+      notificationService.error(t('deepReviewActionBar.capacityQueue.runSlowerFailedWithReason', {
+        reason: normalizeActionErrorMessage(error),
+        defaultValue: 'Failed to update Review settings: {{reason}}. Open Review settings and lower Review Team max parallel reviewers manually.',
       }));
     }
   }, [t]);
