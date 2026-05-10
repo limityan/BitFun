@@ -82,7 +82,7 @@ Verification:
 
 - Rust tests exist for queueable vs non-queueable provider errors, queue expiry, pause, cancel, and diagnostics counters.
 - Frontend tests exist for provider queue notice, localized reason text, and queue-state updates.
-- Final release-gate Rust verification passed with `cargo test -p bitfun-core deep_review -- --nocapture` and `cargo check --workspace --exclude bitfun-cli`.
+- Earlier milestone Rust verification passed with `cargo test -p bitfun-core deep_review -- --nocapture` and `cargo check --workspace --exclude bitfun-cli`; the next full Rust gate remains deferred to the agreed cargo pass.
 
 Exit criteria:
 
@@ -345,6 +345,20 @@ Exit criteria:
 
 ## Deferred Product Decisions
 
+Product recommendation snapshot:
+
+| Decision item | Priority | Recommended product path | Advantages | Trade-offs / risks |
+|---|---:|---|---|---|
+| Backend batch / stagger scheduling | P0 | Design a lightweight default stagger with visible launched/waiting reviewer counts before adding advanced controls. | Reduces provider bursts and makes waiting easier to explain. | Can increase wall-clock time and complicate failure ordering. |
+| Backend-owned automatic retry redispatch scheduler | P1 | Start with explicit opt-in, one bounded automatic redispatch for transient capacity/timeout slices only. | Improves completion rate without requiring manual monitoring. | Hidden cost, stale context, retry loops, and report merge confusion if not visible/cancellable. |
+| User-facing effective-cap override controls | P1 | Prefer intent-based settings such as Conservative / Balanced / Faster; keep learned effective cap as a system recommendation, not a raw required concept. | Gives advanced users control while reducing configuration confusion. | Still needs careful copy and safe bounds to avoid degraded performance. |
+| Hard prompt-byte clipping | P2 | Offer an honest reduced-coverage choice with explicit coverage/reliability metadata. | Provides a hard ceiling for large targets. | Hidden coverage loss if report/export language is not strict. |
+| Authoritative runtime strategy selection | P2 | Keep advisory warnings first; require user confirmation before any strategy override. | Prevents under/over-review without taking away control. | Opaque scoring can reduce trust and expand validation scope. |
+| Programmatic shared tool-result cache | P3 | Continue measurement-only diagnostics until duplicate cost is proven material, then consider session-scoped limited caching. | Could reduce repeated tool IO/token cost. | Source/diff privacy and stale-result semantics are heavy. |
+| Project-level review cache | P3 | Defer until retention, deletion, invalidation, and user-visible management are designed together. | Speeds repeated project reviews. | Persistent security findings and stale results are product/privacy risks. |
+| Generic global subagent queue | P4 | Treat as a platform runtime project, not a Deep Review cleanup. | Could unify fairness and capacity telemetry across hidden subagents. | May unexpectedly slow ordinary subagents and break event/settings expectations. |
+| Backend DAG scheduler | P4 | Keep prompt-driven orchestration with deterministic guardrails; revisit only if Deep Review needs workflow-level SLA guarantees. | Deterministic orchestration and observability. | Highest migration and compatibility risk. |
+
 ### Backend-Owned Automatic Retry Redispatch Scheduler
 
 Status: Deferred for separate product design.
@@ -469,7 +483,7 @@ Do not implement until the control model, settings placement, safe bounds, expla
 
 ## Architecture Refactor Plan
 
-Status: Partially implemented. Backend Deep Review modules, Flow Chat compatibility facades, and the frontend review-team directory have been extracted. The latest no-behavior-change frontend passes split review-team pure helpers and Flow Chat Deep Review helpers for launch parsing/targeting/prompt/errors, report reliability/manifest/section/markdown formatting, and action-bar capacity/header/formatting components. Remaining refactor follow-ups are no-behavior-change unless explicitly called out and approved.
+Status: Partially implemented. Backend Deep Review modules, Flow Chat compatibility facades, and the frontend review-team directory have been extracted. The latest no-behavior-change frontend passes split review-team pure helpers and Flow Chat Deep Review helpers for launch parsing/targeting/prompt/errors, report reliability/manifest/section/markdown formatting, and action-bar capacity/header/formatting/remediation/action-controls/diagnostics components. Remaining refactor follow-ups are no-behavior-change unless explicitly called out and approved.
 
 ### Refactor Goals
 
@@ -494,7 +508,7 @@ Status: Partially implemented. Backend Deep Review modules, Flow Chat compatibil
 | `src/crates/events/src/agentic.rs` | Shared event crate contains Deep Review queue event payload. |
 | `src/web-ui/src/shared/services/reviewTeamService.ts` / `src/web-ui/src/shared/services/review-team/` | `reviewTeamService.ts` is now a two-line facade. The directory owns focused pure helper modules plus `index.ts` for side-effectful config/backend loading, default team assembly, and final manifest assembly. |
 | `src/web-ui/src/flow_chat/services/DeepReviewService.ts` / `src/web-ui/src/flow_chat/deep-review/launch/DeepReviewService.ts` | Old path is a facade; launch orchestration keeps child-session launch and runtime manifest signals while command parsing, target resolution, launch prompt formatting, and launch errors are split. |
-| `src/web-ui/src/flow_chat/components/btw/DeepReviewActionBar.tsx` / `src/web-ui/src/flow_chat/deep-review/action-bar/DeepReviewActionBar.tsx` | Old path is a facade; capacity queue notice, partial-results panel, recovery-plan preview, action header, and formatting are split, while remediation/diagnostics remain in the main action-bar path for now. |
+| `src/web-ui/src/flow_chat/components/btw/DeepReviewActionBar.tsx` / `src/web-ui/src/flow_chat/deep-review/action-bar/DeepReviewActionBar.tsx` | Old path is a facade; capacity queue notice, partial-results panel, recovery-plan preview, action header, formatting, remediation selection, action controls, and diagnostics text building are split. The main action-bar path now owns state orchestration and callback wiring. |
 | `src/web-ui/src/flow_chat/utils/codeReviewReport.ts` / `src/web-ui/src/flow_chat/deep-review/report/codeReviewReport.ts` | Old path is a facade; retry-slice helpers and types stay in the core report module while reliability notices, manifest rendering, section normalization, and markdown export are split. |
 
 ### Target Backend Layout
@@ -653,6 +667,9 @@ src/web-ui/src/flow_chat/deep-review/
     PartialResultsPanel.tsx
     RecoveryPlanPreview.tsx
     ReviewActionHeader.tsx
+    RemediationSelectionPanel.tsx
+    ReviewActionControls.tsx
+    interruptionDiagnostics.ts
     actionBarFormatting.ts
     DeepReviewActionBar.tsx
   report/
@@ -772,14 +789,14 @@ Behavior change allowed: none.
 
 #### Refactor Round 6: Flow Chat Deep Review Decomposition
 
-Status: stable first pass complete. Public facades remain unchanged; partial-results and recovery-plan previews have been split into focused action-bar components. Deeper action-bar extraction for remediation or diagnostics controls is optional future no-behavior cleanup and should not be combined with behavior changes.
+Status: stable frontend cleanup complete for the current scope. Public facades remain unchanged; partial-results, recovery-plan preview, remediation selection, action controls, and diagnostics text building have been split into focused action-bar modules. Future action-bar cleanup should be limited to new density that appears after behavior work and should not be combined with behavior changes.
 
 Actions:
 
 - Completed: split command parsing, target resolution, launch prompt formatting, launch errors, and the remaining launch orchestrator.
 - Completed: split capacity queue notice, review action header, and elapsed-time formatting.
 - Completed: split reliability notices, manifest markdown, report section normalization, and markdown export.
-- Optional follow-up: split remediation or diagnostics controls as separate no-behavior component moves if action-bar density becomes a maintenance blocker.
+- Completed follow-up: split remediation selection and diagnostics/action controls as no-behavior component/helper moves with focused tests.
 
 Verification:
 
