@@ -12,7 +12,6 @@ import {
   Play,
   Copy,
   Info,
-  SkipForward,
   RotateCcw,
   Eye,
 } from 'lucide-react';
@@ -53,6 +52,7 @@ import { useSceneStore } from '@/app/stores/sceneStore';
 import type { ConfigTab } from '@/app/scenes/settings/settingsConfig';
 import { formatElapsedTime } from './actionBarFormatting';
 import { CapacityQueueNotice } from './CapacityQueueNotice';
+import { RecoveryPlanPreview } from './RecoveryPlanPreview';
 import { ReviewActionHeader } from './ReviewActionHeader';
 import '../../components/btw/DeepReviewActionBar.scss';
 
@@ -835,43 +835,7 @@ export const ReviewActionBar: React.FC = () => {
 
       {/* Recovery plan preview */}
       {hasInterruption && recoveryPlan && (
-        <div className="deep-review-action-bar__recovery-plan">
-          <div className="deep-review-action-bar__recovery-plan-detail">
-            {recoveryPlan.willPreserve.length > 0 && (
-              <div className="deep-review-action-bar__recovery-item">
-                <CheckCircle size={12} className="deep-review-action-bar__recovery-icon--preserve" />
-                <span>
-                  {t('deepReviewActionBar.recoveryPreserve', {
-                    count: recoveryPlan.willPreserve.length,
-                    defaultValue: '{{count}} completed reviewers will be preserved',
-                  })}
-                </span>
-              </div>
-            )}
-            {recoveryPlan.willRerun.length > 0 && (
-              <div className="deep-review-action-bar__recovery-item">
-                <RotateCcw size={12} className="deep-review-action-bar__recovery-icon--rerun" />
-                <span>
-                  {t('deepReviewActionBar.recoveryRerun', {
-                    count: recoveryPlan.willRerun.length,
-                    defaultValue: '{{count}} reviewers will be rerun',
-                  })}
-                </span>
-              </div>
-            )}
-            {recoveryPlan.willSkip.length > 0 && (
-              <div className="deep-review-action-bar__recovery-item">
-                <SkipForward size={12} className="deep-review-action-bar__recovery-icon--skip" />
-                <span>
-                  {t('deepReviewActionBar.recoverySkip', {
-                    count: recoveryPlan.willSkip.length,
-                    defaultValue: '{{count}} reviewers will be skipped',
-                  })}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
+        <RecoveryPlanPreview recoveryPlan={recoveryPlan} />
       )}
 
       {/* Context overflow degradation options */}
