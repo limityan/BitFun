@@ -38,6 +38,10 @@ const REQUIRED_ACTION_BAR_KEYS = [
   'deepReviewActionBar.capacityQueue.pausedTitle',
   'deepReviewActionBar.capacityQueue.detail',
   'deepReviewActionBar.capacityQueue.sessionBusy',
+  'deepReviewActionBar.capacityQueue.waitingReviewersTitle',
+  'deepReviewActionBar.capacityQueue.reviewerStatusQueued',
+  'deepReviewActionBar.capacityQueue.reviewerStatusPaused',
+  'deepReviewActionBar.capacityQueue.optionalReviewer',
   'deepReviewActionBar.capacityQueue.pauseQueue',
   'deepReviewActionBar.capacityQueue.continueQueue',
   'deepReviewActionBar.capacityQueue.cancelQueued',
@@ -56,6 +60,7 @@ const REQUIRED_ACTION_BAR_KEYS = [
   'deepReviewActionBar.capacityQueue.runSlowerFailedWithReason',
   'deepReviewActionBar.capacityQueue.controlFailed',
   'deepReviewActionBar.capacityQueue.controlFailedWithReason',
+  'deepReviewActionBar.capacityQueue.controlPartiallyFailedWithReason',
   'reviewActionBar.noIssuesFound',
 ];
 

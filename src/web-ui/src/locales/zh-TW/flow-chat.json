@@ -659,6 +659,10 @@
       },
       "sessionBusy": "目前會話較忙，可暫停 Deep Review 或稍後繼續。",
       "stopHint": "可使用停止按鈕中斷目前審核佇列。",
+      "waitingReviewersTitle": "等待中的審核員",
+      "reviewerStatusQueued": "等待中",
+      "reviewerStatusPaused": "已暫停",
+      "optionalReviewer": "選用",
       "pauseQueue": "暫停佇列",
       "continueQueue": "繼續佇列",
       "cancelQueued": "取消排隊審核員",
@@ -668,8 +672,9 @@
       "runSlowerSaved": "下次 Deep Review 最多會使用 {{count}} 個並行審核員。",
       "runSlowerFailed": "更新審核設定失敗。",
       "runSlowerFailedWithReason": "更新審核設定失敗：{{reason}}。可以開啟審核設定並手動降低 Review Team 最大並行審核員數量。",
-      "controlFailed": "\u4f47\u5217\u63a7\u5236\u5931\u6557\uff0c\u8acb\u91cd\u8a66\u6216\u505c\u6b62\u5be9\u6838\u3002",
-      "controlFailedWithReason": "佇列控制失敗：{{reason}}。請重試；如果佇列卡住，可以使用停止來中斷審核。"
+      "controlFailed": "佇列控制不可用，因為該審核員缺少會話、輪次或工具識別碼。可使用停止按鈕中斷審核，或等待佇列狀態重新整理後再試。",
+      "controlFailedWithReason": "佇列控制失敗：{{reason}}。請重試；如果佇列卡住，可以使用停止來中斷審核。",
+      "controlPartiallyFailedWithReason": "佇列控制已部分生效；{{total}} 位審核員中有 {{failed}} 位失敗：{{reason}}。請等待佇列狀態重新整理後重試；如果佇列卡住，可以使用停止來中斷審核。"
     },
     "degradation": {
       "reduceReviewers": "僅運行核心 reviewer",

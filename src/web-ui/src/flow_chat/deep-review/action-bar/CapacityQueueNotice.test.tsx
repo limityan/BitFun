@@ -82,6 +82,48 @@ describe('CapacityQueueNotice', () => {
     expect(html).toContain('Waited 4s of 1m 0s');
   });
 
+  it('renders the specific reviewers currently waiting', () => {
+    const html = renderToStaticMarkup(
+      <CapacityQueueNotice
+        capacityQueueState={{
+          status: 'queued_for_capacity',
+          reason: 'local_concurrency_cap',
+          queuedReviewerCount: 2,
+          waitingReviewers: [
+            {
+              toolId: 'task-security',
+              subagentType: 'ReviewSecurity',
+              displayName: 'Security reviewer',
+              status: 'queued_for_capacity',
+              reason: 'local_concurrency_cap',
+              queueElapsedMs: 9_000,
+            },
+            {
+              toolId: 'task-frontend',
+              subagentType: 'ReviewFrontend',
+              displayName: 'Frontend reviewer',
+              status: 'paused_by_user',
+              reason: 'launch_batch_blocked',
+            },
+          ],
+        }}
+        supportsInlineQueueControls
+        onPauseQueue={vi.fn()}
+        onContinueQueue={vi.fn()}
+        onSkipOptionalQueuedReviewers={vi.fn()}
+        onCancelQueuedReviewers={vi.fn()}
+        onRunSlowerNextTime={vi.fn()}
+        onOpenReviewSettings={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain('Waiting reviewers');
+    expect(html).toContain('Security reviewer');
+    expect(html).toContain('Frontend reviewer');
+    expect(html).toContain('Paused');
+    expect(html).toContain('Waited 9s');
+  });
+
   it('renders the stop hint when inline queue controls are unavailable', () => {
     const html = renderToStaticMarkup(
       <CapacityQueueNotice

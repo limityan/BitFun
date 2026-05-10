@@ -57,6 +57,17 @@ export type DeepReviewCapacityQueueReason =
   | 'launch_batch_blocked'
   | 'temporary_overload';
 
+export interface DeepReviewCapacityWaitingReviewer {
+  toolId?: string;
+  subagentType?: string;
+  displayName?: string;
+  status: Exclude<DeepReviewCapacityQueueStatus, 'running' | 'capacity_skipped'>;
+  reason?: DeepReviewCapacityQueueReason;
+  optional?: boolean;
+  queueElapsedMs?: number;
+  maxQueueWaitSeconds?: number;
+}
+
 export interface DeepReviewCapacityQueueState {
   toolId?: string;
   subagentType?: string;
@@ -72,6 +83,7 @@ export interface DeepReviewCapacityQueueState {
   maxQueueWaitSeconds?: number;
   sessionConcurrencyHigh?: boolean;
   controlMode?: 'local' | 'session_stop_only' | 'backend';
+  waitingReviewers?: DeepReviewCapacityWaitingReviewer[];
 }
 
 export interface ReviewActionBarState {
@@ -148,6 +160,7 @@ export interface ReviewActionBarState {
   restore: () => void;
   skipRemainingFixes: () => void;
   setCapacityQueueState: (state: DeepReviewCapacityQueueState | null) => void;
+  applyCapacityQueueState: (state: DeepReviewCapacityQueueState) => void;
   pauseCapacityQueue: () => void;
   continueCapacityQueue: () => void;
   cancelQueuedReviewers: () => void;
@@ -180,6 +193,94 @@ const initialState = {
   capacityQueueState: null as DeepReviewCapacityQueueState | null,
   lastCapacityQueueAction: null as DeepReviewCapacityQueueAction | null,
 };
+
+function isTerminalQueueStatus(status: DeepReviewCapacityQueueStatus): boolean {
+  return status === 'running' || status === 'capacity_skipped';
+}
+
+function queueReviewerKey(
+  reviewer: Pick<DeepReviewCapacityWaitingReviewer, 'toolId' | 'subagentType'>,
+): string {
+  return reviewer.toolId || reviewer.subagentType || 'unknown-reviewer';
+}
+
+function waitingReviewerFromQueueState(
+  state: DeepReviewCapacityQueueState,
+): DeepReviewCapacityWaitingReviewer | null {
+  if (state.status === 'running' || state.status === 'capacity_skipped') {
+    return null;
+  }
+
+  return {
+    toolId: state.toolId,
+    subagentType: state.subagentType,
+    status: state.status,
+    reason: state.reason,
+    optional: (state.optionalReviewerCount ?? 0) > 0,
+    queueElapsedMs: state.queueElapsedMs,
+    maxQueueWaitSeconds: state.maxQueueWaitSeconds,
+  };
+}
+
+function normalizeWaitingReviewers(
+  state: DeepReviewCapacityQueueState,
+): DeepReviewCapacityWaitingReviewer[] {
+  if (state.waitingReviewers) {
+    return state.waitingReviewers;
+  }
+
+  const reviewer = waitingReviewerFromQueueState(state);
+  return reviewer ? [reviewer] : [];
+}
+
+function withNormalizedWaitingReviewers(
+  state: DeepReviewCapacityQueueState,
+): DeepReviewCapacityQueueState {
+  return {
+    ...state,
+    waitingReviewers: normalizeWaitingReviewers(state),
+  };
+}
+
+function mergeCapacityQueueState(
+  current: DeepReviewCapacityQueueState | null,
+  incoming: DeepReviewCapacityQueueState,
+): DeepReviewCapacityQueueState | null {
+  const currentReviewers = current?.waitingReviewers ?? normalizeWaitingReviewers(current ?? incoming);
+  const reviewerMap = new Map(
+    currentReviewers.map((reviewer) => [queueReviewerKey(reviewer), reviewer]),
+  );
+  const incomingReviewers = normalizeWaitingReviewers(incoming);
+  const fallbackIncomingKey = queueReviewerKey(incoming);
+
+  if (isTerminalQueueStatus(incoming.status)) {
+    reviewerMap.delete(fallbackIncomingKey);
+    for (const reviewer of incomingReviewers) {
+      reviewerMap.delete(queueReviewerKey(reviewer));
+    }
+  } else {
+    for (const reviewer of incomingReviewers) {
+      reviewerMap.set(queueReviewerKey(reviewer), reviewer);
+    }
+  }
+
+  const waitingReviewers = [...reviewerMap.values()];
+  if (waitingReviewers.length === 0) {
+    return null;
+  }
+
+  const queuedReviewerCount = Math.max(waitingReviewers.length, incoming.queuedReviewerCount ?? 0);
+  const optionalReviewerCount = waitingReviewers.filter((reviewer) => reviewer.optional).length;
+  const allPaused = waitingReviewers.every((reviewer) => reviewer.status === 'paused_by_user');
+
+  return {
+    ...incoming,
+    status: allPaused ? 'paused_by_user' : 'queued_for_capacity',
+    queuedReviewerCount,
+    optionalReviewerCount,
+    waitingReviewers,
+  };
+}
 
 export const useReviewActionBarStore = create<ReviewActionBarState>((set, get) => ({
   ...initialState,
@@ -270,7 +371,7 @@ export const useReviewActionBarStore = create<ReviewActionBarState>((set, get) =
       fixingRemediationIds: new Set(),
       remainingFixIds: [],
       decisionSelections: {},
-      capacityQueueState,
+      capacityQueueState: withNormalizedWaitingReviewers(capacityQueueState),
       lastCapacityQueueAction: null,
     });
   },
@@ -369,14 +470,33 @@ export const useReviewActionBarStore = create<ReviewActionBarState>((set, get) =
     lastSubmittedAction: null,
   }),
   setCapacityQueueState: (capacityQueueState) => set({
-    capacityQueueState,
+    capacityQueueState: capacityQueueState
+      ? withNormalizedWaitingReviewers(capacityQueueState)
+      : null,
     lastCapacityQueueAction: null,
   }),
+  applyCapacityQueueState: (capacityQueueState) => {
+    const nextQueueState = mergeCapacityQueueState(get().capacityQueueState, capacityQueueState);
+    set((state) => ({
+      capacityQueueState: nextQueueState,
+      lastCapacityQueueAction: null,
+      ...(nextQueueState === null && state.phase === 'review_waiting_capacity'
+        ? { phase: 'idle' as ReviewActionPhase }
+        : {}),
+    }));
+  },
   pauseCapacityQueue: () => {
     const current = get().capacityQueueState;
     if (!current || current.status === 'capacity_skipped') return;
     set({
-      capacityQueueState: { ...current, status: 'paused_by_user' },
+      capacityQueueState: {
+        ...current,
+        status: 'paused_by_user',
+        waitingReviewers: current.waitingReviewers?.map((reviewer) => ({
+          ...reviewer,
+          status: 'paused_by_user',
+        })),
+      },
       lastCapacityQueueAction: 'pause',
     });
   },
@@ -384,7 +504,14 @@ export const useReviewActionBarStore = create<ReviewActionBarState>((set, get) =
     const current = get().capacityQueueState;
     if (!current || current.status !== 'paused_by_user') return;
     set({
-      capacityQueueState: { ...current, status: 'queued_for_capacity' },
+      capacityQueueState: {
+        ...current,
+        status: 'queued_for_capacity',
+        waitingReviewers: current.waitingReviewers?.map((reviewer) => ({
+          ...reviewer,
+          status: 'queued_for_capacity',
+        })),
+      },
       lastCapacityQueueAction: 'continue',
     });
   },
@@ -397,6 +524,7 @@ export const useReviewActionBarStore = create<ReviewActionBarState>((set, get) =
         status: 'capacity_skipped',
         queuedReviewerCount: 0,
         optionalReviewerCount: 0,
+        waitingReviewers: [],
       },
       lastCapacityQueueAction: 'cancel',
     });
@@ -415,6 +543,7 @@ export const useReviewActionBarStore = create<ReviewActionBarState>((set, get) =
         status: queuedReviewerCount > 0 ? current.status : 'capacity_skipped',
         queuedReviewerCount,
         optionalReviewerCount: 0,
+        waitingReviewers: current.waitingReviewers?.filter((reviewer) => !reviewer.optional),
       },
       lastCapacityQueueAction: 'skip_optional',
     });

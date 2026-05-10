@@ -12,6 +12,7 @@ import { Button } from '@/component-library';
 import {
   useReviewActionBarStore,
   type DeepReviewCapacityQueueAction,
+  type DeepReviewCapacityQueueState,
   type ReviewActionPhase,
 } from '../../store/deepReviewActionBarStore';
 import { buildSelectedReviewRemediationPrompt } from '../../utils/codeReviewRemediation';
@@ -66,6 +67,25 @@ function normalizeActionErrorMessage(error: unknown): string {
     return error.trim();
   }
   return 'unknown error';
+}
+
+function buildCapacityQueueControlToolIds(
+  capacityQueueState: DeepReviewCapacityQueueState,
+  action: DeepReviewCapacityQueueAction,
+): string[] {
+  const waitingReviewers = capacityQueueState.waitingReviewers ?? [];
+  const targetReviewers = action === 'skip_optional'
+    ? waitingReviewers.filter((reviewer) => reviewer.optional)
+    : waitingReviewers;
+  const toolIds = targetReviewers
+    .map((reviewer) => reviewer.toolId)
+    .filter((toolId): toolId is string => Boolean(toolId));
+
+  if (toolIds.length > 0) {
+    return [...new Set(toolIds)];
+  }
+
+  return capacityQueueState.toolId ? [capacityQueueState.toolId] : [];
 }
 
 const stopNestedScrollPropagation = (event: React.WheelEvent | React.TouchEvent) => {
@@ -133,10 +153,16 @@ export const ReviewActionBar: React.FC = () => {
     Boolean(capacityQueueState) &&
     capacityQueueState?.status !== 'running' &&
     capacityQueueState?.status !== 'capacity_skipped';
+  const backendQueueControlToolIds = useMemo(
+    () => capacityQueueState
+      ? buildCapacityQueueControlToolIds(capacityQueueState, 'cancel')
+      : [],
+    [capacityQueueState],
+  );
   const hasBackendQueueControlTarget = Boolean(
     childSessionId &&
     capacityQueueState?.dialogTurnId &&
-    capacityQueueState?.toolId,
+    backendQueueControlToolIds.length > 0,
   );
   const supportsInlineQueueControls =
     capacityQueueState?.controlMode === 'backend'
@@ -155,28 +181,44 @@ export const ReviewActionBar: React.FC = () => {
       return;
     }
 
-    if (!childSessionId || !capacityQueueState.dialogTurnId || !capacityQueueState.toolId) {
+    const toolIds = buildCapacityQueueControlToolIds(capacityQueueState, action);
+    if (!childSessionId || !capacityQueueState.dialogTurnId || toolIds.length === 0) {
       notificationService.error(t('deepReviewActionBar.capacityQueue.controlFailed', {
         defaultValue: 'Queue control is unavailable because this reviewer is missing session, turn, or tool identifiers. Use Stop to interrupt the review, or wait for the queue state to refresh.',
       }));
       return;
     }
 
-    try {
-      await agentAPI.controlDeepReviewQueue({
-        sessionId: childSessionId,
-        dialogTurnId: capacityQueueState.dialogTurnId,
-        toolId: capacityQueueState.toolId,
-        action,
-      });
-      applyLocalAction();
-    } catch (error) {
-      log.warn('Failed to control DeepReview capacity queue', error);
+    const dialogTurnId = capacityQueueState.dialogTurnId;
+    const controlResults = await Promise.allSettled(toolIds.map((toolId) => agentAPI.controlDeepReviewQueue({
+      sessionId: childSessionId,
+      dialogTurnId,
+      toolId,
+      action,
+    })));
+    const failedResults = controlResults.filter(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    );
+    if (failedResults.length > 0) {
+      const reason = normalizeActionErrorMessage(failedResults[0].reason);
+      log.warn('Failed to control DeepReview capacity queue', failedResults[0].reason);
+      if (failedResults.length < toolIds.length) {
+        notificationService.error(t('deepReviewActionBar.capacityQueue.controlPartiallyFailedWithReason', {
+          failed: failedResults.length,
+          total: toolIds.length,
+          reason,
+          defaultValue: `Queue control partly applied; ${failedResults.length} of ${toolIds.length} reviewers failed: ${reason}. Wait for the queue state to refresh, then retry or use Stop if it is stuck.`,
+        }));
+        return;
+      }
       notificationService.error(t('deepReviewActionBar.capacityQueue.controlFailedWithReason', {
-        reason: normalizeActionErrorMessage(error),
+        reason,
         defaultValue: 'Queue control failed: {{reason}}. Try again, or use Stop to interrupt the review if the queue is stuck.',
       }));
+      return;
     }
+
+    applyLocalAction();
   }, [capacityQueueState, childSessionId, t]);
 
   const handleRunSlowerNextTime = useCallback(async () => {
