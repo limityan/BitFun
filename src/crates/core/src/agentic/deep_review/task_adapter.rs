@@ -30,7 +30,8 @@ use crate::agentic::subagent_runtime::queue_timing::QueueWaitTimer;
 use crate::util::errors::{BitFunError, BitFunResult};
 use serde_json::{json, Value};
 use std::collections::HashSet;
-use tokio::time::{sleep, Duration, Instant};
+use std::time::{Duration, Instant};
+use tokio::time::sleep;
 
 #[cfg(test)]
 const DEEP_REVIEW_QUEUE_POLL_INTERVAL: Duration = Duration::from_millis(10);
