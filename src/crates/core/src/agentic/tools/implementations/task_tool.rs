@@ -5,15 +5,14 @@ use crate::agentic::deep_review::task_adapter::{
     DeepReviewProviderQueueWaitOutcome, DeepReviewQueueWaitOutcome, DeepReviewQueueWaitSkipReason,
 };
 use crate::agentic::deep_review_policy::{
-    deep_review_active_reviewer_count, deep_review_effective_concurrency_snapshot,
-    deep_review_effective_parallel_instances, deep_review_has_judge_been_launched,
-    deep_review_turn_elapsed_seconds, load_default_deep_review_policy,
-    record_deep_review_effective_concurrency_success, record_deep_review_runtime_auto_retry,
-    record_deep_review_runtime_auto_retry_suppressed, record_deep_review_runtime_manual_retry,
-    record_deep_review_task_budget, DeepReviewActiveReviewerGuard, DeepReviewCapacityQueueReason,
-    DeepReviewConcurrencyPolicy, DeepReviewExecutionPolicy, DeepReviewIncrementalCache,
-    DeepReviewPolicyViolation, DeepReviewRunManifestGate, DeepReviewSubagentRole,
-    DEEP_REVIEW_AGENT_TYPE,
+    deep_review_active_reviewer_count, deep_review_effective_parallel_instances,
+    deep_review_has_judge_been_launched, deep_review_turn_elapsed_seconds,
+    load_default_deep_review_policy, record_deep_review_effective_concurrency_success,
+    record_deep_review_runtime_auto_retry, record_deep_review_runtime_auto_retry_suppressed,
+    record_deep_review_runtime_manual_retry, record_deep_review_task_budget,
+    DeepReviewActiveReviewerGuard, DeepReviewCapacityQueueReason, DeepReviewConcurrencyPolicy,
+    DeepReviewExecutionPolicy, DeepReviewIncrementalCache, DeepReviewPolicyViolation,
+    DeepReviewRunManifestGate, DeepReviewSubagentRole, DEEP_REVIEW_AGENT_TYPE,
 };
 use crate::agentic::events::DeepReviewQueueStatus;
 use crate::agentic::tools::framework::{
@@ -342,65 +341,18 @@ impl TaskTool {
         queue_elapsed_ms: u64,
         duration_ms: u128,
     ) -> ToolResult {
-        let queue_skip_reason = match skip_reason {
-            DeepReviewQueueWaitSkipReason::QueueExpired => "queue_expired",
-            DeepReviewQueueWaitSkipReason::UserCancelled => "user_cancelled",
-            DeepReviewQueueWaitSkipReason::OptionalSkipped => "optional_skipped",
-        };
-        let capacity_reason_code =
-            deep_review_task_adapter::queue_reason_to_snake_case(capacity_reason);
-        let assistant_message = match skip_reason {
-            DeepReviewQueueWaitSkipReason::QueueExpired => {
-                let reason_message = match capacity_reason {
-                    DeepReviewCapacityQueueReason::LaunchBatchBlocked => {
-                        "the previous launch batch did not finish before the queue wait limit"
-                    }
-                    DeepReviewCapacityQueueReason::LocalConcurrencyCap => {
-                        "the local reviewer capacity queue reached its maximum wait"
-                    }
-                    _ => "the DeepReview capacity queue reached its maximum wait",
-                };
-                let recommended_action = match capacity_reason {
-                    DeepReviewCapacityQueueReason::LaunchBatchBlocked => {
-                        "Wait for the earlier reviewer batch to finish or cancel stuck queued reviewers, then retry this packet with a lower max parallel reviewer setting if it repeats."
-                    }
-                    _ => {
-                        "Run the review again with a lower max parallel reviewer setting or wait for active reviewers to finish."
-                    }
-                };
-                format!(
-                    "Subagent '{}' was skipped because {} ({}s). Recommended action: {}\n<queue_result status=\"capacity_skipped\" reason=\"{}\" queue_elapsed_ms=\"{}\" />",
-                    subagent_type,
-                    reason_message,
-                    conc_policy.max_queue_wait_seconds,
-                    recommended_action,
-                    capacity_reason_code,
-                    queue_elapsed_ms
-                )
-            }
-            DeepReviewQueueWaitSkipReason::UserCancelled => format!(
-                "Subagent '{}' was skipped because the DeepReview capacity queue was cancelled by the user.\n<queue_result status=\"capacity_skipped\" reason=\"user_cancelled\" queue_elapsed_ms=\"{}\" />",
-                subagent_type, queue_elapsed_ms
-            ),
-            DeepReviewQueueWaitSkipReason::OptionalSkipped => format!(
-                "Subagent '{}' was skipped because optional DeepReview queued reviewers were skipped by the user.\n<queue_result status=\"capacity_skipped\" reason=\"optional_skipped\" queue_elapsed_ms=\"{}\" />",
-                subagent_type, queue_elapsed_ms
-            ),
-        };
-
+        let (data, assistant_message) =
+            deep_review_task_adapter::capacity_skip_result_for_local_queue_outcome(
+                dialog_turn_id,
+                subagent_type,
+                conc_policy,
+                capacity_reason,
+                skip_reason,
+                queue_elapsed_ms,
+                duration_ms,
+            );
         ToolResult::Result {
-            data: json!({
-                "duration": duration_ms,
-                "status": "capacity_skipped",
-                "queue_elapsed_ms": queue_elapsed_ms,
-                "max_queue_wait_seconds": conc_policy.max_queue_wait_seconds,
-                "queue_skip_reason": queue_skip_reason,
-                "capacity_reason": capacity_reason_code,
-                "effective_parallel_instances": deep_review_effective_concurrency_snapshot(
-                    dialog_turn_id,
-                    conc_policy.max_parallel_instances,
-                ).effective_parallel_instances
-            }),
+            data,
             result_for_assistant: Some(assistant_message),
             image_attachments: None,
         }

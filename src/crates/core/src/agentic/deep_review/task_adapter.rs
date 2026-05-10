@@ -10,9 +10,9 @@ use crate::agentic::coordination::get_global_coordinator;
 use crate::agentic::deep_review::queue::extract_retry_after_seconds;
 use crate::agentic::deep_review_policy::{
     classify_deep_review_capacity_error, clear_deep_review_queue_control_for_tool,
-    deep_review_active_reviewer_count, deep_review_effective_parallel_instances,
-    deep_review_max_retries_per_role, deep_review_queue_control_snapshot,
-    record_deep_review_capacity_skip_for_reason,
+    deep_review_active_reviewer_count, deep_review_effective_concurrency_snapshot,
+    deep_review_effective_parallel_instances, deep_review_max_retries_per_role,
+    deep_review_queue_control_snapshot, record_deep_review_capacity_skip_for_reason,
     record_deep_review_effective_concurrency_capacity_error,
     record_deep_review_runtime_provider_capacity_queue,
     record_deep_review_runtime_provider_capacity_retry,
@@ -530,6 +530,76 @@ pub(crate) fn capacity_skip_result_for_provider_reason(
         0,
         None,
     )
+}
+
+pub(crate) fn capacity_skip_result_for_local_queue_outcome(
+    dialog_turn_id: &str,
+    subagent_type: &str,
+    conc_policy: &DeepReviewConcurrencyPolicy,
+    capacity_reason: DeepReviewCapacityQueueReason,
+    skip_reason: DeepReviewQueueWaitSkipReason,
+    queue_elapsed_ms: u64,
+    duration_ms: u128,
+) -> (Value, String) {
+    let queue_skip_reason = match skip_reason {
+        DeepReviewQueueWaitSkipReason::QueueExpired => "queue_expired",
+        DeepReviewQueueWaitSkipReason::UserCancelled => "user_cancelled",
+        DeepReviewQueueWaitSkipReason::OptionalSkipped => "optional_skipped",
+    };
+    let capacity_reason_code = queue_reason_to_snake_case(capacity_reason);
+    let assistant_message = match skip_reason {
+        DeepReviewQueueWaitSkipReason::QueueExpired => {
+            let reason_message = match capacity_reason {
+                DeepReviewCapacityQueueReason::LaunchBatchBlocked => {
+                    "the previous launch batch did not finish before the queue wait limit"
+                }
+                DeepReviewCapacityQueueReason::LocalConcurrencyCap => {
+                    "the local reviewer capacity queue reached its maximum wait"
+                }
+                _ => "the DeepReview capacity queue reached its maximum wait",
+            };
+            let recommended_action = match capacity_reason {
+                DeepReviewCapacityQueueReason::LaunchBatchBlocked => {
+                    "Wait for the earlier reviewer batch to finish or cancel stuck queued reviewers, then retry this packet with a lower max parallel reviewer setting if it repeats."
+                }
+                _ => {
+                    "Run the review again with a lower max parallel reviewer setting or wait for active reviewers to finish."
+                }
+            };
+            format!(
+                "Subagent '{}' was skipped because {} ({}s). Recommended action: {}\n<queue_result status=\"capacity_skipped\" reason=\"{}\" queue_elapsed_ms=\"{}\" />",
+                subagent_type,
+                reason_message,
+                conc_policy.max_queue_wait_seconds,
+                recommended_action,
+                capacity_reason_code,
+                queue_elapsed_ms
+            )
+        }
+        DeepReviewQueueWaitSkipReason::UserCancelled => format!(
+            "Subagent '{}' was skipped because the DeepReview capacity queue was cancelled by the user.\n<queue_result status=\"capacity_skipped\" reason=\"user_cancelled\" queue_elapsed_ms=\"{}\" />",
+            subagent_type, queue_elapsed_ms
+        ),
+        DeepReviewQueueWaitSkipReason::OptionalSkipped => format!(
+            "Subagent '{}' was skipped because optional DeepReview queued reviewers were skipped by the user.\n<queue_result status=\"capacity_skipped\" reason=\"optional_skipped\" queue_elapsed_ms=\"{}\" />",
+            subagent_type, queue_elapsed_ms
+        ),
+    };
+
+    let data = json!({
+        "duration": u64::try_from(duration_ms).unwrap_or(u64::MAX),
+        "status": "capacity_skipped",
+        "queue_elapsed_ms": queue_elapsed_ms,
+        "max_queue_wait_seconds": conc_policy.max_queue_wait_seconds,
+        "queue_skip_reason": queue_skip_reason,
+        "capacity_reason": capacity_reason_code,
+        "effective_parallel_instances": deep_review_effective_concurrency_snapshot(
+            dialog_turn_id,
+            conc_policy.max_parallel_instances,
+        ).effective_parallel_instances
+    });
+
+    (data, assistant_message)
 }
 
 pub(crate) fn capacity_skip_result_for_provider_queue_outcome(
