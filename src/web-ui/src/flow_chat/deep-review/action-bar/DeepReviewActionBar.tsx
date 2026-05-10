@@ -44,6 +44,7 @@ import { useSceneStore } from '@/app/stores/sceneStore';
 import type { ConfigTab } from '@/app/scenes/settings/settingsConfig';
 import { formatElapsedTime } from './actionBarFormatting';
 import { CapacityQueueNotice } from './CapacityQueueNotice';
+import { DecisionExecutionGate } from './DecisionExecutionGate';
 import { buildInterruptionDiagnostics } from './interruptionDiagnostics';
 import { PartialResultsPanel } from './PartialResultsPanel';
 import { RemediationSelectionPanel } from './RemediationSelectionPanel';
@@ -95,6 +96,11 @@ const stopNestedScrollPropagation = (event: React.WheelEvent | React.TouchEvent)
   }
 };
 
+interface PendingDecisionAction {
+  rerunReview: boolean;
+  selectedIds: Set<string>;
+}
+
 const PHASE_CONFIG: Record<ReviewActionPhase, {
   icon: React.ComponentType<{ size?: number | string; style?: React.CSSProperties; className?: string }>;
   iconClass: string;
@@ -132,6 +138,7 @@ export const ReviewActionBar: React.FC = () => {
     errorMessage,
     interruption,
     completedRemediationIds,
+    fixingRemediationIds,
     remainingFixIds,
     decisionSelections,
     capacityQueueState,
@@ -141,6 +148,7 @@ export const ReviewActionBar: React.FC = () => {
   const [showRemediationList, setShowRemediationList] = useState(true);
   const [showPartialResults, setShowPartialResults] = useState(false);
   const [expandedDecisionIds, setExpandedDecisionIds] = useState<Set<string>>(new Set());
+  const [pendingDecisionAction, setPendingDecisionAction] = useState<PendingDecisionAction | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [longRunningNotified, setLongRunningNotified] = useState(false);
 
@@ -326,6 +334,24 @@ export const ReviewActionBar: React.FC = () => {
   const phaseConfig = PHASE_CONFIG[phase];
   const PhaseIcon = phaseConfig.icon;
 
+  const decisionGateItems = useMemo(() => {
+    if (!pendingDecisionAction) {
+      return [];
+    }
+    return remediationItems.filter((item) => (
+      pendingDecisionAction.selectedIds.has(item.id) &&
+      item.requiresDecision &&
+      !completedRemediationIds.has(item.id)
+    ));
+  }, [completedRemediationIds, pendingDecisionAction, remediationItems]);
+
+  const decisionGateMissingSelection = useMemo(() => (
+    decisionGateItems.some((item) => (
+      (item.decisionContext?.options?.length ?? 0) > 0 &&
+      decisionSelections[item.id] == null
+    ))
+  ), [decisionGateItems, decisionSelections]);
+
   const handleToggleRemediation = useCallback((id: string) => {
     store.toggleRemediation(id);
   }, [store]);
@@ -351,10 +377,27 @@ export const ReviewActionBar: React.FC = () => {
     });
   }, []);
 
-  const handleStartFixing = useCallback(async (rerunReview: boolean, overrideSelectedIds?: Set<string>) => {
+  const handleStartFixing = useCallback(async (
+    rerunReview: boolean,
+    overrideSelectedIds?: Set<string>,
+    options?: { skipDecisionGate?: boolean },
+  ) => {
     if (!reviewData || !childSessionId) return;
 
     const idsToFix = overrideSelectedIds ?? selectedRemediationIds;
+    const selectedDecisionItems = remediationItems.filter((item) => (
+      idsToFix.has(item.id) &&
+      item.requiresDecision &&
+      !completedRemediationIds.has(item.id)
+    ));
+    if (!options?.skipDecisionGate && selectedDecisionItems.length > 0) {
+      const decisionIds = selectedDecisionItems.map((item) => item.id);
+      setPendingDecisionAction({ rerunReview, selectedIds: new Set(idsToFix) });
+      setShowRemediationList(true);
+      setExpandedDecisionIds((current) => new Set([...current, ...decisionIds]));
+      return;
+    }
+
     const action = rerunReview ? 'fix-review' : 'fix';
     let prompt = buildSelectedReviewRemediationPrompt({
       reviewData,
@@ -371,7 +414,8 @@ export const ReviewActionBar: React.FC = () => {
       prompt = `${prompt}\n\n## User Instructions\n${customInstructions.trim()}`;
     }
 
-    store.setActiveAction(action);
+    const baselineTurnId = childSession?.dialogTurns.at(-1)?.id ?? null;
+    store.setActiveAction(action, { baselineTurnId });
     store.updatePhase('fix_running');
 
     try {
@@ -412,7 +456,21 @@ export const ReviewActionBar: React.FC = () => {
     } finally {
       store.setActiveAction(null);
     }
-  }, [reviewData, childSessionId, selectedRemediationIds, customInstructions, reviewMode, isDeepReview, store, t, completedRemediationIds]);
+  }, [reviewData, childSessionId, childSession, selectedRemediationIds, remediationItems, completedRemediationIds, customInstructions, reviewMode, isDeepReview, store, t]);
+
+  const handleConfirmDecisionGate = useCallback(async () => {
+    if (!pendingDecisionAction || decisionGateMissingSelection) {
+      return;
+    }
+
+    const action = pendingDecisionAction;
+    setPendingDecisionAction(null);
+    await handleStartFixing(action.rerunReview, action.selectedIds, { skipDecisionGate: true });
+  }, [decisionGateMissingSelection, handleStartFixing, pendingDecisionAction]);
+
+  const handleCancelDecisionGate = useCallback(() => {
+    setPendingDecisionAction(null);
+  }, []);
 
   const handleRetryIncompleteSlices = useCallback(async () => {
     if (!childSessionId || retryableSlices.length === 0) return;
@@ -810,21 +868,37 @@ export const ReviewActionBar: React.FC = () => {
         </div>
       )}
 
-      {/* Remediation selection (only when review completed and has items) */}
-      {phase === 'review_completed' && remediationItems.length > 0 && (
+      {/* Remediation selection stays visible while fixes run so progress remains inspectable. */}
+      {['review_completed', 'fix_running', 'fix_completed', 'fix_interrupted'].includes(phase) && remediationItems.length > 0 && (
         <RemediationSelectionPanel
           remediationItems={remediationItems}
           selectedRemediationIds={selectedRemediationIds}
           completedRemediationIds={completedRemediationIds}
+          fixingRemediationIds={fixingRemediationIds}
           decisionSelections={decisionSelections}
           showRemediationList={showRemediationList}
           expandedDecisionIds={expandedDecisionIds}
+          selectionDisabled={phase === 'fix_running' || phase === 'fix_completed'}
           onToggleRemediation={handleToggleRemediation}
           onToggleAll={handleToggleAll}
           onToggleGroup={handleToggleGroup}
           onToggleList={() => setShowRemediationList(!showRemediationList)}
           onToggleDecisionExpansion={handleToggleDecisionExpansion}
           onSetDecisionSelection={store.setDecisionSelection}
+        />
+      )}
+
+      {phase === 'review_completed' && pendingDecisionAction && decisionGateItems.length > 0 && (
+        <DecisionExecutionGate
+          items={decisionGateItems}
+          decisionSelections={decisionSelections}
+          customInstructions={customInstructions}
+          rerunReview={pendingDecisionAction.rerunReview}
+          confirmDisabled={decisionGateMissingSelection}
+          onSelectDecision={store.setDecisionSelection}
+          onCustomInstructionsChange={store.setCustomInstructions}
+          onConfirm={handleConfirmDecisionGate}
+          onCancel={handleCancelDecisionGate}
         />
       )}
 
@@ -853,7 +927,7 @@ export const ReviewActionBar: React.FC = () => {
       )}
 
       {/* Custom instructions input */}
-      {phase === 'review_completed' && remediationItems.length > 0 && (
+      {phase === 'review_completed' && remediationItems.length > 0 && !pendingDecisionAction && (
         <div className="deep-review-action-bar__custom">
           <button
             type="button"

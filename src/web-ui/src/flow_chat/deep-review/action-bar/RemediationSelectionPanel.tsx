@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CheckCircle, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { CheckCircle, ChevronDown, ChevronUp, Info, Loader2 } from 'lucide-react';
 import { Checkbox } from '@/component-library';
 import type { ReviewRemediationItem } from '../../utils/codeReviewRemediation';
 import { REMEDIATION_GROUP_ORDER } from '../../utils/codeReviewRemediation';
@@ -12,9 +12,11 @@ interface RemediationSelectionPanelProps {
   remediationItems: ReviewRemediationItem[];
   selectedRemediationIds: Set<string>;
   completedRemediationIds: Set<string>;
+  fixingRemediationIds?: Set<string>;
   decisionSelections: Record<string, number>;
   showRemediationList: boolean;
   expandedDecisionIds: Set<string>;
+  selectionDisabled?: boolean;
   onToggleRemediation: (id: string) => void;
   onToggleAll: () => void;
   onToggleGroup: (groupId: string) => void;
@@ -22,6 +24,8 @@ interface RemediationSelectionPanelProps {
   onToggleDecisionExpansion: (id: string) => void;
   onSetDecisionSelection: (id: string, optionIndex: number) => void;
 }
+
+const EMPTY_FIXING_REMEDIATION_IDS = new Set<string>();
 
 const GROUP_PRIORITY_META: Record<RemediationGroupId, { color: string }> = {
   must_fix: { color: 'var(--color-error, #ef4444)' },
@@ -41,9 +45,11 @@ export const RemediationSelectionPanel: React.FC<RemediationSelectionPanelProps>
   remediationItems,
   selectedRemediationIds,
   completedRemediationIds,
+  fixingRemediationIds = EMPTY_FIXING_REMEDIATION_IDS,
   decisionSelections,
   showRemediationList,
   expandedDecisionIds,
+  selectionDisabled = false,
   onToggleRemediation,
   onToggleAll,
   onToggleGroup,
@@ -53,8 +59,12 @@ export const RemediationSelectionPanel: React.FC<RemediationSelectionPanelProps>
 }) => {
   const { t } = useTranslation('flow-chat');
 
-  const selectedCount = selectedRemediationIds.size;
-  const totalCount = remediationItems.length;
+  const selectableItems = useMemo(
+    () => remediationItems.filter((item) => !completedRemediationIds.has(item.id)),
+    [completedRemediationIds, remediationItems],
+  );
+  const selectedCount = selectableItems.filter((item) => selectedRemediationIds.has(item.id)).length;
+  const totalCount = selectableItems.length;
   const allSelected = totalCount > 0 && selectedCount === totalCount;
 
   const groupedItems = useMemo(() => {
@@ -86,7 +96,12 @@ export const RemediationSelectionPanel: React.FC<RemediationSelectionPanelProps>
         <Checkbox
           checked={allSelected}
           indeterminate={!allSelected && selectedCount > 0}
-          onChange={onToggleAll}
+          onChange={() => {
+            if (!selectionDisabled) {
+              onToggleAll();
+            }
+          }}
+          disabled={selectionDisabled || totalCount === 0}
           size="small"
         />
         <span className="deep-review-action-bar__remediation-label">
@@ -107,8 +122,10 @@ export const RemediationSelectionPanel: React.FC<RemediationSelectionPanelProps>
         >
           {groupOrder.map((groupId) => {
             const items = groupedItems[groupId]!;
-            const groupSelectedCount = items.filter((i) => selectedRemediationIds.has(i.id)).length;
-            const groupAllSelected = groupSelectedCount === items.length;
+            const selectableGroupItems = items.filter((item) => !completedRemediationIds.has(item.id));
+            const groupSelectedCount = selectableGroupItems.filter((i) => selectedRemediationIds.has(i.id)).length;
+            const groupTotalCount = selectableGroupItems.length;
+            const groupAllSelected = groupTotalCount > 0 && groupSelectedCount === groupTotalCount;
             const groupPartial = groupSelectedCount > 0 && !groupAllSelected;
             const groupTitle = groupId === 'ungrouped'
               ? t('toolCards.codeReview.remediationActions.ungrouped', { defaultValue: 'Other' })
@@ -117,41 +134,52 @@ export const RemediationSelectionPanel: React.FC<RemediationSelectionPanelProps>
 
             return (
               <div key={groupId} className="deep-review-action-bar__remediation-group">
-                <button
-                  type="button"
+                <div
                   className="deep-review-action-bar__remediation-group-header"
-                  onClick={() => onToggleGroup(groupId)}
                 >
                   <Checkbox
                     checked={groupAllSelected}
                     indeterminate={groupPartial}
-                    onChange={() => onToggleGroup(groupId)}
+                    onChange={() => {
+                      if (!selectionDisabled) {
+                        onToggleGroup(groupId);
+                      }
+                    }}
                     size="small"
+                    disabled={selectionDisabled || groupTotalCount === 0}
+                    label={(
+                      <>
+                        <span
+                          className="deep-review-action-bar__remediation-group-title"
+                          style={groupMeta ? { color: groupMeta.color } : undefined}
+                        >
+                          {groupTitle}
+                        </span>
+                        <span className="deep-review-action-bar__remediation-group-count">
+                          {groupSelectedCount}/{groupTotalCount}
+                        </span>
+                      </>
+                    )}
                   />
-                  <span
-                    className="deep-review-action-bar__remediation-group-title"
-                    style={groupMeta ? { color: groupMeta.color } : undefined}
-                  >
-                    {groupTitle}
-                  </span>
-                  <span className="deep-review-action-bar__remediation-group-count">
-                    {groupSelectedCount}/{items.length}
-                  </span>
-                </button>
+                </div>
                 <div className="deep-review-action-bar__remediation-group-items">
                   {items.map((item) => {
                     const isCompleted = completedRemediationIds.has(item.id);
+                    const isFixing = !isCompleted && fixingRemediationIds.has(item.id);
+                    const isLocked = selectionDisabled || isCompleted;
                     return (
                       <label
                         key={item.id}
                         className={`deep-review-action-bar__remediation-item ${
                           isCompleted ? 'deep-review-action-bar__remediation-item--completed' : ''
+                        } ${isFixing ? 'deep-review-action-bar__remediation-item--fixing' : ''} ${
+                          isLocked ? 'deep-review-action-bar__remediation-item--locked' : ''
                         }`}
                       >
                         <Checkbox
-                          checked={selectedRemediationIds.has(item.id)}
-                          onChange={() => !isCompleted && onToggleRemediation(item.id)}
-                          disabled={isCompleted}
+                          checked={isCompleted || selectedRemediationIds.has(item.id)}
+                          onChange={() => !isLocked && onToggleRemediation(item.id)}
+                          disabled={isLocked}
                           size="small"
                         />
                         <span
@@ -160,6 +188,16 @@ export const RemediationSelectionPanel: React.FC<RemediationSelectionPanelProps>
                         >
                           {isCompleted && (
                             <CheckCircle size={12} className="deep-review-action-bar__completed-icon" />
+                          )}
+                          {isFixing && (
+                            <Loader2 size={12} className="deep-review-action-bar__fixing-icon" />
+                          )}
+                          {(isCompleted || isFixing) && (
+                            <span className="deep-review-action-bar__remediation-status">
+                              {isCompleted
+                                ? t('deepReviewActionBar.remediationStatus.fixed', { defaultValue: 'Fixed' })
+                                : t('deepReviewActionBar.remediationStatus.fixing', { defaultValue: 'Fixing' })}
+                            </span>
                           )}
                           {item.requiresDecision && (
                             <span className="deep-review-action-bar__remediation-tag">
@@ -248,7 +286,7 @@ export const RemediationSelectionPanel: React.FC<RemediationSelectionPanelProps>
         </div>
       )}
 
-      {selectedCount === 0 && (
+      {!selectionDisabled && totalCount > 0 && selectedCount === 0 && (
         <div className="deep-review-action-bar__empty-selection" role="note">
           <Info size={14} className="deep-review-action-bar__empty-selection-icon" />
           <span>

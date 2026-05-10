@@ -589,6 +589,21 @@
     "showCustomInput": "Add instructions",
     "hideCustomInput": "Hide instructions",
     "customInstructionsPlaceholder": "Describe additional requirements or context for the fix...",
+    "remediationStatus": {
+      "fixing": "Fixing",
+      "fixed": "Fixed"
+    },
+    "decisionGate": {
+      "title": "Confirm decision items before fixing",
+      "description": "Choose how each selected decision should be handled before BitFun starts editing.",
+      "supplementLabel": "Additional requirements",
+      "supplementPlaceholder": "Optional: add constraints, scope limits, or implementation preferences before starting.",
+      "missingSelection": "Choose an option for each selected decision item before starting.",
+      "noOptionsHint": "This item has no structured options. Confirm only if you want the selected plan to be executed as written.",
+      "confirmFix": "Confirm and start",
+      "confirmFixAndReview": "Confirm and re-review",
+      "cancel": "Back to selection"
+    },
     "fillBackInput": "Fill to input",
     "fillBackInputHint": "Copy selected fix plan to the input box for manual editing",
     "retryIncompleteSlices": "Retry incomplete slices ({{count}})",
@@ -1602,7 +1617,7 @@
         "noSelectionHint": "Select at least one remediation item to start fixing.",
         "ungrouped": "Other",
         "startFix": "Start fixing",
-        "fixAndReview": "Fix \\u0026 re-review",
+        "fixAndReview": "Fix & re-review",
         "cancel": "Cancel",
         "fixUnavailable": "Unable to start remediation because the review session is unavailable.",
         "fixRequestDisplay": "Start fixing Deep Review findings",

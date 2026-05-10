@@ -119,6 +119,8 @@ export interface ReviewActionBarState {
   completedRemediationIds: Set<string>;
   /** IDs of items being fixed in the current fix_running session (snapshot at start) */
   fixingRemediationIds: Set<string>;
+  /** Last dialog turn that existed before the current fix request was submitted */
+  fixingBaselineTurnId: string | null;
   /** IDs of items remaining when a fix was interrupted */
   remainingFixIds: string[];
   /** User's option choice for needs_decision items: map of item id -> option index */
@@ -152,7 +154,10 @@ export interface ReviewActionBarState {
   toggleRemediation: (id: string) => void;
   toggleAllRemediation: () => void;
   toggleGroupRemediation: (groupId: RemediationGroupId) => void;
-  setActiveAction: (action: 'fix' | 'fix-review' | 'resume' | 'retry' | null) => void;
+  setActiveAction: (
+    action: 'fix' | 'fix-review' | 'resume' | 'retry' | null,
+    options?: { baselineTurnId?: string | null },
+  ) => void;
   setCustomInstructions: (value: string) => void;
   setSelectedRemediationIds: (ids: Set<string>) => void;
   dismiss: () => void;
@@ -188,6 +193,7 @@ const initialState = {
   interruption: null as DeepReviewInterruption | null,
   completedRemediationIds: new Set<string>(),
   fixingRemediationIds: new Set<string>(),
+  fixingBaselineTurnId: null as string | null,
   remainingFixIds: [] as string[],
   decisionSelections: {} as Record<string, number>,
   capacityQueueState: null as DeepReviewCapacityQueueState | null,
@@ -317,6 +323,7 @@ export const useReviewActionBarStore = create<ReviewActionBarState>((set, get) =
       interruption: null,
       completedRemediationIds: preservedCompleted,
       fixingRemediationIds: new Set(),
+      fixingBaselineTurnId: null,
       remainingFixIds: [],
       decisionSelections: {},
       capacityQueueState: null,
@@ -342,6 +349,7 @@ export const useReviewActionBarStore = create<ReviewActionBarState>((set, get) =
       interruption,
       completedRemediationIds: new Set(),
       fixingRemediationIds: new Set(),
+      fixingBaselineTurnId: null,
       remainingFixIds: [],
       decisionSelections: {},
       capacityQueueState: null,
@@ -369,6 +377,7 @@ export const useReviewActionBarStore = create<ReviewActionBarState>((set, get) =
         ? get().completedRemediationIds
         : new Set(),
       fixingRemediationIds: new Set(),
+      fixingBaselineTurnId: null,
       remainingFixIds: [],
       decisionSelections: {},
       capacityQueueState: withNormalizedWaitingReviewers(capacityQueueState),
@@ -389,15 +398,25 @@ export const useReviewActionBarStore = create<ReviewActionBarState>((set, get) =
         errorMessage: errorMessage ?? null,
         completedRemediationIds: nextCompleted,
         fixingRemediationIds: new Set(),
+        fixingBaselineTurnId: null,
         remainingFixIds: [],
       });
     } else {
-      set({ phase, errorMessage: errorMessage ?? null });
+      set({
+        phase,
+        errorMessage: errorMessage ?? null,
+        ...(phase !== 'fix_running' ? { fixingBaselineTurnId: null } : {}),
+      });
     }
   },
 
   toggleRemediation: (id) => {
-    const next = new Set(get().selectedRemediationIds);
+    const { completedRemediationIds, selectedRemediationIds } = get();
+    if (completedRemediationIds.has(id)) {
+      return;
+    }
+
+    const next = new Set(selectedRemediationIds);
     if (next.has(id)) {
       next.delete(id);
     } else {
@@ -407,23 +426,46 @@ export const useReviewActionBarStore = create<ReviewActionBarState>((set, get) =
   },
 
   toggleAllRemediation: () => {
-    const { remediationItems, selectedRemediationIds } = get();
-    const allSelected = remediationItems.length > 0 &&
-      selectedRemediationIds.size === remediationItems.length;
-    if (allSelected) {
-      set({ selectedRemediationIds: new Set() });
-    } else {
-      set({ selectedRemediationIds: new Set(remediationItems.map((i) => i.id)) });
+    const { remediationItems, selectedRemediationIds, completedRemediationIds } = get();
+    const selectableIds = remediationItems
+      .filter((item) => !completedRemediationIds.has(item.id))
+      .map((item) => item.id);
+    const allSelected = selectableIds.length > 0 &&
+      selectableIds.every((id) => selectedRemediationIds.has(id));
+    const next = new Set(selectedRemediationIds);
+
+    for (const id of completedRemediationIds) {
+      next.delete(id);
     }
+
+    if (allSelected) {
+      for (const id of selectableIds) {
+        next.delete(id);
+      }
+    } else {
+      for (const id of selectableIds) {
+        next.add(id);
+      }
+    }
+
+    set({ selectedRemediationIds: next });
   },
 
   toggleGroupRemediation: (groupId) => {
-    const { remediationItems, selectedRemediationIds } = get();
-    const groupIds = new Set(remediationItems.filter((i) => i.groupId === groupId).map((i) => i.id));
+    const { remediationItems, selectedRemediationIds, completedRemediationIds } = get();
+    const groupIds = new Set(
+      remediationItems
+        .filter((item) => (item.groupId ?? 'ungrouped') === groupId && !completedRemediationIds.has(item.id))
+        .map((item) => item.id),
+    );
     if (groupIds.size === 0) return;
 
     const allGroupSelected = [...groupIds].every((id) => selectedRemediationIds.has(id));
     const next = new Set(selectedRemediationIds);
+
+    for (const id of completedRemediationIds) {
+      next.delete(id);
+    }
 
     if (allGroupSelected) {
       for (const id of groupIds) {
@@ -438,12 +480,13 @@ export const useReviewActionBarStore = create<ReviewActionBarState>((set, get) =
     set({ selectedRemediationIds: next });
   },
 
-  setActiveAction: (action) => {
+  setActiveAction: (action, options) => {
     if (action === 'fix' || action === 'fix-review') {
       set({
         activeAction: action,
         lastSubmittedAction: action,
         fixingRemediationIds: new Set(get().selectedRemediationIds),
+        fixingBaselineTurnId: options?.baselineTurnId ?? null,
       });
     } else if (action === 'resume' || action === 'retry') {
       set({
@@ -466,6 +509,7 @@ export const useReviewActionBarStore = create<ReviewActionBarState>((set, get) =
   skipRemainingFixes: () => set({
     phase: 'review_completed',
     remainingFixIds: [],
+    fixingBaselineTurnId: null,
     activeAction: null,
     lastSubmittedAction: null,
   }),

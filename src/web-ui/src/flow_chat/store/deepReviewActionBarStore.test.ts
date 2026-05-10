@@ -119,9 +119,10 @@ describe('deepReviewActionBarStore', () => {
       });
 
       bar().setSelectedRemediationIds(new Set(['remediation-0']));
-      bar().setActiveAction('fix');
+      bar().setActiveAction('fix', { baselineTurnId: 'review-turn-1' });
 
       expect(bar().fixingRemediationIds.has('remediation-0')).toBe(true);
+      expect(bar().fixingBaselineTurnId).toBe('review-turn-1');
     });
 
     it('moves fixing IDs to completed when fix completes', () => {
@@ -142,6 +143,7 @@ describe('deepReviewActionBarStore', () => {
       const s = bar();
       expect(s.completedRemediationIds.has('remediation-0')).toBe(true);
       expect(s.fixingRemediationIds.size).toBe(0);
+      expect(s.fixingBaselineTurnId).toBeNull();
       expect(s.phase).toBe('fix_completed');
     });
 
@@ -162,6 +164,7 @@ describe('deepReviewActionBarStore', () => {
 
       const s = bar();
       expect(s.completedRemediationIds.has('remediation-0')).toBe(false);
+      expect(s.fixingBaselineTurnId).toBeNull();
       expect(s.phase).toBe('fix_failed');
       expect(s.errorMessage).toBe('Something went wrong');
     });
@@ -365,6 +368,53 @@ describe('deepReviewActionBarStore', () => {
       bar().setSelectedRemediationIds(new Set());
       bar().toggleRemediation('remediation-1');
       expect(bar().selectedRemediationIds.has('remediation-1')).toBe(true);
+
+      bar().toggleRemediation('remediation-0');
+      expect(bar().selectedRemediationIds.has('remediation-0')).toBe(false);
+    });
+
+    it('does not select completed items through select-all', () => {
+      bar().showActionBar({
+        childSessionId: 'child-1',
+        parentSessionId: 'parent-1',
+        reviewData: {
+          summary: { recommended_action: 'request_changes' },
+          remediation_plan: ['Fix issue 1', 'Fix issue 2'],
+        },
+        completedRemediationIds: new Set(['remediation-0']),
+      });
+
+      bar().setSelectedRemediationIds(new Set());
+      bar().toggleAllRemediation();
+
+      expect([...bar().selectedRemediationIds].sort()).toEqual(['remediation-1']);
+    });
+
+    it('does not select completed items through a remediation group root toggle', () => {
+      bar().showActionBar({
+        childSessionId: 'child-1',
+        parentSessionId: 'parent-1',
+        reviewData: {
+          review_mode: 'deep',
+          report_sections: {
+            remediation_groups: {
+              should_improve: [
+                'Improve error copy',
+                'Improve retry state',
+              ],
+            },
+          },
+        },
+        completedRemediationIds: new Set(['remediation-should_improve-0']),
+      });
+
+      bar().setSelectedRemediationIds(new Set());
+      bar().toggleGroupRemediation('should_improve');
+
+      expect([...bar().selectedRemediationIds].sort()).toEqual(['remediation-should_improve-1']);
+
+      bar().toggleGroupRemediation('should_improve');
+      expect(bar().selectedRemediationIds.size).toBe(0);
     });
   });
 

@@ -589,6 +589,21 @@
     "showCustomInput": "补充说明",
     "hideCustomInput": "收起说明",
     "customInstructionsPlaceholder": "描述修复的额外要求或上下文信息...",
+    "remediationStatus": {
+      "fixing": "修复中",
+      "fixed": "已修复"
+    },
+    "decisionGate": {
+      "title": "修复前确认待决策项",
+      "description": "请先选择每个待决策项的处理方案，BitFun 会按你的选择开始修改。",
+      "supplementLabel": "补充要求",
+      "supplementPlaceholder": "可选：补充约束、范围边界或实现偏好。",
+      "missingSelection": "开始前需要先为每个待决策项选择一个方案。",
+      "noOptionsHint": "该项没有结构化选项。只有在确认按当前计划执行时再继续。",
+      "confirmFix": "确认并开始",
+      "confirmFixAndReview": "确认并重审",
+      "cancel": "返回选择"
+    },
     "fillBackInput": "填入输入框",
     "fillBackInputHint": "将选中的修复计划填入输入框，供手动编辑",
     "retryIncompleteSlices": "重试未完成切片（{{count}}）",
@@ -1602,7 +1617,7 @@
         "noSelectionHint": "至少选择一项修复计划后才能开始修复。",
         "ungrouped": "其他",
         "startFix": "开始修复",
-        "fixAndReview": "修复\\u0026重审",
+        "fixAndReview": "修复&重审",
         "cancel": "取消",
         "fixUnavailable": "无法开始修复：审核会话不可用。",
         "fixRequestDisplay": "开始修复深度审核问题",
