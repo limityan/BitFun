@@ -649,6 +649,14 @@
         "launchBatchBlocked": "previous launch batch still running",
         "temporaryOverload": "temporary provider overload"
       },
+      "reasonDetails": {
+        "providerRateLimit": "The model provider is rate-limiting requests. BitFun will wait briefly; reducing Review Team parallel reviewers can help if this repeats.",
+        "providerConcurrencyLimit": "The model provider rejected another concurrent reviewer. BitFun will retry after capacity opens; lower reviewer parallelism if it keeps happening.",
+        "retryAfter": "The model provider asked BitFun to retry later. Waiting here avoids spending reviewer runtime while the provider cools down.",
+        "localConcurrencyCap": "The configured Review Team reviewer limit is full. This reviewer will start after an active reviewer finishes.",
+        "launchBatchBlocked": "An earlier launch batch is still running. Waiting preserves the planned review order and prevents a later batch from overtaking it.",
+        "temporaryOverload": "The model provider reported temporary overload. BitFun will wait briefly and then continue or mark the reviewer as capacity skipped."
+      },
       "sessionBusy": "Your active session is busy. Pause Deep Review or continue later.",
       "stopHint": "Use Stop to interrupt this review queue.",
       "pauseQueue": "Pause queue",

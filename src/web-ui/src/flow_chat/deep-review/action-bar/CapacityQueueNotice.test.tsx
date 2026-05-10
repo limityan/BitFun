@@ -49,6 +49,7 @@ describe('CapacityQueueNotice', () => {
     expect(html).toContain('Reviewers waiting for capacity');
     expect(html).toContain('Queue wait does not count against reviewer runtime.');
     expect(html).toContain('Reason: provider concurrency limit');
+    expect(html).toContain('The model provider rejected another concurrent reviewer.');
     expect(html).toContain('Waited 12s of 1m 0s');
     expect(html).toContain('Pause queue');
     expect(html).toContain('Skip optional extras');
@@ -77,6 +78,7 @@ describe('CapacityQueueNotice', () => {
     );
 
     expect(html).toContain('Reason: previous launch batch still running');
+    expect(html).toContain('Waiting preserves the planned review order');
     expect(html).toContain('Waited 4s of 1m 0s');
   });
 
