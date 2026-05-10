@@ -76,7 +76,7 @@ Deep Review 当前已经不是纯 prompt 概念，而是带运行时护栏的 pr
 | `src/crates/core/src/agentic/tools/pipeline/tool_pipeline.rs` | 1485 | 通用 tool pipeline 仍承担 Deep Review context propagation 和 duplicate measurement hook。 |
 | `src/web-ui/src/shared/services/reviewTeamService.ts` / `src/web-ui/src/shared/services/review-team/` | 2 / split modules | old import path 已是 facade；新增逻辑应进入窄 helper 或 `review-team/index.ts` 的明确 orchestration 边界。 |
 | `src/web-ui/src/flow_chat/services/DeepReviewService.ts` / `src/web-ui/src/flow_chat/deep-review/launch/DeepReviewService.ts` | 2 / 338 | old import path 已是 facade；launch 编排已拆出 command parser、target resolver、launch prompt 和 launch errors。 |
-| `src/web-ui/src/flow_chat/components/btw/DeepReviewActionBar.tsx` / `src/web-ui/src/flow_chat/deep-review/action-bar/DeepReviewActionBar.tsx` | 5 / 1260 | old import path 已是 facade；capacity queue notice、recovery-plan preview、header 和 formatting 已拆出，remediation/diagnostics 主体仍可后续继续收敛。 |
+| `src/web-ui/src/flow_chat/components/btw/DeepReviewActionBar.tsx` / `src/web-ui/src/flow_chat/deep-review/action-bar/DeepReviewActionBar.tsx` | 5 / 1219 | old import path 已是 facade；capacity queue notice、partial-results panel、recovery-plan preview、header 和 formatting 已拆出，remediation/diagnostics 主体仍可后续继续收敛。 |
 | `src/web-ui/src/flow_chat/utils/codeReviewReport.ts` / `src/web-ui/src/flow_chat/deep-review/report/codeReviewReport.ts` | 2 / 423 | old import path 已是 facade；report reliability、manifest sections、section normalization 和 markdown export 已拆出。 |
 
 ## 子计划执行规则
@@ -167,7 +167,7 @@ Deep Review 当前已经不是纯 prompt 概念，而是带运行时护栏的 pr
 
 7. Flow Chat Deep Review 拆分。
    - 新建 `src/web-ui/src/flow_chat/deep-review/launch/`，承载 command parsing、target resolution、launch prompt、child-session launch、launch errors。
-   - 新建 `src/web-ui/src/flow_chat/deep-review/action-bar/`，承载 queue notice、recovery-plan preview、remediation controls、review action header。
+   - 新建 `src/web-ui/src/flow_chat/deep-review/action-bar/`，承载 queue notice、partial-results panel、recovery-plan preview、remediation controls、review action header。
    - 新建 `src/web-ui/src/flow_chat/deep-review/report/`，承载 reliability notices、manifest sections、markdown export。
    - `DeepReviewService.ts`、`DeepReviewActionBar.tsx`、`codeReviewReport.ts` 保留 public facade。
 
@@ -254,7 +254,7 @@ Deep Review 当前已经不是纯 prompt 概念，而是带运行时护栏的 pr
 **M1-P8 Flow Chat split**
 
 - 前置检查：先记录 `DeepReviewService.ts`、`DeepReviewActionBar.tsx`、`codeReviewReport.ts` 当前 public exports。
-- 当前状态：old import paths 均保留为 facade；`launch/commandParser.ts`、`launch/targetResolver.ts`、`launch/launchPrompt.ts`、`launch/launchErrors.ts`、`action-bar/CapacityQueueNotice.tsx`、`action-bar/RecoveryPlanPreview.tsx`、`action-bar/ReviewActionHeader.tsx`、`action-bar/actionBarFormatting.ts`、`report/manifestSections.ts`、`report/reliabilityNotices.ts`、`report/reportSections.ts`、`report/markdown.ts` 已落地。
+- 当前状态：old import paths 均保留为 facade；`launch/commandParser.ts`、`launch/targetResolver.ts`、`launch/launchPrompt.ts`、`launch/launchErrors.ts`、`action-bar/CapacityQueueNotice.tsx`、`action-bar/PartialResultsPanel.tsx`、`action-bar/RecoveryPlanPreview.tsx`、`action-bar/ReviewActionHeader.tsx`、`action-bar/actionBarFormatting.ts`、`report/manifestSections.ts`、`report/reliabilityNotices.ts`、`report/reportSections.ts`、`report/markdown.ts` 已落地。
 - 改动范围：按 launch -> action-bar -> report 三组拆分；每组应保持独立可验证。后续如继续拆 action-bar 的 remediation controls 或 diagnostics controls，仍按 no-behavior-change 小步执行。
 - 必须验证：`DeepReviewService.test.ts`、`DeepReviewActionBar.test.tsx`、`codeReviewReport.test.ts`、lint、type-check。
 - 禁止事项：不得改变 UI 文案、布局行为、standard review remediation flow。
