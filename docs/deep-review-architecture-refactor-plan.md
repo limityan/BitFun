@@ -421,13 +421,13 @@ Behavior change allowed: none.
 
 Goal: document module boundaries without adding noisy comments.
 
-Current status: Flow Chat ownership cleanup is complete for the current frontend split. The subsystem README records module boundaries, facade guardrails, Deep Review gating, privacy constraints, and focused verification. Backend ownership cleanup has also started: `deep_review` module docs now explain product-policy ownership, and `subagent_runtime` docs define the generic primitive boundary.
+Current status: Flow Chat ownership cleanup is complete for the current frontend split. The subsystem README records module boundaries, facade guardrails, Deep Review gating, privacy constraints, and focused verification. Backend ownership cleanup has a focused first pass: `deep_review` module docs now explain product-policy ownership, cache/diagnostics/privacy boundaries, and the generic runtime split; `subagent_runtime` docs define the generic primitive boundary.
 
 Actions:
 
 - Completed for Flow Chat: add subsystem-level TypeScript ownership documentation without adding noisy per-file comments.
 - Completed for Flow Chat: update Deep Review plan/status docs to reflect the real first-pass split and optional action-bar follow-ups.
-- Completed for backend first pass: add module-level Rust docs for `deep_review::{mod,queue,concurrency_policy,task_adapter}` and `subagent_runtime::{mod,queue_timing}` where the generic-vs-product boundary was not obvious.
+- Completed for backend first pass: add module-level Rust docs for the Deep Review policy, budget, queue, manifest, cache, diagnostics, report, shared-context, tool-context, tool-measurement, and generic `subagent_runtime` boundary.
 - Future backend cleanup: add module-level Rust docs only when additional modules are touched and their responsibilities are not obvious.
 - Future no-behavior cleanup: remove duplicated constants or status wording only when a focused scan finds real duplication, not business terms such as capacity `temporary_overload`.
 

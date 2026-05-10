@@ -1,4 +1,9 @@
 //! Typed Deep Review launch manifest accessors.
+//!
+//! The frontend builds the launch manifest, but Rust owns defensive parsing and
+//! the final trust boundary. Accessors in this module must remain backward
+//! compatible with older manifest field spellings and should not silently hide
+//! reduced coverage, omitted files, or stale evidence hints.
 
 use super::execution_policy::DeepReviewPolicyViolation;
 use serde_json::Value;

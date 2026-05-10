@@ -262,7 +262,7 @@ Deep Review 当前已经不是纯 prompt 概念，而是带运行时护栏的 pr
 **M1-P9 Ownership cleanup**
 
 - 前置检查：确认 M1-P1 到 M1-P8 均已合入并验证。
-- 当前状态：`src/web-ui/src/flow_chat/deep-review/README.md` 已补充 launch/action-bar/report ownership、facade 保留规则、Deep Review gating、隐私边界和 focused verification；Rust 侧已补 `deep_review` 与 `subagent_runtime` module docs，说明 generic runtime 与 Deep Review product policy 的边界；placeholder scan 没有发现真实 TODO/TBD 残留，命中项仅为业务词 `temporary_overload` 和文档里的 duplicate measurement 表述。
+- 当前状态：`src/web-ui/src/flow_chat/deep-review/README.md` 已补充 launch/action-bar/report ownership、facade 保留规则、Deep Review gating、隐私边界和 focused verification；Rust 侧已补 `deep_review` 与 `subagent_runtime` module docs，说明 generic runtime、Deep Review product policy、cache/diagnostics/privacy、report honesty 与 tool-context gating 的边界；placeholder scan 没有发现真实 TODO/TBD 残留，命中项仅为业务词 `temporary_overload` 和文档里的 duplicate measurement 表述。
 - cleanup 拆解：
   - facade cleanup：确认旧 import path 只 re-export 或保留极薄 compatibility adapter，不新增业务逻辑。
   - Rust docs cleanup：给职责不明显的 module 加 `//!` 说明，标明哪些是 Deep Review policy、哪些是 generic runtime primitive。

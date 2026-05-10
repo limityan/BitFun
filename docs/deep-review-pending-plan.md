@@ -789,13 +789,13 @@ Behavior change allowed: none.
 
 #### Refactor Round 7: Documentation, Comments, And Ownership Cleanup
 
-Status: Flow Chat ownership cleanup is complete for the current frontend split. Backend module docs have a first pass covering the Deep Review queue/concurrency/adapter boundary and the new generic `subagent_runtime::queue_timing` primitive.
+Status: Flow Chat ownership cleanup is complete for the current frontend split. Backend module docs have a first pass covering Deep Review policy, budget, queue, manifest, cache, diagnostics, report, shared-context, tool-context, tool-measurement, and the new generic `subagent_runtime::queue_timing` primitive.
 
 Actions:
 
 - Completed for Flow Chat: add subsystem-level ownership notes covering launch, action-bar, report, facade guardrails, Deep Review gating, privacy constraints, and focused verification.
 - Completed for Flow Chat: update status/planning docs without claiming new product behavior.
-- Completed for backend first pass: add module-level Rust docs where the Deep Review policy and generic runtime boundary was not obvious.
+- Completed for backend first pass: add module-level Rust docs where Deep Review product policy, privacy/cache boundaries, report honesty, and the generic runtime boundary were not obvious.
 - Future backend cleanup: add module-level Rust docs only when additional modules are touched and their responsibilities are not obvious.
 - Future no-behavior cleanup: remove duplicated constants and wording only when a focused scan finds real duplication.
 

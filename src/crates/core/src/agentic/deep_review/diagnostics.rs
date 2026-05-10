@@ -1,4 +1,8 @@
 //! Content-free Deep Review runtime diagnostics counters.
+//!
+//! These counters are safe to surface in reports and logs because they record
+//! aggregate counts, durations, and reason labels only. They must not store
+//! source text, diffs, reviewer output, provider raw bodies, or full file paths.
 
 use serde::Serialize;
 use std::collections::BTreeMap;

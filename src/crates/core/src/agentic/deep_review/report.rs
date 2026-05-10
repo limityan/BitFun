@@ -1,4 +1,9 @@
 //! Deep Review report enrichment, diagnostics logging, and cache write-through.
+//!
+//! Report enrichment must be honest about queue skips, retries, reduced-depth
+//! coverage, evidence hints, and cache reuse. Standard Code Review output
+//! should only receive Deep Review-only metadata when the tool context proves a
+//! Deep Review run is active.
 
 use crate::agentic::agents::get_agent_registry;
 use crate::agentic::context_profile::ContextProfilePolicy;
