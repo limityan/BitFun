@@ -1169,7 +1169,12 @@
       "disableLabel": "關閉",
       "enableTooltip": "恢復超時限制",
       "enableLabel": "啟用",
-      "restoreShort": "恢復（剩餘 {{seconds}} 秒）"
+      "restoreShort": "恢復（剩餘 {{seconds}} 秒）",
+      "durationTooltip": "耗時 {{duration}}",
+      "completedDurationTooltip": "已完成，耗時 {{duration}}",
+      "failedDurationTooltip": "執行失敗，耗時 {{duration}}",
+      "failedDurationTooltipWithReason": "執行失敗，耗時 {{duration}}：{{reason}}",
+      "cancelledDurationTooltip": "已取消，耗時 {{duration}}"
     },
     "template": {
       "get": "獲取模板:",

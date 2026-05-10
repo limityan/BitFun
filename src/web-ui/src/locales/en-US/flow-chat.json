@@ -1169,7 +1169,12 @@
       "disableLabel": "Ignore limit",
       "enableTooltip": "Re-enable timeout",
       "enableLabel": "Restore limit",
-      "restoreShort": "Restore ({{seconds}}s left)"
+      "restoreShort": "Restore ({{seconds}}s left)",
+      "durationTooltip": "Duration {{duration}}",
+      "completedDurationTooltip": "Completed in {{duration}}",
+      "failedDurationTooltip": "Failed after {{duration}}",
+      "failedDurationTooltipWithReason": "Failed after {{duration}}: {{reason}}",
+      "cancelledDurationTooltip": "Cancelled after {{duration}}"
     },
     "template": {
       "get": "Get Template:",
