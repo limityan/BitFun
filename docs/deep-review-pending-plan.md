@@ -25,15 +25,16 @@ Future implementation must stay inside these boundaries:
 
 1. Deep Review remains prompt-driven with deterministic guardrails. Do not replace it with a backend DAG scheduler without a separate design approval.
 2. Deep Review queueing must not become global subagent queueing by accident.
-3. Deep Review must not silently consume normal user-session concurrency. If the session is already busy, the product should warn, pause, or require manual continuation.
+3. Deep Review internal reviewer caps are scoped to the same Deep Review run. Normal user-session subagents, other sessions, and other sessions' subagents must not count against the Deep Review cap; if actual runtime admission fails, surface a truthful diagnosis and recovery path instead of pre-blocking Deep Review.
 4. Queue wait time must not count against reviewer runtime timeout.
-5. Provider capacity queueing must be short, visible, bounded, pauseable, and cancellable.
-6. Automatic retry is manual by default and can only become bounded automatic retry after explicit user opt-in.
-7. Automatic retry must never loop indefinitely.
-8. Quick/default review depth may reduce breadth, but must not hide changed files from coverage metadata.
-9. Diagnostics must be low-frequency and content-free.
-10. Project-level review cache remains deferred until retention, deletion, invalidation, and user visibility rules are approved.
-11. Refactor rounds must preserve existing behavior unless a behavior-change checkpoint is explicitly approved.
+5. Deep Review local reviewer queue must keep waiting while another reviewer or earlier launch batch is active; short queue expiry is only meaningful for the no-active-reviewer / no-executable-path fallback.
+6. Provider capacity queueing must be short, visible, bounded, pauseable, and cancellable.
+7. Automatic retry is manual by default and can only become bounded automatic retry after explicit user opt-in.
+8. Automatic retry must never loop indefinitely.
+9. Quick/default review depth may reduce breadth, but must not hide changed files from coverage metadata.
+10. Diagnostics must be low-frequency and content-free.
+11. Project-level review cache remains deferred until retention, deletion, invalidation, and user visibility rules are approved.
+12. Refactor rounds must preserve existing behavior unless a behavior-change checkpoint is explicitly approved.
 
 ## Remaining Functional Plan
 
@@ -310,7 +311,7 @@ Exit criteria:
 
 ### Round 5: Documentation Reconciliation And Release Gate
 
-Status: Completed release gate for provider queue, retry-control, cost-aware scope, and evidence-pack rounds.
+Status: Completed documentation/status reconciliation for provider queue, local queue liveness, retry-control, cost-aware scope, and evidence-pack rounds. Full release-gate verification remains the PR/release responsibility.
 
 Goal: Keep documents and code aligned after each functional close.
 
@@ -318,6 +319,7 @@ Actions:
 
 - Update status wording only after verification passes.
 - Keep provider queue marked implemented-with-guardrails, not a generic provider/adaptive scheduler.
+- Keep local queue liveness marked implemented only for Deep Review reviewer admission; do not present it as a generic subagent queue.
 - Keep retry controls marked implemented-with-guardrails, not backend-owned automatic redispatch.
 - Keep project-level cache deferred.
 - Keep programmatic shared context cache deferred unless measurements justify it.
@@ -916,6 +918,7 @@ Stop and re-review the design if:
 When all pending functional and refactor work is complete:
 
 - Provider transient queue is short, visible, bounded, and controllable.
+- Deep Review local reviewer queue does not expire while an active reviewer or earlier launch batch is still running.
 - Retry defaults to explicit user action, and opted-in automatic retry is bounded.
 - Quick/default reviews reduce time and token cost by focusing on risk, while `deep` remains full-depth.
 - Reviewers start from a compact shared evidence pack.

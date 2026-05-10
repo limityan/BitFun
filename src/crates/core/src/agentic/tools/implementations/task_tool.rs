@@ -1610,17 +1610,21 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn deep_review_capacity_queue_skips_after_max_wait() {
+    async fn deep_review_capacity_queue_cancel_skips_even_when_active_reviewer_is_running() {
         use crate::agentic::deep_review_policy::{
-            deep_review_capacity_skip_count, deep_review_concurrency_cap_rejection_count,
-            deep_review_effective_parallel_instances, try_begin_deep_review_active_reviewer,
-            DeepReviewConcurrencyPolicy,
+            apply_deep_review_queue_control, deep_review_capacity_skip_count,
+            deep_review_concurrency_cap_rejection_count, deep_review_effective_parallel_instances,
+            try_begin_deep_review_active_reviewer, DeepReviewConcurrencyPolicy,
+            DeepReviewQueueControlAction,
         };
 
-        let _occupied_a = try_begin_deep_review_active_reviewer("turn-queue-skip", 2)
+        let turn_id = "turn-queue-cancel-active-reviewer";
+        let tool_id = "tool-queue-cancel-active-reviewer";
+        let _occupied_a = try_begin_deep_review_active_reviewer(turn_id, 2)
             .expect("precondition should occupy first reviewer capacity");
-        let _occupied_b = try_begin_deep_review_active_reviewer("turn-queue-skip", 2)
+        let _occupied_b = try_begin_deep_review_active_reviewer(turn_id, 2)
             .expect("precondition should occupy second reviewer capacity");
+        apply_deep_review_queue_control(turn_id, tool_id, DeepReviewQueueControlAction::Cancel);
         let policy = DeepReviewConcurrencyPolicy {
             max_parallel_instances: 2,
             stagger_seconds: 0,
@@ -1631,9 +1635,9 @@ mod tests {
         };
 
         let outcome = TaskTool::wait_for_deep_review_reviewer_capacity(
-            "session-queue-skip",
-            "turn-queue-skip",
-            "tool-queue-skip",
+            "session-queue-cancel-active-reviewer",
+            turn_id,
+            tool_id,
             "ReviewSecurity",
             &policy,
             false,
@@ -1643,36 +1647,92 @@ mod tests {
 
         match outcome {
             super::DeepReviewQueueWaitOutcome::Skipped {
-                queue_elapsed_ms, ..
+                queue_elapsed_ms,
+                skip_reason,
+                ..
             } => {
                 assert!(queue_elapsed_ms < 100);
+                assert_eq!(
+                    skip_reason,
+                    super::DeepReviewQueueWaitSkipReason::UserCancelled
+                );
             }
             super::DeepReviewQueueWaitOutcome::Ready { .. } => {
-                panic!("occupied capacity should skip with maxQueueWaitSeconds=0");
+                panic!("cancelled queue should not run the waiting reviewer");
             }
         }
-        assert_eq!(deep_review_capacity_skip_count("turn-queue-skip"), 1);
-        assert_eq!(
-            deep_review_concurrency_cap_rejection_count("turn-queue-skip"),
-            0
-        );
-        assert_eq!(
-            deep_review_effective_parallel_instances("turn-queue-skip", 2),
-            1
-        );
+        assert_eq!(deep_review_capacity_skip_count(turn_id), 1);
+        assert_eq!(deep_review_concurrency_cap_rejection_count(turn_id), 0);
+        assert_eq!(deep_review_effective_parallel_instances(turn_id, 2), 2);
     }
 
     #[tokio::test]
-    async fn deep_review_capacity_queue_waits_for_previous_launch_batch_without_lowering_cap() {
+    async fn deep_review_capacity_queue_does_not_expire_while_active_reviewer_is_running() {
+        use crate::agentic::deep_review_policy::{
+            try_begin_deep_review_active_reviewer, DeepReviewConcurrencyPolicy,
+        };
+
+        let turn_id = "turn-queue-active-reviewer-liveness";
+        let tool_id = "tool-queue-active-reviewer-liveness";
+        let occupied = try_begin_deep_review_active_reviewer(turn_id, 1)
+            .expect("precondition should occupy reviewer capacity");
+        let policy = DeepReviewConcurrencyPolicy {
+            max_parallel_instances: 1,
+            stagger_seconds: 0,
+            max_queue_wait_seconds: 0,
+            batch_extras_separately: true,
+            allow_bounded_auto_retry: false,
+            auto_retry_elapsed_guard_seconds: 180,
+        };
+        let turn_id_owned = turn_id.to_string();
+        let tool_id_owned = tool_id.to_string();
+
+        let mut handle = tokio::spawn(async move {
+            TaskTool::wait_for_deep_review_reviewer_capacity(
+                "session-queue-active-reviewer-liveness",
+                &turn_id_owned,
+                &tool_id_owned,
+                "ReviewSecurity",
+                &policy,
+                false,
+            )
+            .await
+        });
+
+        assert!(
+            tokio::time::timeout(tokio::time::Duration::from_millis(30), &mut handle)
+                .await
+                .is_err(),
+            "queued reviewer should keep waiting while another reviewer is active"
+        );
+
+        drop(occupied);
+
+        let outcome = tokio::time::timeout(tokio::time::Duration::from_millis(500), handle)
+            .await
+            .expect("queue should become ready after active reviewer releases")
+            .expect("spawned wait should not panic")
+            .expect("queue wait should resolve");
+
+        match outcome {
+            super::DeepReviewQueueWaitOutcome::Ready { .. } => {}
+            super::DeepReviewQueueWaitOutcome::Skipped { .. } => {
+                panic!("active reviewer liveness should prevent queue expiry");
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn deep_review_capacity_queue_waits_for_previous_launch_batch_until_it_releases() {
         use crate::agentic::deep_review::task_adapter::DeepReviewLaunchBatchInfo;
         use crate::agentic::deep_review_policy::{
             deep_review_capacity_skip_count, deep_review_effective_parallel_instances,
-            try_begin_deep_review_active_reviewer_for_launch_batch, DeepReviewCapacityQueueReason,
-            DeepReviewConcurrencyPolicy,
+            try_begin_deep_review_active_reviewer_for_launch_batch, DeepReviewConcurrencyPolicy,
         };
 
-        let turn_id = "turn-launch-batch-queue-skip";
-        let _occupied =
+        let turn_id = "turn-launch-batch-queue-liveness";
+        let tool_id = "tool-launch-batch-queue-liveness";
+        let occupied =
             try_begin_deep_review_active_reviewer_for_launch_batch(turn_id, 2, 1, Some("packet-a"))
                 .expect("launch batch admission should not fail")
                 .expect("first batch reviewer should start");
@@ -1688,33 +1748,44 @@ mod tests {
             packet_id: Some("packet-b".to_string()),
             launch_batch: 2,
         };
+        let turn_id_owned = turn_id.to_string();
+        let tool_id_owned = tool_id.to_string();
 
-        let outcome = TaskTool::wait_for_deep_review_reviewer_admission(
-            "session-launch-batch-queue-skip",
-            turn_id,
-            "tool-launch-batch-queue-skip",
-            "ReviewSecurity",
-            &policy,
-            false,
-            Some(&launch_batch_info),
-        )
-        .await
-        .expect("queue wait should resolve");
+        let mut handle = tokio::spawn(async move {
+            TaskTool::wait_for_deep_review_reviewer_admission(
+                "session-launch-batch-queue-liveness",
+                &turn_id_owned,
+                &tool_id_owned,
+                "ReviewSecurity",
+                &policy,
+                false,
+                Some(&launch_batch_info),
+            )
+            .await
+        });
+
+        assert!(
+            tokio::time::timeout(tokio::time::Duration::from_millis(30), &mut handle)
+                .await
+                .is_err(),
+            "later launch batch should keep waiting while an earlier batch is active"
+        );
+
+        drop(occupied);
+
+        let outcome = tokio::time::timeout(tokio::time::Duration::from_millis(500), handle)
+            .await
+            .expect("later launch batch should start after previous batch releases")
+            .expect("spawned wait should not panic")
+            .expect("queue wait should resolve");
 
         match outcome {
-            super::DeepReviewQueueWaitOutcome::Skipped {
-                capacity_reason, ..
-            } => {
-                assert_eq!(
-                    capacity_reason,
-                    DeepReviewCapacityQueueReason::LaunchBatchBlocked
-                );
-            }
-            super::DeepReviewQueueWaitOutcome::Ready { .. } => {
-                panic!("later launch batch should not run while an earlier batch is active");
+            super::DeepReviewQueueWaitOutcome::Ready { .. } => {}
+            super::DeepReviewQueueWaitOutcome::Skipped { .. } => {
+                panic!("later launch batch should not expire while an earlier batch is active");
             }
         }
-        assert_eq!(deep_review_capacity_skip_count(turn_id), 1);
+        assert_eq!(deep_review_capacity_skip_count(turn_id), 0);
         assert_eq!(deep_review_effective_parallel_instances(turn_id, 2), 2);
     }
 
@@ -1823,7 +1894,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn deep_review_capacity_queue_pause_does_not_expire_until_continued() {
+    async fn deep_review_capacity_queue_pause_continue_waits_until_active_reviewer_releases() {
         use crate::agentic::deep_review_policy::{
             apply_deep_review_queue_control, try_begin_deep_review_active_reviewer,
             DeepReviewConcurrencyPolicy, DeepReviewQueueControlAction,
@@ -1831,7 +1902,7 @@ mod tests {
 
         let turn_id = "turn-queue-pause";
         let tool_id = "tool-queue-pause";
-        let _occupied = try_begin_deep_review_active_reviewer(turn_id, 1)
+        let occupied = try_begin_deep_review_active_reviewer(turn_id, 1)
             .expect("precondition should occupy reviewer capacity");
         apply_deep_review_queue_control(turn_id, tool_id, DeepReviewQueueControlAction::Pause);
         let policy = DeepReviewConcurrencyPolicy {
@@ -1864,19 +1935,25 @@ mod tests {
         );
 
         apply_deep_review_queue_control(turn_id, tool_id, DeepReviewQueueControlAction::Continue);
+        let mut handle = handle;
+        assert!(
+            tokio::time::timeout(tokio::time::Duration::from_millis(30), &mut handle)
+                .await
+                .is_err(),
+            "continued queue wait should keep waiting while active reviewer still occupies capacity"
+        );
+
+        drop(occupied);
+
         let outcome = tokio::time::timeout(tokio::time::Duration::from_millis(500), handle)
             .await
-            .expect("continued queue wait should finish")
+            .expect("continued queue wait should finish after capacity frees")
             .expect("spawned wait should not panic")
             .expect("queue wait should resolve");
         match outcome {
-            super::DeepReviewQueueWaitOutcome::Skipped {
-                queue_elapsed_ms, ..
-            } => {
-                assert!(queue_elapsed_ms < 100);
-            }
-            super::DeepReviewQueueWaitOutcome::Ready { .. } => {
-                panic!("occupied capacity should skip after pause is continued");
+            super::DeepReviewQueueWaitOutcome::Ready { .. } => {}
+            super::DeepReviewQueueWaitOutcome::Skipped { .. } => {
+                panic!("active reviewer liveness should prevent skip after pause is continued");
             }
         }
     }

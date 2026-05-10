@@ -551,19 +551,21 @@ pub(crate) fn capacity_skip_result_for_local_queue_outcome(
         DeepReviewQueueWaitSkipReason::QueueExpired => {
             let reason_message = match capacity_reason {
                 DeepReviewCapacityQueueReason::LaunchBatchBlocked => {
-                    "the previous launch batch did not finish before the queue wait limit"
+                    "no executable path opened for the later launch batch before the queue wait limit"
                 }
                 DeepReviewCapacityQueueReason::LocalConcurrencyCap => {
-                    "the local reviewer capacity queue reached its maximum wait"
+                    "no executable DeepReview reviewer path became available before the queue wait limit"
                 }
-                _ => "the DeepReview capacity queue reached its maximum wait",
+                _ => {
+                    "the DeepReview local queue could not obtain an executable reviewer path before the queue wait limit"
+                }
             };
             let recommended_action = match capacity_reason {
                 DeepReviewCapacityQueueReason::LaunchBatchBlocked => {
-                    "Wait for the earlier reviewer batch to finish or cancel stuck queued reviewers, then retry this packet with a lower max parallel reviewer setting if it repeats."
+                    "Check whether earlier reviewers are stuck, cancel queued reviewers if needed, then retry with a lower max parallel reviewer setting if it repeats."
                 }
                 _ => {
-                    "Run the review again with a lower max parallel reviewer setting or wait for active reviewers to finish."
+                    "Check whether Deep Review reviewers are still running or stuck, then wait, cancel, or rerun with a lower max parallel reviewer setting."
                 }
             };
             format!(
@@ -997,7 +999,8 @@ pub(crate) async fn wait_for_reviewer_admission(
         }
         last_wait_reason = current_reason;
 
-        if queue_snapshot.is_expired(max_wait) {
+        let has_active_deep_review_path = active_reviewers > 0;
+        if queue_snapshot.is_expired(max_wait) && !has_active_deep_review_path {
             let effective_parallel_instances =
                 if current_reason == DeepReviewCapacityQueueReason::LaunchBatchBlocked {
                     effective_parallel_instances
@@ -1051,7 +1054,11 @@ pub(crate) async fn wait_for_reviewer_admission(
         )
         .await;
 
-        let remaining = max_wait.saturating_sub(queue_elapsed);
-        sleep(DEEP_REVIEW_QUEUE_POLL_INTERVAL.min(remaining)).await;
+        let sleep_for = if queue_snapshot.is_expired(max_wait) {
+            DEEP_REVIEW_QUEUE_POLL_INTERVAL
+        } else {
+            DEEP_REVIEW_QUEUE_POLL_INTERVAL.min(max_wait.saturating_sub(queue_elapsed))
+        };
+        sleep(sleep_for).await;
     }
 }

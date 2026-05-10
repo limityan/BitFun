@@ -21,7 +21,7 @@ This inventory lists the shared areas touched by the current Deep Review work wh
 
 | Shared file or area touched | Change type | Non-DeepReview behavior risk | Regression evidence |
 |---|---|---|---|
-| `src/crates/core/src/agentic/tools/implementations/task_tool.rs` | Deep Review adapter extraction, queue/capacity handling, retry admission, retry guidance and packet/cache gates | Normal Task could accidentally enter Deep Review queue/retry/cache behavior or receive Deep Review retry guidance | Rust non-DeepReview Task and Deep Review focused tests were added in earlier milestones; post-review regression `deep_review_retry_guidance_only_applies_to_initial_reviewer_timeout` keeps retry guidance Deep Review-gated. The next full Rust gate is deferred to the agreed cargo pass. |
+| `src/crates/core/src/agentic/tools/implementations/task_tool.rs` | Deep Review adapter extraction, queue/capacity handling, local queue liveness, retry admission, retry guidance and packet/cache gates | Normal Task could accidentally enter Deep Review queue/retry/cache behavior or receive Deep Review retry guidance | Rust non-DeepReview Task and Deep Review focused tests were added in earlier milestones; post-review regression `deep_review_retry_guidance_only_applies_to_initial_reviewer_timeout` keeps retry guidance Deep Review-gated. Local queue liveness is covered by `deep_review_capacity_queue_does_not_expire_while_active_reviewer_is_running`, `deep_review_capacity_queue_waits_for_previous_launch_batch_until_it_releases`, `deep_review_capacity_queue_pause_continue_waits_until_active_reviewer_releases`, and `deep_review_capacity_queue_cancel_skips_even_when_active_reviewer_is_running`. The next full Rust gate is deferred to the agreed cargo pass. |
 | `src/crates/core/src/agentic/tools/implementations/code_review_tool.rs` | Deep Review packet metadata, reliability signals, cache write-through, evidence-pack validation signal | Standard Code Review could receive Deep Review-only report metadata | Rust report tests cover standard submission and Deep Review enrichment boundaries from earlier milestones. The next full Rust gate is deferred to the agreed cargo pass. |
 | `src/crates/core/src/agentic/deep_review/*` | Deep Review subsystem ownership for policy, queue, diagnostics, manifest, report, task adapter and cache | Future contributors could bypass explicit Deep Review gates | Module-level tests and facade compatibility tests were added in earlier milestones. The next full Rust gate is deferred to the agreed cargo pass. |
 | `src/crates/core/src/agentic/mod.rs` and `src/crates/core/src/agentic/subagent_runtime/*` | Adds a `pub(crate)` generic runtime area with a queue timing primitive used by Deep Review queue waits | Future generic modules could accidentally absorb Deep Review product policy or make queueing global | `subagent_runtime` must not import Deep Review modules; current static import scan found no Deep Review dependency in the new runtime directory. Full Rust verification is deferred to the next agreed cargo pass. |
@@ -43,6 +43,7 @@ This inventory lists the shared areas touched by the current Deep Review work wh
 6. Provider capacity requeue must remain Deep Review-scoped until product confirms broader behavior.
 7. Diagnostics must stay aggregate-only and content-free.
 8. Adding `subagent_runtime` primitives does not imply generic global subagent queue behavior is implemented.
+9. Deep Review local reviewer queue must not expire while another reviewer or earlier launch batch is still active; queue expiry is only for the no-active-reviewer / no-executable-path fallback.
 
 ## Regression Tests To Keep Or Add
 
@@ -53,6 +54,7 @@ This inventory lists the shared areas touched by the current Deep Review work wh
 - A normal `Task` tool call is not affected by Deep Review `auto_retry` admission unless the parent agent is Deep Review.
 - Standard `CodeReviewTool` submission does not emit Deep Review packet metadata, cache hit/miss, or queue reliability signals.
 - Deep Review queue events serialize with the existing stable event shape.
+- Deep Review local reviewer queue continues waiting while another reviewer or earlier launch batch is active, and still honors user cancel / optional skip immediately.
 - Tool pipeline duplicate-read measurement ignores non-DeepReview `Read` and `GetFileDiff` calls.
 
 ### Frontend

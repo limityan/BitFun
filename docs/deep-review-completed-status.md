@@ -149,12 +149,13 @@ The orchestrator is still source-agnostic. Git-backed changes, local workspace c
 ### Current Boundary
 
 - Current queue automation is narrow and Deep Review reviewer-oriented.
-- Local-cap waits are bounded, visible, pauseable, continuable, cancellable, and optional-extra skippable.
+- Local-cap waits are visible, pauseable, continuable, cancellable, and optional-extra skippable.
+- Local-cap queue expiry is reserved for the no-active-reviewer / no-executable-path case; while a Deep Review reviewer or earlier launch batch is active, queued reviewers continue waiting rather than expiring on a fixed short per-reviewer window.
 - Explicit provider transient-capacity reviewer failures now enter a short bounded provider queue and reattempt once before final `capacity_skipped`.
 - Provider queue/retry/success counts and provider reason counts are aggregate diagnostics.
 - Provider queue time remains separated from reviewer runtime timeout.
 - Generic runtime containment has a first no-behavior primitive: `agentic/subagent_runtime/queue_timing.rs` owns queue wait / pause timing only.
-- Full backend batch/stagger scheduling is pending; a narrow launch-batch overlap guard now queues later batches with `launch_batch_blocked` while an earlier reviewer batch is still active.
+- Full backend batch/stagger scheduling is pending; a narrow launch-batch overlap guard now queues later batches with `launch_batch_blocked` while an earlier reviewer batch is still active, and those later batches do not expire solely because the short queue window elapsed during the earlier batch.
 - User-facing effective-cap override controls are pending.
 - Deep Review queueing is not global subagent queueing.
 
@@ -274,7 +275,7 @@ The orchestrator is still source-agnostic. Git-backed changes, local workspace c
   - `auto_retry_elapsed_guard_seconds`.
 - Defaults remain conservative:
   - 4 parallel reviewers;
-  - 60 seconds max queue wait;
+  - 60 seconds max queue wait for provider/transient queueing and no-executable-path fallback, not a fixed per-reviewer local queue expiry while another Deep Review reviewer is active;
   - provider capacity queue allowed by policy and bounded to one short reattempt;
   - bounded automatic retry disabled by default;
   - 180 seconds elapsed guard.

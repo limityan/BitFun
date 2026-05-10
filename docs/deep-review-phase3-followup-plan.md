@@ -315,7 +315,7 @@ Steps:
 - [x] Persist bounded automatic retry preference to Review settings.
 - [x] Admit `auto_retry` only when opt-in, structured coverage, reduced scope, lower timeout, retry budget, and elapsed guard all pass.
 - [x] Record aggregate suppression reasons when `auto_retry` admission fails.
-- [ ] Backend-owned automatic redispatch scheduling remains deferred.
+- [x] Keep backend-owned automatic redispatch scheduling deferred until a separate product design approves trigger timing, visibility, cancellation, retry budgets, failure attribution, and report merge semantics.
 
 Verification:
 
@@ -333,6 +333,8 @@ Exit criteria:
 
 **Goal:** Reduce default review time and token use for large changes by narrowing quick/default review depth and precomputing shared evidence once.
 
+**Status:** Implemented with guardrails. Quick maps to high-risk-only review, normal maps to risk-expanded review, and deep remains full-depth. Reviewers start from compact metadata-first evidence, while programmatic full tool-result reuse remains deferred.
+
 **Files:**
 
 - Modify: `src/web-ui/src/shared/services/reviewTeamService.ts`
@@ -347,13 +349,13 @@ Exit criteria:
 
 Steps:
 
-- [ ] Add `review_depth`, `risk_focus_tags`, `max_dependency_hops`, and `coverage_expectation` to the Deep Review manifest.
-- [ ] Map `quick` to high-risk-only review, `normal` to risk-expanded review, and `deep` to full-depth review.
-- [ ] Keep optional reviewers risk-matched in quick/default paths instead of running every configured extra reviewer by default.
-- [ ] Add a compact shared evidence pack to the manifest with changed files, hunk ranges, domain tags, packet ids, and cheap contract hints.
-- [ ] Update reviewer prompts so subagents start from the evidence pack and call `Read`/`GetFileDiff` only for confirmation or missing context.
-- [ ] Update Judge/report wording so reduced-depth reviews are clearly marked as high-risk or risk-expanded coverage, not full coverage.
-- [ ] Keep programmatic cross-subagent tool-result reuse deferred unless duplicate-tool diagnostics show material repeated `Read`/`GetFileDiff` cost.
+- [x] Add `review_depth`, `risk_focus_tags`, `max_dependency_hops`, and `coverage_expectation` to the Deep Review manifest.
+- [x] Map `quick` to high-risk-only review, `normal` to risk-expanded review, and `deep` to full-depth review.
+- [x] Keep optional reviewers risk-matched in quick/default paths instead of running every configured extra reviewer by default.
+- [x] Add a compact shared evidence pack to the manifest with changed files, hunk ranges, domain tags, packet ids, and cheap contract hints.
+- [x] Update reviewer prompts so subagents start from the evidence pack and call `Read`/`GetFileDiff` only for confirmation or missing context.
+- [x] Update Judge/report wording so reduced-depth reviews are clearly marked as high-risk or risk-expanded coverage, not full coverage.
+- [x] Keep programmatic cross-subagent tool-result reuse deferred unless duplicate-tool diagnostics show material repeated `Read`/`GetFileDiff` cost.
 
 Verification:
 
@@ -372,6 +374,8 @@ Exit criteria:
 
 **Goal:** Keep docs aligned with code and leave deferred items explicit.
 
+**Status:** Completed for the implemented non-deferred scope. Full release-gate verification remains the final PR/release responsibility.
+
 **Files:**
 
 - Modify: `docs/deep-review-design.md`
@@ -381,13 +385,13 @@ Exit criteria:
 
 Steps:
 
-- [ ] Update status wording after each completed round.
-- [ ] Mark provider short queue as runtime-complete only after tests prove visible bounded behavior.
+- [x] Update status wording after each completed round.
+- [x] Mark provider short queue as runtime-complete only after tests prove visible bounded behavior.
 - [x] Mark bounded auto retry admission as implemented with guardrails after setting and loop guards exist.
-- [ ] Keep project-level cache as product-decision-required/deferred.
-- [ ] Keep programmatic shared context cache deferred unless real diagnostics justify it.
-- [ ] Keep cost-aware depth profiles explicit so quick/default reduced-depth behavior cannot be mistaken for full review.
-- [ ] Add a short "measured outcome" section once real run data is sampled.
+- [x] Keep project-level cache as product-decision-required/deferred.
+- [x] Keep programmatic shared context cache deferred unless real diagnostics justify it.
+- [x] Keep cost-aware depth profiles explicit so quick/default reduced-depth behavior cannot be mistaken for full review.
+- [x] Keep a measured-outcome section deferred until real run data is sampled; do not invent metrics for release readiness.
 
 Verification:
 
