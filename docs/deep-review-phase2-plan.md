@@ -89,7 +89,7 @@ pub struct DeepReviewConcurrencyPolicy {
 ```
 `effective_max_same_role_instances`: `max(1, max_parallel_instances / role_count).min(existing_max)`
 
-**Launch strategy**: The prompt tells the LLM to respect `launch_batch`, while TaskTool now bounded-waits when local reviewer capacity is saturated, converts expired waits to `CapacitySkipped`, and converts explicit provider transient-capacity reviewer failures to `capacity_skipped` with turn-local effective-cap learning. This is still not a backend batch scheduler: `staggerSeconds`, batch lifecycle ordering, automatic provider requeue/retry execution, and user-facing effective-cap overrides remain deferred.
+**Launch strategy**: The prompt tells the LLM to respect `launch_batch`, while TaskTool now bounded-waits when local reviewer capacity is saturated, queues later launch batches while an earlier reviewer batch is still active, converts expired waits to `CapacitySkipped`, and converts explicit provider transient-capacity reviewer failures to `capacity_skipped` with turn-local effective-cap learning. This is still not a complete backend batch scheduler: `staggerSeconds`, skipped/unstarted earlier-batch detection, automatic provider requeue/retry execution, and user-facing effective-cap overrides remain deferred.
 
 **Risk**: Medium. The coordinator currently does fire-and-forget parallel dispatch. Adding batching requires restructuring the dispatch flow to wait for batch completion before launching the next. This is the most architecturally complex item.
 
@@ -253,7 +253,7 @@ Phase A (Backend policy foundation): original target
   P2-6: Token Budget - maxFilesPerReviewer only
 
 Phase B (Backend dispatch enforcement): original target, now partially scoped
-  P2-2: ConcurrencyPolicy + original backend batching target (current runtime has bounded local-cap waiting; backend batch/stagger scheduling is deferred)
+  P2-2: ConcurrencyPolicy + original backend batching target (current runtime has bounded local-cap waiting and launch-batch overlap protection; full backend batch/stagger scheduling is deferred)
   P2-3: Original retry execution target (current runtime has structured retry admission; backend-owned redispatch is deferred)
 
 Phase C (Backend caching - higher risk): original target
@@ -285,7 +285,7 @@ Phase D (Optional / lower priority):
 | Area | Current behavior | Follow-up needed |
 |---|---|---|
 | Strategy authority | Manifest metadata records frontend recommendation, backend-compatible recommendation, user override, final strategy, mismatch state, and severity | Measured complexity delta only; backend scoring remains advisory and must not expand reviewer roster or override user/team strategy |
-| Batched dispatch | Tool-level local-cap waiting handles reviewer saturation, but backend batch ordering and `staggerSeconds` are still prompt-guided | Add deterministic backend batch/stagger scheduling only if prompt-guided ordering remains unreliable |
+| Batched dispatch | Tool-level local-cap waiting handles reviewer saturation, and launch-batch overlap protection queues later batches while earlier batches are active. Full backend batch ordering and `staggerSeconds` remain prompt-guided | Add deterministic backend batch/stagger scheduling only if prompt-guided ordering remains unreliable |
 | Retry | Budget, guidance, structured retry admission, and bounded retry-scope prompt injection are emitted/enforced; guidance uses effective manifest policy when available | Backend-owned automatic reduced-scope redispatch, or keep the current prompt-guided status wording |
 | Pre-review summary UI | Compact launch summary shows file count, risk areas, selected strategy, optional-reviewer count, summary-first marker, and skipped-reviewer warnings | Separate dense pre-review report only if product later needs it |
 | Incremental cache | Per-session data model, metadata field, packet-id read/write path, and hit/miss reporting exist | Project-level persistence and retention/privacy policy only |

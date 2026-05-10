@@ -30,6 +30,7 @@ const CAPACITY_QUEUE_REASON_KEYS: Record<DeepReviewCapacityQueueReason, string> 
   provider_concurrency_limit: 'deepReviewActionBar.capacityQueue.reasons.providerConcurrencyLimit',
   retry_after: 'deepReviewActionBar.capacityQueue.reasons.retryAfter',
   local_concurrency_cap: 'deepReviewActionBar.capacityQueue.reasons.localConcurrencyCap',
+  launch_batch_blocked: 'deepReviewActionBar.capacityQueue.reasons.launchBatchBlocked',
   temporary_overload: 'deepReviewActionBar.capacityQueue.reasons.temporaryOverload',
 };
 

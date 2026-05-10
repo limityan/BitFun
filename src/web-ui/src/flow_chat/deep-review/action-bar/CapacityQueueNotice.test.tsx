@@ -6,6 +6,9 @@ import { CapacityQueueNotice } from './CapacityQueueNotice';
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (_key: string, options?: Record<string, unknown> & { defaultValue?: string }) => {
+      if (_key === 'deepReviewActionBar.capacityQueue.reasons.launchBatchBlocked') {
+        return 'previous launch batch still running';
+      }
       const template = options?.defaultValue ?? _key;
       return template.replace(/{{(\w+)}}/g, (_match, token: string) => String(options?.[token] ?? _match));
     },
@@ -50,6 +53,31 @@ describe('CapacityQueueNotice', () => {
     expect(html).toContain('Pause queue');
     expect(html).toContain('Skip optional extras');
     expect(html).toContain('Run slower next time');
+  });
+
+  it('renders launch-batch waiting as a concrete queue reason', () => {
+    const html = renderToStaticMarkup(
+      <CapacityQueueNotice
+        capacityQueueState={{
+          status: 'queued_for_capacity',
+          reason: 'launch_batch_blocked',
+          queuedReviewerCount: 1,
+          activeReviewerCount: 2,
+          queueElapsedMs: 4_000,
+          maxQueueWaitSeconds: 60,
+        }}
+        supportsInlineQueueControls
+        onPauseQueue={vi.fn()}
+        onContinueQueue={vi.fn()}
+        onSkipOptionalQueuedReviewers={vi.fn()}
+        onCancelQueuedReviewers={vi.fn()}
+        onRunSlowerNextTime={vi.fn()}
+        onOpenReviewSettings={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain('Reason: previous launch batch still running');
+    expect(html).toContain('Waited 4s of 1m 0s');
   });
 
   it('renders the stop hint when inline queue controls are unavailable', () => {

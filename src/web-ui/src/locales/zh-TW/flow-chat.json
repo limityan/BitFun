@@ -690,6 +690,7 @@
         "providerConcurrencyLimit": "模型服務並發限制",
         "retryAfter": "模型服務要求稍後重試",
         "localConcurrencyCap": "本地審核員容量",
+        "launchBatchBlocked": "前一啟動批次仍在執行",
         "temporaryOverload": "模型服務暫時過載"
       },
       "sessionBusy": "目前會話較忙，可暫停 Deep Review 或稍後繼續。",

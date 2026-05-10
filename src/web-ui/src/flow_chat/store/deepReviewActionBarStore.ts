@@ -54,6 +54,7 @@ export type DeepReviewCapacityQueueReason =
   | 'provider_concurrency_limit'
   | 'retry_after'
   | 'local_concurrency_cap'
+  | 'launch_batch_blocked'
   | 'temporary_overload';
 
 export interface DeepReviewCapacityQueueState {

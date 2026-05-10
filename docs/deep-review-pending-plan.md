@@ -461,7 +461,7 @@ Primary risks: overriding user intent, opaque scoring, project-type misclassific
 
 Status: Deferred for separate product design.
 
-Current boundary: Deep Review may queue for local/provider capacity, but it does not intentionally batch or stagger reviewer launch order as a scheduling product behavior.
+Current boundary: Deep Review may queue for local/provider capacity and now has a narrow launch-batch overlap guard (`launch_batch_blocked`) when a later batch starts while an earlier batch is active. It still does not intentionally own full batch/stagger reviewer launch order as a scheduling product behavior.
 
 Potential benefit: reduce provider burst pressure, improve capacity success rate, and make progress easier to surface incrementally.
 
