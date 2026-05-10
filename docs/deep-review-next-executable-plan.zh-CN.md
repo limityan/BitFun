@@ -33,17 +33,19 @@ Deep Review 当前已经不是纯 prompt 概念，而是带运行时护栏的 pr
 - per-session incremental cache 和 packet metadata fallback。
 - report reliability signals、content-free duplicate `Read` / `GetFileDiff` diagnostics。
 - compact consent summary、action-bar recovery、Review Team capacity / retry settings。
+- provider transient capacity 短队列与一次性重试，且保持 Deep Review scoped。
+- 用户可见 explicit retry action，以及默认关闭、opt-in 后才可通过 guard 的 bounded auto retry admission。
+- quick / normal / deep cost-aware scope profile，且 reduced-depth report 不声称 full coverage。
+- metadata-first shared evidence pack，且不存储 source text、full diff、reviewer output、provider raw body 或 full file contents。
+- 前端 review-team、Flow Chat launch/action-bar/report 的 no-behavior helper split 与 ownership 文档。
 
-当前明确尚未完成的功能包括：
+当前明确尚未完成或仍延期的边界包括：
 
-- provider transient capacity 的短队列与一次性重试。
-- 用户可见的 explicit retry action。
-- opt-in 后的 bounded auto retry。
-- quick / normal / deep 的 cost-aware scope profile。
-- metadata-first shared evidence pack。
-- 大规模架构拆分与 shared runtime containment。
+- shared runtime containment 仍是 no-behavior 架构后续项；不得顺手把 Deep Review queueing 升级为全局 subagent queueing。
+- backend-owned automatic retry redispatch scheduler 仍未实现；当前 `auto_retry` 只是 admission guard，不是自动调度器。
 - backend batch / stagger scheduling 仍未实现，除非后续产品决策明确纳入，否则不应在本计划中顺手实现。
 - user-facing effective-cap override controls 仍未实现，除非后续产品决策明确纳入，否则不应在本计划中顺手实现。
+- project-level review cache、programmatic full tool-result cache、hard prompt-byte clipping、backend DAG scheduler、authoritative runtime strategy selection 继续保持延期。
 
 ## 总体原则
 

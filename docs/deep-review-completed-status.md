@@ -13,7 +13,7 @@ This consolidation covers the following current Deep Review documents and compan
 | `docs/deep-review-design.md` | Original strategy-engine, Architecture Reviewer, Frontend Reviewer, prompt ownership, and current implementation status. |
 | `docs/deep-review-phase2-plan.md` | Phase 2 implementation status for strategy, concurrency, retry, cache, token budget, and report reliability work. |
 | `docs/deep-review-phase2-addendum.md` | Truth model, status wording, risk register, completed rounds, and deferred boundaries. |
-| `docs/deep-review-phase3-followup-plan.md` | Latest product decisions and the current Phase 3 split between implemented diagnostics/settings/provider queue/retry controls and pending cost scope work. |
+| `docs/deep-review-phase3-followup-plan.md` | Latest product decisions and the Phase 3 lineage for diagnostics, settings, provider queue/retry controls, cost-aware scope, and shared evidence pack work. |
 | `docs/deep-review-architecture-refactor-plan.md` | Architecture refactor goals and module boundaries. Backend module extraction, Flow Chat compatibility facades, frontend review-team pure-helper split, and the stable first Flow Chat launch/action-bar/report split are implemented; broader shared-runtime refactors remain bounded by that plan. |
 | `docs/deep-review-nondeepreview-impact-inventory.md` | Shared-runtime impact rules that are already documented and must continue to constrain future work. |
 | `docs/superpowers/plans/2026-05-09-deep-review-phase3-execution-plan.md` | Round-level execution status and verification history for Phase 3. |
