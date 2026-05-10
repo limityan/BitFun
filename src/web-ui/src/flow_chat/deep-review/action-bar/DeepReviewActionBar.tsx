@@ -52,6 +52,7 @@ import { useSceneStore } from '@/app/stores/sceneStore';
 import type { ConfigTab } from '@/app/scenes/settings/settingsConfig';
 import { formatElapsedTime } from './actionBarFormatting';
 import { CapacityQueueNotice } from './CapacityQueueNotice';
+import { PartialResultsPanel } from './PartialResultsPanel';
 import { RecoveryPlanPreview } from './RecoveryPlanPreview';
 import { ReviewActionHeader } from './ReviewActionHeader';
 import '../../components/btw/DeepReviewActionBar.scss';
@@ -749,54 +750,12 @@ export const ReviewActionBar: React.FC = () => {
         />
       )}
 
-      {/* Partial results summary on interruption */}
-      {hasInterruption && progressSummary && progressSummary.completed > 0 && (
-        <div className="deep-review-action-bar__partial-summary">
-          <span className="deep-review-action-bar__partial-count">
-            {t('deepReviewActionBar.partialResultsDescription', {
-              completed: progressSummary.completed,
-              total: progressSummary.total,
-              defaultValue: '{{completed}}/{{total}} reviewers completed',
-            })}
-          </span>
-          <button
-            type="button"
-            className="deep-review-action-bar__partial-link"
-            onClick={() => setShowPartialResults(!showPartialResults)}
-          >
-            <Eye size={12} />
-            {showPartialResults
-              ? t('deepReviewActionBar.hidePartialResults', { defaultValue: 'Hide partial results' })
-              : t('deepReviewActionBar.viewPartialResults', { defaultValue: 'View partial results' })}
-          </button>
-        </div>
-      )}
-
-      {/* Partial results detail */}
-      {showPartialResults && partialResults && (
-        <div className="deep-review-action-bar__partial-detail">
-          {partialResults.completedIssues.length > 0 && (
-            <div className="deep-review-action-bar__partial-section">
-              <span className="deep-review-action-bar__partial-section-title">
-                {t('deepReviewActionBar.partialIssues', {
-                  count: partialResults.completedIssues.length,
-                  defaultValue: '{{count}} issues found',
-                })}
-              </span>
-            </div>
-          )}
-          {partialResults.completedRemediationItems.length > 0 && (
-            <div className="deep-review-action-bar__partial-section">
-              <span className="deep-review-action-bar__partial-section-title">
-                {t('deepReviewActionBar.partialRemediationItems', {
-                  count: partialResults.completedRemediationItems.length,
-                  defaultValue: '{{count}} remediation items',
-                })}
-              </span>
-            </div>
-          )}
-        </div>
-      )}
+      <PartialResultsPanel
+        progressSummary={hasInterruption ? progressSummary : null}
+        partialResults={partialResults}
+        showPartialResults={showPartialResults}
+        onTogglePartialResults={() => setShowPartialResults(!showPartialResults)}
+      />
 
       {/* Error attribution card */}
       {hasInterruption && errorAttribution && (

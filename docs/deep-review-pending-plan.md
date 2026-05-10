@@ -494,7 +494,7 @@ Status: Partially implemented. Backend Deep Review modules, Flow Chat compatibil
 | `src/crates/events/src/agentic.rs` | Shared event crate contains Deep Review queue event payload. |
 | `src/web-ui/src/shared/services/reviewTeamService.ts` / `src/web-ui/src/shared/services/review-team/` | `reviewTeamService.ts` is now a two-line facade. The directory owns focused pure helper modules plus `index.ts` for side-effectful config/backend loading, default team assembly, and final manifest assembly. |
 | `src/web-ui/src/flow_chat/services/DeepReviewService.ts` / `src/web-ui/src/flow_chat/deep-review/launch/DeepReviewService.ts` | Old path is a facade; launch orchestration keeps child-session launch and runtime manifest signals while command parsing, target resolution, launch prompt formatting, and launch errors are split. |
-| `src/web-ui/src/flow_chat/components/btw/DeepReviewActionBar.tsx` / `src/web-ui/src/flow_chat/deep-review/action-bar/DeepReviewActionBar.tsx` | Old path is a facade; capacity queue notice, recovery-plan preview, action header, and formatting are split, while remediation/diagnostics remain in the main action-bar path for now. |
+| `src/web-ui/src/flow_chat/components/btw/DeepReviewActionBar.tsx` / `src/web-ui/src/flow_chat/deep-review/action-bar/DeepReviewActionBar.tsx` | Old path is a facade; capacity queue notice, partial-results panel, recovery-plan preview, action header, and formatting are split, while remediation/diagnostics remain in the main action-bar path for now. |
 | `src/web-ui/src/flow_chat/utils/codeReviewReport.ts` / `src/web-ui/src/flow_chat/deep-review/report/codeReviewReport.ts` | Old path is a facade; retry-slice helpers and types stay in the core report module while reliability notices, manifest rendering, section normalization, and markdown export are split. |
 
 ### Target Backend Layout
@@ -650,6 +650,7 @@ src/web-ui/src/flow_chat/deep-review/
     DeepReviewService.ts
   action-bar/
     CapacityQueueNotice.tsx
+    PartialResultsPanel.tsx
     RecoveryPlanPreview.tsx
     ReviewActionHeader.tsx
     actionBarFormatting.ts
@@ -771,7 +772,7 @@ Behavior change allowed: none.
 
 #### Refactor Round 6: Flow Chat Deep Review Decomposition
 
-Status: stable first pass complete. Public facades remain unchanged; recovery-plan preview has been split into a focused action-bar component. Deeper action-bar extraction for remediation or diagnostics controls is optional future no-behavior cleanup and should not be combined with behavior changes.
+Status: stable first pass complete. Public facades remain unchanged; partial-results and recovery-plan previews have been split into focused action-bar components. Deeper action-bar extraction for remediation or diagnostics controls is optional future no-behavior cleanup and should not be combined with behavior changes.
 
 Actions:
 

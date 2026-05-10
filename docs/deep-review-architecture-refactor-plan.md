@@ -37,7 +37,7 @@ The branch range contains unrelated product and packaging changes. This document
 |---|---:|---|---|
 | `src/web-ui/src/shared/services/review-team/` | Split modules | Defaults, strategy profiles, public types, path metadata, risk scoring, work packets, token budget, scope profile, evidence pack, cache plans, pre-review summary, prompt block formatting, manifest-member projection, and the review-team service facade | Current subsystem home. The public import path is backed by a directory; new pure behavior should land in the narrow helper module instead of growing `index.ts`. |
 | `src/web-ui/src/flow_chat/services/DeepReviewService.ts` / `src/web-ui/src/flow_chat/deep-review/launch/DeepReviewService.ts` | 2 / 338 | Compatibility facade plus launch orchestration. Command parsing, target resolution, launch prompt formatting, and launch error shaping now live in focused modules. | Lower. Keep child-session creation and runtime-signal manifest assembly in the orchestrator unless a later no-behavior adapter split has equivalent tests. |
-| `src/web-ui/src/flow_chat/components/btw/DeepReviewActionBar.tsx` / `src/web-ui/src/flow_chat/deep-review/action-bar/DeepReviewActionBar.tsx` | 5 / 1260 | Compatibility facade plus shared review action bar. Capacity queue notice, recovery-plan preview, header, and elapsed-time formatting are split; diagnostics and remediation remain dense but guarded by tests. | Medium. Continue only with small no-behavior components such as diagnostics or remediation controls if this file grows again. |
+| `src/web-ui/src/flow_chat/components/btw/DeepReviewActionBar.tsx` / `src/web-ui/src/flow_chat/deep-review/action-bar/DeepReviewActionBar.tsx` | 5 / 1219 | Compatibility facade plus shared review action bar. Capacity queue notice, partial-results panel, recovery-plan preview, header, and elapsed-time formatting are split; diagnostics and remediation remain dense but guarded by tests. | Medium. Continue only with small no-behavior components such as diagnostics or remediation controls if this file grows again. |
 | `src/web-ui/src/flow_chat/utils/codeReviewReport.ts` / `src/web-ui/src/flow_chat/deep-review/report/codeReviewReport.ts` | 2 / 423 | Compatibility facade plus retry-slice helpers and shared report types. Reliability notices, manifest markdown, report sections, and markdown export are split. | Lower. New report behavior should land in the narrow helper module instead of regrowing the facade/core type file. |
 | `src/web-ui/src/shared/services/reviewTargetClassifier.ts` | 319 | Source-agnostic target classification and reviewer applicability registry | Good candidate to keep as an independent module. |
 | `src/web-ui/src/shared/services/reviewSubagentCapabilities.ts` | 43 | Shared tool contract for custom review agents | Good candidate to keep as common review-team support. |
@@ -227,6 +227,7 @@ src/web-ui/src/flow_chat/deep-review/
     DeepReviewService.ts
   action-bar/
     CapacityQueueNotice.tsx
+    PartialResultsPanel.tsx
     RecoveryPlanPreview.tsx
     ReviewActionHeader.tsx
     actionBarFormatting.ts
@@ -401,7 +402,7 @@ Mitigation:
 
 Goal: separate launch, action bar, and report concerns.
 
-Current status: stable first pass complete. The compatibility facades are preserved; launch command/target/prompt/error helpers, report manifest/reliability/section/markdown helpers, and action-bar capacity/recovery-plan/header/formatting components are now separated. Deeper action-bar extraction for diagnostics or remediation controls remains an optional no-behavior cleanup, not a prerequisite for provider queue/retry work.
+Current status: stable first pass complete. The compatibility facades are preserved; launch command/target/prompt/error helpers, report manifest/reliability/section/markdown helpers, and action-bar capacity/partial-results/recovery-plan/header/formatting components are now separated. Deeper action-bar extraction for diagnostics or remediation controls remains an optional no-behavior cleanup, not a prerequisite for provider queue/retry work.
 
 Actions:
 
