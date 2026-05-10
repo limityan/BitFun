@@ -287,7 +287,8 @@ pnpm run type-check:web
 完成整个里程碑后运行：
 
 ```powershell
-cargo check --workspace --exclude bitfun-cli
+cargo check --workspace
+cargo test --workspace
 pnpm run lint:web
 pnpm --dir src/web-ui run test:run
 git diff --check
@@ -721,7 +722,8 @@ pnpm run type-check:web
 rg -n "project-level cache.*implement[[:alpha:]]*ed|auto retry.*compl[[:alpha:]]*ete|provider/adaptive queue.*compl[[:alpha:]]*ete|hard prompt.*compl[[:alpha:]]*ete|global.*concurrency.*auto[[:alpha:]]*matic" docs/deep-review-design.md docs/deep-review-phase2-plan.md docs/deep-review-phase2-addendum.md docs/deep-review-phase3-followup-plan.md docs/deep-review-pending-plan.md
 cargo test -p bitfun-core deep_review -- --nocapture
 cargo test -p bitfun-events deep_review_queue_state_event_serializes_stable_contract -- --nocapture
-cargo check --workspace --exclude bitfun-cli
+cargo check --workspace
+cargo test --workspace
 pnpm run lint:web
 pnpm run type-check:web
 pnpm --dir src/web-ui run test:run

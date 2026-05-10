@@ -314,14 +314,15 @@ The shared-impact inventory is documented and must remain active during future w
 The source documents record focused and release-gate verification, including:
 
 - `cargo test -p bitfun-core deep_review -- --nocapture`
-- `cargo check --workspace --exclude bitfun-cli`
+- `cargo check --workspace`
+- `cargo test --workspace`
 - `pnpm run lint:web`
 - `pnpm run type-check:web`
 - `pnpm --dir src/web-ui run test:run`
 - focused frontend tests for `reviewTeamService`, Deep Review action bar/store, queue events, and report utilities;
 - focused Rust tests for runtime diagnostics, cache behavior, retry admission, queue/capacity behavior, and report reliability.
 
-The latest M4 release gate records focused web verification, static stale-claim/privacy checks, `cargo test -p bitfun-core deep_review -- --nocapture`, and `cargo check --workspace --exclude bitfun-cli`.
+The latest merge verification has run the full Rust gate: `cargo test -p bitfun-events deep_review_queue_state_event_serializes_stable_contract -- --nocapture`, `cargo test -p bitfun-core deep_review -- --nocapture`, `cargo check --workspace`, and `cargo test --workspace` all pass. A real Deep Review manual smoke / E2E pass remains a separate pre-release product acceptance step.
 
 ## Completed Boundary Summary
 

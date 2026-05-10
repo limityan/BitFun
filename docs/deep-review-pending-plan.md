@@ -82,7 +82,7 @@ Verification:
 
 - Rust tests exist for queueable vs non-queueable provider errors, queue expiry, pause, cancel, and diagnostics counters.
 - Frontend tests exist for provider queue notice, localized reason text, and queue-state updates.
-- Earlier milestone Rust verification passed with `cargo test -p bitfun-core deep_review -- --nocapture` and `cargo check --workspace --exclude bitfun-cli`; the next full Rust gate remains deferred to the agreed cargo pass.
+- Earlier milestone Rust verification passed with `cargo test -p bitfun-core deep_review -- --nocapture` and a partial workspace check; the agreed merge verification pass later completed `cargo test -p bitfun-events deep_review_queue_state_event_serializes_stable_contract -- --nocapture`, `cargo test -p bitfun-core deep_review -- --nocapture`, `cargo check --workspace`, and `cargo test --workspace`.
 
 Exit criteria:
 
@@ -329,7 +329,8 @@ Verification:
 ```powershell
 rg -n "project-level cache.*implement[[:alpha:]]*ed|auto retry.*compl[[:alpha:]]*ete|provider/adaptive queue.*compl[[:alpha:]]*ete|hard prompt.*compl[[:alpha:]]*ete|global.*concurrency.*auto[[:alpha:]]*matic" docs/deep-review-design.md docs/deep-review-phase2-plan.md docs/deep-review-phase2-addendum.md docs/deep-review-phase3-followup-plan.md
 cargo test -p bitfun-core deep_review -- --nocapture
-cargo check --workspace --exclude bitfun-cli
+cargo check --workspace
+cargo test --workspace
 pnpm run lint:web
 pnpm run type-check:web
 pnpm --dir src/web-ui run test:run
@@ -887,7 +888,8 @@ Run after any batch that completes pending functionality or refactor rounds:
 
 ```powershell
 cargo test -p bitfun-core deep_review -- --nocapture
-cargo check --workspace --exclude bitfun-cli
+cargo check --workspace
+cargo test --workspace
 pnpm run lint:web
 pnpm run type-check:web
 pnpm --dir src/web-ui run test:run
