@@ -693,6 +693,14 @@
         "launchBatchBlocked": "前一启动批次仍在运行",
         "temporaryOverload": "模型服务临时过载"
       },
+      "reasonDetails": {
+        "providerRateLimit": "模型服务正在限速。BitFun 会短暂等待；如果反复出现，可以降低 Review Team 并行审核员数量。",
+        "providerConcurrencyLimit": "模型服务拒绝了新的并发审核员。BitFun 会在容量恢复后重试；如果持续发生，建议降低审核员并行数。",
+        "retryAfter": "模型服务要求稍后重试。这里的等待不会消耗审核员运行时间。",
+        "localConcurrencyCap": "当前 Review Team 审核员并行上限已满。已有审核员完成后，该审核员会继续启动。",
+        "launchBatchBlocked": "前一启动批次仍在运行。等待可以保持计划中的审核顺序，避免后续批次提前执行。",
+        "temporaryOverload": "模型服务报告临时过载。BitFun 会短暂等待，然后继续或将该审核员标记为容量跳过。"
+      },
       "sessionBusy": "当前会话较忙，可暂停 Deep Review 或稍后继续。",
       "stopHint": "可使用停止按钮中断当前审核队列。",
       "pauseQueue": "暂停队列",

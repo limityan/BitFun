@@ -34,6 +34,36 @@ const CAPACITY_QUEUE_REASON_KEYS: Record<DeepReviewCapacityQueueReason, string> 
   temporary_overload: 'deepReviewActionBar.capacityQueue.reasons.temporaryOverload',
 };
 
+const CAPACITY_QUEUE_REASON_DETAIL_KEYS: Record<DeepReviewCapacityQueueReason, {
+  key: string;
+  defaultValue: string;
+}> = {
+  provider_rate_limit: {
+    key: 'deepReviewActionBar.capacityQueue.reasonDetails.providerRateLimit',
+    defaultValue: 'The model provider is rate-limiting requests. BitFun will wait briefly; reducing Review Team parallel reviewers can help if this repeats.',
+  },
+  provider_concurrency_limit: {
+    key: 'deepReviewActionBar.capacityQueue.reasonDetails.providerConcurrencyLimit',
+    defaultValue: 'The model provider rejected another concurrent reviewer. BitFun will retry after capacity opens; lower reviewer parallelism if it keeps happening.',
+  },
+  retry_after: {
+    key: 'deepReviewActionBar.capacityQueue.reasonDetails.retryAfter',
+    defaultValue: 'The model provider asked BitFun to retry later. Waiting here avoids spending reviewer runtime while the provider cools down.',
+  },
+  local_concurrency_cap: {
+    key: 'deepReviewActionBar.capacityQueue.reasonDetails.localConcurrencyCap',
+    defaultValue: 'The configured Review Team reviewer limit is full. This reviewer will start after an active reviewer finishes.',
+  },
+  launch_batch_blocked: {
+    key: 'deepReviewActionBar.capacityQueue.reasonDetails.launchBatchBlocked',
+    defaultValue: 'An earlier launch batch is still running. Waiting preserves the planned review order and prevents a later batch from overtaking it.',
+  },
+  temporary_overload: {
+    key: 'deepReviewActionBar.capacityQueue.reasonDetails.temporaryOverload',
+    defaultValue: 'The model provider reported temporary overload. BitFun will wait briefly and then continue or mark the reviewer as capacity skipped.',
+  },
+};
+
 export const CapacityQueueNotice: React.FC<CapacityQueueNoticeProps> = ({
   capacityQueueState,
   supportsInlineQueueControls,
@@ -48,6 +78,11 @@ export const CapacityQueueNotice: React.FC<CapacityQueueNoticeProps> = ({
   const capacityQueueReasonLabel = capacityQueueState.reason
     ? t(CAPACITY_QUEUE_REASON_KEYS[capacityQueueState.reason], {
       defaultValue: capacityQueueState.reason.split('_').join(' '),
+    })
+    : null;
+  const capacityQueueReasonDetail = capacityQueueState.reason
+    ? t(CAPACITY_QUEUE_REASON_DETAIL_KEYS[capacityQueueState.reason].key, {
+      defaultValue: CAPACITY_QUEUE_REASON_DETAIL_KEYS[capacityQueueState.reason].defaultValue,
     })
     : null;
   const capacityQueueElapsedLabel = capacityQueueState.queueElapsedMs !== undefined
@@ -100,6 +135,11 @@ export const CapacityQueueNotice: React.FC<CapacityQueueNoticeProps> = ({
                     })}
                 </span>
               )}
+            </span>
+          )}
+          {capacityQueueReasonDetail && (
+            <span className="deep-review-action-bar__capacity-queue-detail">
+              {capacityQueueReasonDetail}
             </span>
           )}
           {capacityQueueState.sessionConcurrencyHigh && (
