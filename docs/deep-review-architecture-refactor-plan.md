@@ -124,11 +124,20 @@ The existing `src/crates/core/src/agentic/deep_review_policy.rs` is now a compat
 
 ### Generic Subagent Runtime Boundary
 
-Deep Review should not own generic subagent scheduling. Introduce a generic runtime-facing shape only after the first extraction round:
+Deep Review should not own generic subagent scheduling. The first no-behavior generic runtime primitive now exists:
 
 ```text
 src/crates/core/src/agentic/subagent_runtime/
   mod.rs
+  queue_timing.rs
+```
+
+`queue_timing.rs` only tracks queue wait, pause/continue time, elapsed milliseconds, and expiration checks. It does not know about Deep Review roles, provider reasons, queue events, retry policy, reports, or user-facing wording.
+
+Future generic runtime-facing shapes may be introduced only after the current behavior proves stable:
+
+```text
+src/crates/core/src/agentic/subagent_runtime/
   capacity.rs
   queue_state.rs
   retry_admission.rs
@@ -412,13 +421,14 @@ Behavior change allowed: none.
 
 Goal: document module boundaries without adding noisy comments.
 
-Current status: Flow Chat ownership cleanup is complete for the current frontend split. The subsystem README records module boundaries, facade guardrails, Deep Review gating, privacy constraints, and focused verification. Backend ownership cleanup can continue in later no-behavior Rust rounds when those files are next touched.
+Current status: Flow Chat ownership cleanup is complete for the current frontend split. The subsystem README records module boundaries, facade guardrails, Deep Review gating, privacy constraints, and focused verification. Backend ownership cleanup has also started: `deep_review` module docs now explain product-policy ownership, and `subagent_runtime` docs define the generic primitive boundary.
 
 Actions:
 
 - Completed for Flow Chat: add subsystem-level TypeScript ownership documentation without adding noisy per-file comments.
 - Completed for Flow Chat: update Deep Review plan/status docs to reflect the real first-pass split and optional action-bar follow-ups.
-- Future backend cleanup: add module-level Rust docs for `deep_review` modules where responsibilities are not obvious when those modules are next changed.
+- Completed for backend first pass: add module-level Rust docs for `deep_review::{mod,queue,concurrency_policy,task_adapter}` and `subagent_runtime::{mod,queue_timing}` where the generic-vs-product boundary was not obvious.
+- Future backend cleanup: add module-level Rust docs only when additional modules are touched and their responsibilities are not obvious.
 - Future no-behavior cleanup: remove duplicated constants or status wording only when a focused scan finds real duplication, not business terms such as capacity `temporary_overload`.
 
 Verification:

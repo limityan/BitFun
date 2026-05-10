@@ -345,6 +345,22 @@ Exit criteria:
 
 ## Deferred Product Decisions
 
+### Backend-Owned Automatic Retry Redispatch Scheduler
+
+Status: Deferred for separate product design.
+
+Current boundary:
+
+- manual retry is implemented for structured unresolved slices;
+- `allow_bounded_auto_retry` is an admission guard only;
+- there is no backend-owned caller, retry queue, or automatic redispatch loop.
+
+Potential benefit: automatically recover transient capacity/timeout failures without requiring the user to notice and trigger manual retry.
+
+Primary risks: hidden automation, repeated cost, stale context, retry loops, confusing report merge states, and conflicts with queue pause/cancel controls.
+
+Do not implement until trigger timing, visibility, cancellation, retry budgets, failure attribution, and final-report merge semantics are designed as product behavior.
+
 ### Project-Level Review Cache
 
 Status: Deferred by product decision.
@@ -360,6 +376,10 @@ Do not implement until a separate plan defines:
 
 Current boundary: per-session cache only.
 
+Potential benefit: repeated reviews of the same project can reuse prior context across sessions.
+
+Primary risks: stale findings, source/privacy retention, deletion semantics, and invalidation across model, strategy, roster, prompt, or file changes.
+
 ### Programmatic Shared Tool-Result Cache
 
 Status: Deferred pending measured need.
@@ -372,6 +392,10 @@ Current boundary:
 
 Do not intercept and reuse full tool results until real-run measurements prove material duplicate cost and a separate semantics/privacy plan is approved.
 
+Potential benefit: reduce repeated `Read` / `GetFileDiff` work and token/IO cost.
+
+Primary risks: stale tool results, source/diff leakage, cache growth, and silently bypassing tool semantics.
+
 ### Hard Prompt-Byte Clipping
 
 Status: Deferred.
@@ -383,6 +407,10 @@ Current boundary:
 - file splitting/max-file guardrails.
 
 Do not hard-clip files from reviewer coverage unless every omitted or reduced file remains explicit in coverage/reliability metadata.
+
+Potential benefit: provide a hard cost and timeout ceiling for very large review targets.
+
+Primary risks: hidden coverage loss, missed high-risk files, and reports that overstate full-review confidence.
 
 ### Backend DAG Scheduler
 
@@ -397,6 +425,10 @@ Current boundary:
 
 Do not replace the orchestrator with a deterministic backend workflow engine in the current plan.
 
+Potential benefit: deterministic orchestration, unified retry/queue handling, and clearer observability.
+
+Primary risks: large migration blast radius, reduced model adaptability, complicated interruption/resume semantics, and session compatibility.
+
 ### Authoritative Runtime Strategy Selection
 
 Status: Deferred.
@@ -406,6 +438,34 @@ Current boundary:
 - advisory/mismatch-warning metadata only.
 
 Do not let backend risk scoring override the user's selected strategy until measured complexity signals and product approval exist.
+
+Potential benefit: automatically prevent under- or over-reviewing when the selected strategy mismatches target complexity.
+
+Primary risks: overriding user intent, opaque scoring, project-type misclassification, and a much larger validation matrix.
+
+### Backend Batch / Stagger Scheduling
+
+Status: Deferred for separate product design.
+
+Current boundary: Deep Review may queue for local/provider capacity, but it does not intentionally batch or stagger reviewer launch order as a scheduling product behavior.
+
+Potential benefit: reduce provider burst pressure, improve capacity success rate, and make progress easier to surface incrementally.
+
+Primary risks: longer wall-clock completion, worse perceived waiting, more complex failure ordering, and overlap with active-session warning, pause, and manual continuation semantics.
+
+Do not implement until launch cadence, batch size, defaults, user-facing waiting copy, fairness, and failure recovery are designed.
+
+### User-Facing Effective-Cap Override Controls
+
+Status: Deferred for separate product design.
+
+Current boundary: effective capacity learning remains a runtime guardrail and diagnostic signal, not a direct user control surface.
+
+Potential benefit: advanced users can tune throughput or reduce local/provider pressure for their environment.
+
+Primary risks: confusing overlap among learned effective cap, global subagent cap, and Review Team capacity settings; unsafe high values; degraded performance from low values; and unclear accountability when overrides conflict with learned limits.
+
+Do not implement until the control model, settings placement, safe bounds, explanatory copy, and relationship to learned effective cap are designed.
 
 ## Architecture Refactor Plan
 
@@ -480,11 +540,20 @@ Responsibilities:
 
 ### Generic Subagent Runtime Boundary
 
-Introduce a generic runtime area only after the Deep Review extraction proves stable:
+The first no-behavior generic runtime primitive is now present:
 
 ```text
 src/crates/core/src/agentic/subagent_runtime/
   mod.rs
+  queue_timing.rs
+```
+
+`queue_timing.rs` only handles queue elapsed time, pause/continue accounting, elapsed milliseconds, and expiration checks. It must stay free of Deep Review roles, queue reasons, provider classifications, retry policy, events, and report wording.
+
+Introduce additional generic runtime areas only after Deep Review extraction proves stable and the primitive is proven generic:
+
+```text
+src/crates/core/src/agentic/subagent_runtime/
   capacity.rs
   queue_state.rs
   retry_admission.rs
@@ -720,13 +789,14 @@ Behavior change allowed: none.
 
 #### Refactor Round 7: Documentation, Comments, And Ownership Cleanup
 
-Status: Flow Chat ownership cleanup is complete for the current frontend split. Backend module docs remain an optional no-behavior cleanup for future Rust-focused rounds.
+Status: Flow Chat ownership cleanup is complete for the current frontend split. Backend module docs have a first pass covering the Deep Review queue/concurrency/adapter boundary and the new generic `subagent_runtime::queue_timing` primitive.
 
 Actions:
 
 - Completed for Flow Chat: add subsystem-level ownership notes covering launch, action-bar, report, facade guardrails, Deep Review gating, privacy constraints, and focused verification.
 - Completed for Flow Chat: update status/planning docs without claiming new product behavior.
-- Future backend cleanup: add module-level Rust docs where boundaries are not obvious.
+- Completed for backend first pass: add module-level Rust docs where the Deep Review policy and generic runtime boundary was not obvious.
+- Future backend cleanup: add module-level Rust docs only when additional modules are touched and their responsibilities are not obvious.
 - Future no-behavior cleanup: remove duplicated constants and wording only when a focused scan finds real duplication.
 
 Verification:

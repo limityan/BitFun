@@ -153,6 +153,7 @@ The orchestrator is still source-agnostic. Git-backed changes, local workspace c
 - Explicit provider transient-capacity reviewer failures now enter a short bounded provider queue and reattempt once before final `capacity_skipped`.
 - Provider queue/retry/success counts and provider reason counts are aggregate diagnostics.
 - Provider queue time remains separated from reviewer runtime timeout.
+- Generic runtime containment has a first no-behavior primitive: `agentic/subagent_runtime/queue_timing.rs` owns queue wait / pause timing only.
 - Backend batch/stagger scheduling is pending.
 - User-facing effective-cap override controls are pending.
 - Deep Review queueing is not global subagent queueing.
