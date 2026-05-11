@@ -997,7 +997,10 @@ pub(crate) async fn wait_for_reviewer_admission(
         }
         last_wait_reason = current_reason;
 
-        if queue_snapshot.is_expired(max_wait) {
+        let queue_expired_without_active_reviewer =
+            queue_snapshot.is_expired(max_wait) && active_reviewers == 0;
+
+        if queue_expired_without_active_reviewer {
             let effective_parallel_instances =
                 if current_reason == DeepReviewCapacityQueueReason::LaunchBatchBlocked {
                     effective_parallel_instances
@@ -1051,7 +1054,11 @@ pub(crate) async fn wait_for_reviewer_admission(
         )
         .await;
 
-        let remaining = max_wait.saturating_sub(queue_elapsed);
-        sleep(DEEP_REVIEW_QUEUE_POLL_INTERVAL.min(remaining)).await;
+        let sleep_duration = if queue_snapshot.is_expired(max_wait) {
+            DEEP_REVIEW_QUEUE_POLL_INTERVAL
+        } else {
+            DEEP_REVIEW_QUEUE_POLL_INTERVAL.min(max_wait.saturating_sub(queue_elapsed))
+        };
+        sleep(sleep_duration).await;
     }
 }

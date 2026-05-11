@@ -150,6 +150,7 @@ The orchestrator is still source-agnostic. Git-backed changes, local workspace c
 
 - Current queue automation is narrow and Deep Review reviewer-oriented.
 - Local-cap waits are bounded, visible, pauseable, continuable, cancellable, and optional-extra skippable.
+- Local reviewer queue liveness now waits while the same Deep Review still has an active reviewer; a fixed short wait window is not treated as a per-reviewer expiry.
 - Explicit provider transient-capacity reviewer failures now enter a short bounded provider queue and reattempt once before final `capacity_skipped`.
 - Provider queue/retry/success counts and provider reason counts are aggregate diagnostics.
 - Provider queue time remains separated from reviewer runtime timeout.
@@ -355,4 +356,4 @@ Deep Review has moved from a prompt-only concept to a guarded runtime with:
 - no-behavior Flow Chat Deep Review helper extraction with stable `DeepReviewService.ts`, `DeepReviewActionBar.tsx`, and `codeReviewReport.ts` facades;
 - Flow Chat Deep Review ownership documentation covering launch, action-bar, report, facade, privacy, and focused verification boundaries.
 
-The completed boundary intentionally stops before backend-owned retry redispatch scheduling, full backend batch/stagger scheduling, project-level cache, hard byte clipping, programmatic shared tool-result reuse, global subagent scheduling, and additional shared-runtime architecture behavior changes. The current launch-batch guard is only an overlap safety net, not a complete dispatcher.
+The completed boundary intentionally stops before backend-owned retry redispatch scheduling, full backend batch/stagger scheduling, project-level cache, hard byte clipping, programmatic shared tool-result reuse, global subagent scheduling, and additional shared-runtime architecture behavior changes. Local queue liveness is complete for the current reviewer-admission path; the current launch-batch guard is only an overlap safety net, not a complete dispatcher.

@@ -26,7 +26,7 @@ Future implementation must stay inside these boundaries:
 1. Deep Review remains prompt-driven with deterministic guardrails. Do not replace it with a backend DAG scheduler without a separate design approval.
 2. Deep Review queueing must not become global subagent queueing by accident.
 3. Deep Review must not silently consume normal user-session concurrency. If the session is already busy, the product should warn, pause, or require manual continuation.
-4. Queue wait time must not count against reviewer runtime timeout.
+4. Queue wait time must not count against reviewer runtime timeout; local reviewer queue liveness now waits while the same Deep Review still has an active reviewer.
 5. Provider capacity queueing must be short, visible, bounded, pauseable, and cancellable.
 6. Automatic retry is manual by default and can only become bounded automatic retry after explicit user opt-in.
 7. Automatic retry must never loop indefinitely.
@@ -462,7 +462,7 @@ Primary risks: overriding user intent, opaque scoring, project-type misclassific
 
 Status: Deferred for separate product design.
 
-Current boundary: Deep Review may queue for local/provider capacity and now has a narrow launch-batch overlap guard (`launch_batch_blocked`) when a later batch starts while an earlier batch is active. It still does not intentionally own full batch/stagger reviewer launch order as a scheduling product behavior.
+Current boundary: Deep Review may queue for local/provider capacity, local reviewer queue liveness now waits while the same Deep Review still has an active reviewer, and a narrow launch-batch overlap guard (`launch_batch_blocked`) queues later batches when an earlier batch is active. It still does not intentionally own full batch/stagger reviewer launch order as a scheduling product behavior.
 
 Potential benefit: reduce provider burst pressure, improve capacity success rate, and make progress easier to surface incrementally.
 
