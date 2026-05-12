@@ -1629,10 +1629,11 @@ impl ExecutionEngine {
 
         // Loop to execute model rounds
         loop {
-            if completed_rounds >= self.config.max_rounds {
+            let max_rounds = context.max_rounds.unwrap_or(self.config.max_rounds).max(1);
+            if completed_rounds >= max_rounds {
                 warn!(
                     "Reached max rounds limit: {}, stopping execution",
-                    self.config.max_rounds
+                    max_rounds
                 );
                 finalization_reason = Some("max_rounds");
                 break;
@@ -1950,6 +1951,17 @@ impl ExecutionEngine {
                 &context_profile_policy,
             );
 
+            if let Some(max_tool_calls) = context.max_tool_calls.filter(|limit| *limit > 0) {
+                if total_tools >= max_tool_calls {
+                    warn!(
+                        "Reached max tool call limit: {}, stopping execution: turn={}, round={}, total_tools={}",
+                        max_tool_calls, context.dialog_turn_id, round_index, total_tools
+                    );
+                    finalization_reason = Some("max_tool_calls");
+                    break;
+                }
+            }
+
             let repeated_tool_loop_threshold = context_profile_policy
                 .effective_loop_threshold(self.config.max_consecutive_same_tool);
             if after_round_health.repeated_tool_signature_count >= repeated_tool_loop_threshold {
@@ -2242,7 +2254,7 @@ impl ExecutionEngine {
         let success = !loop_detected
             && !matches!(
                 effective_finish_reason,
-                "finalize_failed" | "empty_round" | "max_rounds"
+                "finalize_failed" | "empty_round" | "max_rounds" | "max_tool_calls"
             );
 
         // Emit dialog turn completed event
@@ -2306,6 +2318,7 @@ impl ExecutionEngine {
                 .unwrap_or_else(|| Message::assistant(String::new())),
             total_rounds: completed_rounds,
             success,
+            completion_reason: effective_finish_reason.to_string(),
             new_messages,
             finish_reason,
         })
