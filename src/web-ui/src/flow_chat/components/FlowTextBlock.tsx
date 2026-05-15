@@ -7,8 +7,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MarkdownRenderer } from '@/component-library';
-import { DotMatrixLoader } from '@/component-library';
+import { MarkdownRenderer } from '@/component-library/components/Markdown';
+import { DotMatrixLoader } from '@/component-library/components/DotMatrixLoader';
 import type { FlowTextItem } from '../types/flow-chat';
 import { useFlowChatContext } from './modern/FlowChatContext';
 import { useTypewriter } from '../hooks/useTypewriter';

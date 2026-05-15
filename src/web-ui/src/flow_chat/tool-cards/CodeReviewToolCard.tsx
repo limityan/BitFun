@@ -15,7 +15,8 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Tooltip, ToolProcessingDots } from '@/component-library';
+import { Tooltip } from '@/component-library/components/Tooltip';
+import { ToolProcessingDots } from '@/component-library/components/FlowChatCards/ToolProcessingDots';
 import type { ToolCardProps } from '../types/flow-chat';
 import { flowChatStore } from '../store/FlowChatStore';
 import { BaseToolCard, ToolCardHeader } from './BaseToolCard';

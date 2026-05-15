@@ -5,7 +5,8 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { GitBranch, Activity } from 'lucide-react';
-import { Tooltip, IconButton } from '@/component-library';
+import { Tooltip } from '@/component-library/components/Tooltip';
+import { IconButton } from '@/component-library/components/IconButton';
 import { useGitState } from '@/tools/git/hooks/useGitState';
 import './ChatInputWorkspaceStrip.scss';
 

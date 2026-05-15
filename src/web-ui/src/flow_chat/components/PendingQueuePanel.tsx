@@ -23,7 +23,8 @@ import {
   Inbox,
   Loader2,
 } from 'lucide-react';
-import { Tooltip, IconButton } from '@/component-library';
+import { Tooltip } from '@/component-library/components/Tooltip';
+import { IconButton } from '@/component-library/components/IconButton';
 import { agentAPI } from '@/infrastructure/api/service-api/AgentAPI';
 import { stateMachineManager } from '../state-machine';
 import { FlowChatStore } from '../store/FlowChatStore';

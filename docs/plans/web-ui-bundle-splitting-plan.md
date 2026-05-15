@@ -61,6 +61,23 @@ P2 完成后的关键静态图断言：
 - 主入口静态图不再触达 `react-syntax-highlighter`。
 - 生产源码不再使用 `import * as LucideIcons from 'lucide-react'`。
 
+### 1.2 P3 执行结果快照
+
+P3 已在同一 PR 中完成阶段 5-6，仍保持 `chunkSizeWarningLimit` 不变。P3 的重点不是删除功能或把常用路径变成 lazy，而是在 P2 已经收窄意外依赖后，做热点路径的组件库导入治理和有限 vendor 分组。
+
+| 快照 | 最大入口 JS | App entry JS | JS/CSS raw 总量 | JS/CSS gzip 总量 | 主入口静态图 |
+|---|---:|---:|---:|---:|---:|
+| P2 完成后 | `index-dVXtFQsH.js` 8242.6 KiB | 同左 | 13952.4 KiB | 3930.0 KiB | 1013 local modules |
+| P3 完成后 | `vendor-monaco-DdXR92sU.js` 3771.6 KiB | `index-Nu1_3coB.js` 3226.0 KiB | 13952.1 KiB | 3880.2 KiB | 1013 local modules |
+
+P3 后最大单个入口 JS 相比 P2 的集中入口减少约 `4471.0 KiB raw / 1326.8 KiB gzip`；App entry 自身减少约 `5016.6 KiB raw / 1352.9 KiB gzip`。JS/CSS gzip 总量相比 P2 减少约 `49.8 KiB`，但更重要的收益是 vendor 缓存边界更稳定，后续 app 代码变更不再让 Monaco、terminal、Markdown、Tiptap、React 等依赖全部跟随主入口重新失效。
+
+P3 完成后的入口 HTML 预加载边界：
+
+- 预加载 `vendor-monaco`、`vendor-tiptap`、`vendor-react`、`vendor-icons`、`vendor-markdown`、`vendor-terminal`，因为这些能力仍属于当前 eager 路径或常用路径保护范围。
+- 不预加载 `mermaid`、`prism`、`react-syntax-highlighter`；Mermaid 与语法高亮继续保留 P2 的按内容增强边界。
+- Vite 大 chunk 告警仍允许存在，用来指向真实剩余热点，例如 Monaco 和当前 eager editor/terminal 路径，而不是通过阈值掩盖。
+
 ---
 
 ## 2. 根因梳理
@@ -403,7 +420,7 @@ pnpm --dir tests/e2e run test:l1:chat-flow
 
 ### 阶段 5：复审 component-library barrel
 
-**当前状态：** 延后到 P3。该阶段会触及更广泛 UI import 面，当前 PR 只记录风险与执行门槛，不混入实现。
+**当前状态：** P3 已完成一轮热点路径治理。仅改聊天、导航、会话列表、工具卡状态等常用路径的组件级导入，不做全仓库机械替换。
 
 **目的：** 减少 `@/component-library` 在热点路径上的意外 fan-out，但不做全仓库机械替换。
 
@@ -419,11 +436,30 @@ pnpm --dir tests/e2e run test:l1:chat-flow
 
 - 不在一个 PR 中批量重写所有 component-library import。
 - 从热点路径开始，把简单 UI primitives 改成直接路径导入，避免顺带暴露 Markdown/CodeEditor 等重组件。
-- 优先考虑：
+- P3 已处理：
+  - `src/web-ui/src/flow_chat/components/ChatInput.tsx`
+  - `src/web-ui/src/flow_chat/components/ChatInputWorkspaceStrip.tsx`
+  - `src/web-ui/src/flow_chat/components/PendingQueuePanel.tsx`
+  - `src/web-ui/src/flow_chat/components/FlowTextBlock.tsx`
+  - `src/web-ui/src/flow_chat/components/modern/FlowChatHeader.tsx`
+  - `src/web-ui/src/flow_chat/components/modern/ModelRoundItem.tsx`
+  - `src/web-ui/src/flow_chat/tool-cards/CodeReviewToolCard.tsx`
+  - `src/web-ui/src/flow_chat/tool-cards/ToolCardStatusSlot.tsx`
+  - `src/web-ui/src/app/components/NavPanel/MainNav.tsx`
+  - `src/web-ui/src/app/components/NavPanel/NavSearchDialog.tsx`
+  - `src/web-ui/src/app/components/NavPanel/sections/workspaces/WorkspaceItem.tsx`
+  - `src/web-ui/src/app/components/NavPanel/sections/sessions/SessionsSection.tsx`
+  - `src/web-ui/src/app/components/panels/base/FlexiblePanel.tsx`
+- 直接入口包括：
   - `@/component-library/components/Tooltip`
   - `@/component-library/components/Button`
-  - `@/component-library/components/ConfirmDialog/confirmService`
+  - `@/component-library/components/ConfirmDialog`
   - `@/component-library/components/Markdown`
+  - `@/component-library/components/IconButton`
+  - `@/component-library/components/Input`
+  - `@/component-library/components/Modal`
+  - `@/component-library/components/Search`
+  - `@/component-library/components/FlowChatCards/ToolProcessingDots`
 - 保留 barrel 导出，兼容低风险或 legacy 调用方。
 
 **体验风险：**
@@ -446,7 +482,7 @@ pnpm --dir src/web-ui build
 
 ### 阶段 6：在根因清理后再加 manual chunks
 
-**当前状态：** 延后到 P3。P2 仍让 Vite 大 chunk 告警保留为真实信号，不用阈值掩盖。
+**当前状态：** P3 已完成有限 `manualChunks`。P3 仍让 Vite 大 chunk 告警保留为真实信号，不用阈值掩盖。
 
 **目的：** 在意外依赖已清理后，改善缓存和 vendor 组织。
 
@@ -458,14 +494,14 @@ pnpm --dir src/web-ui build
 
 - `chunkSizeWarningLimit` 保持不变。
 - 根据阶段 0 到阶段 5 的测量结果添加少量显式 `manualChunks`。
-- 候选分组：
+- P3 实际分组：
   - `vendor-react`
-  - `vendor-i18n`
   - `vendor-markdown`
   - `vendor-monaco`
   - `vendor-terminal`
-  - `vendor-mermaid`
   - `vendor-tiptap`
+  - `vendor-icons`
+- `vendor-mermaid` 与语法高亮没有加入手动入口分组，因为它们属于 P2 已经保护的按需增强路径；入口 HTML 必须继续不预加载 Mermaid / Prism / react-syntax。
 - 避免过度拆分小依赖。
 
 **体验风险：**
@@ -487,9 +523,10 @@ pnpm --dir tests/e2e run test:l1:terminal
 
 **验收：**
 
-- 主入口 chunk 变小。
+- 主入口集中大 chunk 被拆为稳定 vendor 边界，App entry JS 降到 `3226.0 KiB raw / 933.2 KiB gzip`。
 - 启动和常用交互无明显劣化。
 - Vite 告警若仍存在，应能指向剩余真实热点，而不是单文件集中问题。
+- 入口 HTML 不预加载 `mermaid`、`prism` 或 `react-syntax-highlighter`。
 
 ---
 
@@ -549,7 +586,7 @@ pnpm --dir tests/e2e run test:l1:terminal
 
 ## 8. 验证汇总
 
-P2 当前已执行并通过：
+P2 已执行并通过：
 
 ```powershell
 pnpm run lint:web
@@ -568,7 +605,7 @@ git diff --check
 
 `pnpm --dir src/web-ui run test:run` 当前覆盖 `119` 个测试文件、`629` 个测试用例。`pnpm run e2e:test:l0` 曾尝试执行，但日志出现 `Webview document did not become ready within 30000ms: BitFun app shell is not ready`，因此不计入通过项，后续 P3 若触及 `manualChunks` 或更大范围 scene/import 拆分，需要优先补跑可用的桌面 smoke。
 
-后续任一产品代码阶段前，至少需要：
+P3 追加验证已执行并通过：
 
 ```powershell
 pnpm run type-check:web
@@ -576,10 +613,13 @@ pnpm run lint:web
 pnpm --dir src/web-ui run test:run
 pnpm --dir src/web-ui build
 pnpm run verify:monaco-assets
+node scripts/report-web-bundle-size.cjs --top=26
+node scripts/report-web-main-static-graph.cjs --assert-external-unreachable=react-syntax-highlighter --assert-external-unreachable=mermaid --assert-no-direct-import=src/web-ui/src/main.tsx:./tools --top=12
+Select-String -Path dist\index.html -Pattern "mermaid|syntax|prism|react-syntax"
 git diff --check
 ```
 
-按影响面补充：
+其中 `Select-String` 命令无输出，用来证明入口 HTML 没有重新预加载 Mermaid / Prism / react-syntax。若本地桌面 E2E 可用，按影响面补充：
 
 ```powershell
 pnpm run e2e:test:l0
@@ -599,11 +639,11 @@ node scripts/report-web-main-static-graph.cjs
 
 ## 9. 推荐下一步
 
-P2 已完成，当前 PR 到此为止。
+P3 已收敛到当前 PR，整体 PR 控制在不超过 3 个 commit。
 
-后续建议进入 P3 前先单独评审两个方向：
+后续如继续做 P4，建议单独评审两个方向：
 
-- 复审 `component-library` barrel：只从热点路径做少量直接导入替换，不做全仓库机械改写。
-- 在根因清理后的真实构建图上设计 `manualChunks`：重点看缓存稳定和 WebView 冷启动请求数，不以压掉 warning 为目标。
+- Monaco/editor/terminal 的 eager 关系：这是当前最大真实热点，但直接 lazy 可能伤害常用编辑器体验，需要启动时序和 preload 设计。
+- 剩余 `@/component-library` root imports：只在证明确实影响热点路径时继续治理，不做纯机械替换。
 
-不建议把阶段 5/6 混入本 PR。它们会触及更广 import 面和构建组织，需要新的 before/after 与桌面 smoke 证据。
+不建议在本 PR 继续扩大范围。P3 已经同时触及构建组织和部分热点导入，下一阶段应重新做 before/after 与桌面 smoke 证据。

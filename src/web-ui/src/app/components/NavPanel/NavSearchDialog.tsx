@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FolderOpen, User, MessageSquare } from 'lucide-react';
-import { Search } from '@/component-library';
+import { Search } from '@/component-library/components/Search';
 import { useI18n } from '@/infrastructure/i18n';
 import { useWorkspaceContext } from '@/infrastructure/contexts/WorkspaceContext';
 import { useSceneManager } from '@/app/hooks/useSceneManager';

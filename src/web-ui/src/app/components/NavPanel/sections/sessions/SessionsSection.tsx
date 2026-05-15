@@ -8,7 +8,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Pencil, Trash2, Check, X, Bot, Code2, ClipboardList, Panda, MoreHorizontal, Loader2 } from 'lucide-react';
-import { IconButton, Input, Tooltip } from '@/component-library';
+import { IconButton } from '@/component-library/components/IconButton';
+import { Input } from '@/component-library/components/Input';
+import { Tooltip } from '@/component-library/components/Tooltip';
 import { useI18n } from '@/infrastructure/i18n';
 import { flowChatStore } from '../../../../../flow_chat/store/FlowChatStore';
 import { flowChatManager } from '../../../../../flow_chat/services/FlowChatManager';

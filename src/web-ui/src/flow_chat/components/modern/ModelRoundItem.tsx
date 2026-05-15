@@ -21,7 +21,7 @@ import { taskCollapseStateManager } from '../../store/TaskCollapseStateManager';
 import { ExportImageButton } from './ExportImageButton';
 import { ForkSessionButton } from './ForkSessionButton';
 import { buildModelRoundItemGroups } from './modelRoundItemGrouping';
-import { Tooltip } from '@/component-library';
+import { Tooltip } from '@/component-library/components/Tooltip';
 import { createLogger } from '@/shared/utils/logger';
 import { SmoothHeightCollapse } from './SmoothHeightCollapse';
 import './ModelRoundItem.scss';

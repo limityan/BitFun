@@ -45,7 +45,8 @@ import {
   launchDeepReviewSession,
 } from '../services/DeepReviewService';
 import { createLogger } from '@/shared/utils/logger';
-import { Tooltip, IconButton } from '@/component-library';
+import { Tooltip } from '@/component-library/components/Tooltip';
+import { IconButton } from '@/component-library/components/IconButton';
 import { PendingQueuePanel } from './PendingQueuePanel';
 import { useAgentCanvasStore } from '@/app/components/panels/content-canvas/stores';
 import { openBtwSessionInAuxPane, selectActiveBtwSessionTab } from '../services/openBtwSession';

@@ -5,6 +5,59 @@ import { versionInjectionPlugin } from "./vite.config.version-plugin";
 
 const host = process.env.TAURI_DEV_HOST;
 
+function manualChunks(id: string): string | undefined {
+  const normalizedId = id.replace(/\\/g, '/');
+  if (!normalizedId.includes('/node_modules/')) {
+    return undefined;
+  }
+
+  if (
+    normalizedId.includes('/react/') ||
+    normalizedId.includes('/react-dom/') ||
+    normalizedId.includes('/scheduler/')
+  ) {
+    return 'vendor-react';
+  }
+
+  if (
+    normalizedId.includes('/monaco-editor/') ||
+    normalizedId.includes('/@monaco-editor/')
+  ) {
+    return 'vendor-monaco';
+  }
+
+  if (normalizedId.includes('/@xterm/')) {
+    return 'vendor-terminal';
+  }
+
+  if (
+    normalizedId.includes('/@tiptap/') ||
+    normalizedId.includes('/prosemirror-')
+  ) {
+    return 'vendor-tiptap';
+  }
+
+  if (
+    normalizedId.includes('/react-markdown/') ||
+    normalizedId.includes('/remark-') ||
+    normalizedId.includes('/rehype-') ||
+    normalizedId.includes('/unified/') ||
+    normalizedId.includes('/katex/') ||
+    normalizedId.includes('/micromark') ||
+    normalizedId.includes('/mdast-') ||
+    normalizedId.includes('/hast-') ||
+    normalizedId.includes('/unist-')
+  ) {
+    return 'vendor-markdown';
+  }
+
+  if (normalizedId.includes('/lucide-react/')) {
+    return 'vendor-icons';
+  }
+
+  return undefined;
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode, command }) => {
   const isProduction = mode === 'production' || (command === 'build' && mode !== 'development');
@@ -99,6 +152,11 @@ export default defineConfig(({ mode, command }) => {
     outDir: '../../dist',
     // Empty the output directory
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks,
+      },
+    },
   }
   };
 });

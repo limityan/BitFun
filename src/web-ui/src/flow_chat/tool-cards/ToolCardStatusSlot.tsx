@@ -16,8 +16,8 @@
 
 import React, { ReactNode } from 'react';
 import { Check, X } from 'lucide-react';
-import { ToolProcessingDots } from '@/component-library';
-import type { ToolProcessingDotsSize } from '@/component-library';
+import { ToolProcessingDots } from '@/component-library/components/FlowChatCards/ToolProcessingDots';
+import type { ToolProcessingDotsSize } from '@/component-library/components/FlowChatCards/ToolProcessingDots';
 import type { BaseToolCardProps } from './BaseToolCard';
 import './ToolCardStatusSlot.scss';
 

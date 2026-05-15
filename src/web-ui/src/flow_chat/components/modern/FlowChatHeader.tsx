@@ -6,7 +6,9 @@
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { ChevronDown, ChevronUp, List, Search, X } from 'lucide-react';
-import { Tooltip, IconButton, Input } from '@/component-library';
+import { Tooltip } from '@/component-library/components/Tooltip';
+import { IconButton } from '@/component-library/components/IconButton';
+import { Input } from '@/component-library/components/Input';
 import { useTranslation } from 'react-i18next';
 import { SessionFilesBadge } from './SessionFilesBadge';
 import './FlowChatHeader.scss';
