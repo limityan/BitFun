@@ -14,8 +14,11 @@ import {
   ImageAnalysisResult,
   AnyFlowItem,
   SessionConfig,
+  SessionHistoryState,
 } from '../types/flow-chat';
 import { createLogger } from '@/shared/utils/logger';
+import { isRemoteTraceContext, startupTrace } from '@/shared/utils/startupTrace';
+import { elapsedMs, nowMs } from '@/shared/utils/timing';
 import { i18nService } from '@/infrastructure/i18n/core/I18nService';
 import type { LocalCommandMetadata, SessionKind } from '@/shared/types/session-history';
 import {
@@ -249,6 +252,7 @@ export class FlowChatStore {
         lastActiveAt: Date.now(),
         lastFinishedAt: undefined,
         error: null,
+        historyState: 'new',
         maxContextTokens: maxContextTokens || 128128,
         mode: mode || 'agentic',
         workspacePath,
@@ -320,6 +324,7 @@ export class FlowChatStore {
         maxContextTokens: 128128,
         mode: mode || 'agentic',
         isHistorical: false,
+        historyState: 'new',
         workspacePath,
         remoteConnectionId,
         remoteSshHost,
@@ -1731,40 +1736,64 @@ export class FlowChatStore {
     remoteConnectionId?: string,
     remoteSshHost?: string
   ): Promise<void> {
+    const traceStartedAt = nowMs();
+    const remote = isRemoteTraceContext(remoteConnectionId, remoteSshHost);
+    let sessionCount = 0;
+    startupTrace.markPhase('session_metadata_list_start', { remote });
     try {
       const { sessionAPI } = await import('@/infrastructure/api');
       const sessions = await sessionAPI.listSessions(workspacePath, remoteConnectionId, remoteSshHost);
+      sessionCount = sessions.length;
+      startupTrace.markPhase('session_metadata_list_loaded', { remote, sessionCount });
 
       const { stateMachineManager } = await import('../state-machine');
-      sessions.forEach(metadata => {
-        stateMachineManager.getOrCreate(metadata.sessionId);
-      });
-      
+
+      let models: any[] = [];
+      let defaultModels: Record<string, string> = {};
+      try {
+        const { configManager } = await import('@/infrastructure/config/services/ConfigManager');
+        const [modelsResult, defaultModelsResult] = await Promise.allSettled([
+          configManager.getConfig<any[]>('ai.models'),
+          configManager.getConfig<Record<string, string>>('ai.default_models'),
+        ]);
+
+        if (modelsResult.status === 'fulfilled' && Array.isArray(modelsResult.value)) {
+          models = modelsResult.value;
+        }
+        if (
+          defaultModelsResult.status === 'fulfilled' &&
+          defaultModelsResult.value &&
+          typeof defaultModelsResult.value === 'object'
+        ) {
+          defaultModels = defaultModelsResult.value;
+        }
+      } catch (error) {
+        log.warn('Failed to load model config for session metadata, using defaults', { error });
+      }
+
       const processSession = async (metadata: any) => {
-        const existingSession = this.state.sessions.get(metadata.sessionId);
-        if (existingSession) {
-          return;
-        }
-        if (isLegacyPersistedBtwSession(metadata)) {
-          return;
-        }
-        
-        let maxContextTokens = 128128;
         try {
-          const { configManager } = await import('@/infrastructure/config/services/ConfigManager');
-          const models = await configManager.getConfig<any[]>('ai.models') || [];
-          
+          const existingSession = this.state.sessions.get(metadata.sessionId);
+          if (existingSession) {
+            return;
+          }
+          if (isLegacyPersistedBtwSession(metadata)) {
+            return;
+          }
+
+          stateMachineManager.getOrCreate(metadata.sessionId);
+
+          let maxContextTokens = 128128;
           if (metadata.modelName) {
             const model = models.find((m: any) => m.name === metadata.modelName || m.id === metadata.modelName);
             if (model?.context_window) {
               maxContextTokens = model.context_window;
             }
           }
-          
+
           if (maxContextTokens === 128128) {
-            const defaultModels = await configManager.getConfig<Record<string, string>>('ai.default_models');
             const primaryModelId = defaultModels?.primary;
-            
+
             if (primaryModelId) {
               const primaryModel = models.find((m: any) => m.id === primaryModelId);
               if (primaryModel?.context_window) {
@@ -1772,76 +1801,110 @@ export class FlowChatStore {
               }
             }
           }
-        } catch (error) {
-          log.warn('Failed to get model context window size, using default', { sessionId: metadata.sessionId, error });
-        }
-        
-        const relationship = deriveSessionRelationshipFromMetadata(metadata);
-        const lastFinishedAt = deriveLastFinishedAtFromMetadata(metadata);
-        const titleState = deriveSessionTitleStateFromMetadata(metadata);
-        const hasDynamicDefaultTitle = titleState.titleSource === 'i18n';
 
-        this.setState(prev => {
-          if (prev.sessions.has(metadata.sessionId)) {
-            return prev;
-          }
-          
-          const rawAgentType = metadata.agentType || 'agentic';
-          const validatedAgentType = isValidPersistedAgentType(rawAgentType) ? rawAgentType : 'agentic';
-          
-          if (rawAgentType !== validatedAgentType) {
-            log.warn('Invalid agentType, falling back to agentic', { sessionId: metadata.sessionId, rawAgentType, validatedAgentType });
-          }
-          
-          const session: Session = {
-            sessionId: metadata.sessionId,
-            title: titleState.title,
-            titleSource: titleState.titleSource,
-            titleI18nKey: titleState.titleI18nKey,
-            titleI18nParams: titleState.titleI18nParams,
-            titleStatus: hasDynamicDefaultTitle ? undefined : 'generated',
-            dialogTurns: [],
-            status: 'idle',
-            config: {
-              agentType: validatedAgentType,
-              modelName: metadata.modelName,
-            },
-            createdAt: metadata.createdAt,
-            lastActiveAt: metadata.lastActiveAt,
-            lastFinishedAt,
-            error: null,
-            isHistorical: true,
-            todos: (metadata as any).todos || [],
-            maxContextTokens,
-            mode: validatedAgentType,
-            workspacePath: (metadata as any).workspacePath || workspacePath,
-            remoteConnectionId: metadata.remoteConnectionId || remoteConnectionId,
-            remoteSshHost:
-              metadata.remoteSshHost || metadata.workspaceHostname || remoteSshHost,
-            parentSessionId: relationship.parentSessionId,
-            sessionKind: relationship.sessionKind,
-            btwThreads: [],
-            btwOrigin: relationship.btwOrigin,
-            hasUnreadCompletion: metadata.unreadCompletion,
-            needsUserAttention: metadata.needsUserAttention,
-            deepReviewRunManifest: metadata.deepReviewRunManifest,
-            isTransient: false,
-          };
-          
-          const newSessions = new Map(prev.sessions);
-          newSessions.set(metadata.sessionId, session);
-          
-          return {
-            ...prev,
-            sessions: newSessions,
-          };
-        });
+          const relationship = deriveSessionRelationshipFromMetadata(metadata);
+          const lastFinishedAt = deriveLastFinishedAtFromMetadata(metadata);
+          const titleState = deriveSessionTitleStateFromMetadata(metadata);
+          const hasDynamicDefaultTitle = titleState.titleSource === 'i18n';
+
+          this.setState(prev => {
+            if (prev.sessions.has(metadata.sessionId)) {
+              return prev;
+            }
+
+            const rawAgentType = metadata.agentType || 'agentic';
+            const validatedAgentType = isValidPersistedAgentType(rawAgentType) ? rawAgentType : 'agentic';
+
+            if (rawAgentType !== validatedAgentType) {
+              log.warn('Invalid agentType, falling back to agentic', { sessionId: metadata.sessionId, rawAgentType, validatedAgentType });
+            }
+
+            const session: Session = {
+              sessionId: metadata.sessionId,
+              title: titleState.title,
+              titleSource: titleState.titleSource,
+              titleI18nKey: titleState.titleI18nKey,
+              titleI18nParams: titleState.titleI18nParams,
+              titleStatus: hasDynamicDefaultTitle ? undefined : 'generated',
+              dialogTurns: [],
+              status: 'idle',
+              config: {
+                agentType: validatedAgentType,
+                modelName: metadata.modelName,
+              },
+              createdAt: metadata.createdAt,
+              lastActiveAt: metadata.lastActiveAt,
+              lastFinishedAt,
+              error: null,
+              isHistorical: true,
+              historyState: 'metadata-only',
+              todos: (metadata as any).todos || [],
+              maxContextTokens,
+              mode: validatedAgentType,
+              workspacePath: (metadata as any).workspacePath || workspacePath,
+              remoteConnectionId: metadata.remoteConnectionId || remoteConnectionId,
+              remoteSshHost:
+                metadata.remoteSshHost || metadata.workspaceHostname || remoteSshHost,
+              parentSessionId: relationship.parentSessionId,
+              sessionKind: relationship.sessionKind,
+              btwThreads: [],
+              btwOrigin: relationship.btwOrigin,
+              hasUnreadCompletion: metadata.unreadCompletion,
+              needsUserAttention: metadata.needsUserAttention,
+              deepReviewRunManifest: metadata.deepReviewRunManifest,
+              isTransient: false,
+            };
+
+            const newSessions = new Map(prev.sessions);
+            newSessions.set(metadata.sessionId, session);
+
+            return {
+              ...prev,
+              sessions: newSessions,
+            };
+          });
+        } catch (error) {
+          log.warn('Failed to process persisted session metadata', {
+            sessionId: metadata?.sessionId,
+            error,
+          });
+        }
       };
       
       await Promise.all(sessions.map(processSession));
+      startupTrace.markPhase('session_metadata_list_end', {
+        remote,
+        sessionCount,
+        durationMs: elapsedMs(traceStartedAt),
+      });
     } catch (error) {
+      startupTrace.markPhase('session_metadata_list_failed', {
+        remote,
+        sessionCount,
+        durationMs: elapsedMs(traceStartedAt),
+      });
       log.error('Failed to load persisted sessions', error);
     }
+  }
+
+  public setSessionHistoryState(sessionId: string, historyState: SessionHistoryState): void {
+    this.setState(prev => {
+      const session = prev.sessions.get(sessionId);
+      if (!session || session.historyState === historyState) {
+        return prev;
+      }
+
+      const newSessions = new Map(prev.sessions);
+      newSessions.set(sessionId, {
+        ...session,
+        historyState,
+      });
+
+      return {
+        ...prev,
+        sessions: newSessions,
+      };
+    });
   }
 
   /**
@@ -1854,6 +1917,10 @@ export class FlowChatStore {
     remoteConnectionId?: string,
     remoteSshHost?: string
   ): Promise<void> {
+    const traceStartedAt = nowMs();
+    const remote = isRemoteTraceContext(remoteConnectionId, remoteSshHost);
+    startupTrace.markPhase('historical_session_hydrate_start', { remote });
+    this.setSessionHistoryState(sessionId, 'hydrating');
     try {
       const { stateMachineManager } = await import('../state-machine');
       stateMachineManager.getOrCreate(sessionId);
@@ -1878,6 +1945,10 @@ export class FlowChatStore {
         remoteConnectionId,
         remoteSshHost
       );
+      startupTrace.markPhase('historical_session_turns_loaded', {
+        remote,
+        turnCount: Array.isArray(turns) ? turns.length : 0,
+      });
       
       const dialogTurns = this.convertToDialogTurns(turns);
       
@@ -1889,6 +1960,8 @@ export class FlowChatStore {
           ...session,
           dialogTurns,
           isHistorical: false,
+          historyState: 'ready' as const,
+          error: null,
         };
         
         const newSessions = new Map(prev.sessions);
@@ -1903,7 +1976,32 @@ export class FlowChatStore {
       // Reset state machine to IDLE after loading history
       // This handles the case where restoreSession triggered events that left the state machine in PROCESSING
       stateMachineManager.reset(sessionId);
+      startupTrace.markPhase('historical_session_hydrate_end', {
+        remote,
+        turnCount: dialogTurns.length,
+        durationMs: elapsedMs(traceStartedAt),
+      });
     } catch (error) {
+      this.setState(prev => {
+        const session = prev.sessions.get(sessionId);
+        if (!session) return prev;
+
+        const newSessions = new Map(prev.sessions);
+        newSessions.set(sessionId, {
+          ...session,
+          isHistorical: true,
+          historyState: 'failed',
+        });
+
+        return {
+          ...prev,
+          sessions: newSessions,
+        };
+      });
+      startupTrace.markPhase('historical_session_hydrate_failed', {
+        remote,
+        durationMs: elapsedMs(traceStartedAt),
+      });
       log.error('Failed to load session history', { sessionId, error });
       throw error;
     }
