@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>03 · LangChain Deep Agents</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<style>
+  /* Header */
+  .head { margin-bottom: 26px; padding-bottom: 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-end; gap: 60px; }
+  .head .h1 { font-size: 68px; line-height: 1.05; font-weight: 600; letter-spacing: -0.03em; }
+  .head .h1 .sub {
+    color: var(--ink-soft); font-weight: 400; font-size: 30px;
+    display: block; margin-top: 14px; letter-spacing: -0.005em;
+  }
+  .head .h1 .sub .green { color: #86EFAC; font-family: var(--font-mono); font-size: 26px; margin-left: 6px; }
+
+  /* Hero stat row */
+  .stat-row {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: rgba(134,239,172,0.04);
+    margin-bottom: 26px;
+  }
+  .stat-cell { padding: 18px 22px; border-right: 1px solid var(--border); }
+  .stat-cell:last-child { border-right: none; }
+  .stat-cell .label {
+    font-family: var(--font-mono); font-size: 16px;
+    color: var(--muted); letter-spacing: 0.10em; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .stat-cell .value {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 50px; line-height: 1.05;
+    color: var(--ink); letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-cell .value.text { font-size: 32px; }
+  .stat-cell .value .unit {
+    display: block;
+    font-size: 16px; color: var(--ink-soft);
+    margin-top: 8px; font-weight: 400;
+    font-family: var(--font-mono); letter-spacing: 0.02em;
+  }
+  .stat-cell .value.green { color: #86EFAC; }
+
+  /* Body layout */
+  .body-grid { flex: 1; display: grid; grid-template-columns: 1fr 1.05fr; gap: 36px; }
+
+  /* Left: 3-jump scoreboard with bars */
+  .scoreboard {
+    padding: 24px 26px;
+    background: rgba(255,255,255,0.018);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex; flex-direction: column;
+  }
+  .scoreboard .sb-title {
+    font-family: var(--font-mono); font-size: 16px;
+    color: var(--muted); letter-spacing: 0.10em; text-transform: uppercase;
+    padding-bottom: 14px; margin-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .jump-row { padding: 16px 0; border-bottom: 1px dashed var(--border); }
+  .jump-row:last-child { border-bottom: none; padding-bottom: 4px; }
+  .jump-row .jump-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .jump-row .jump-label {
+    font-family: var(--font-display); font-weight: 600;
+    font-size: 22px; color: var(--ink); letter-spacing: -0.01em;
+  }
+  .jump-row .jump-label .delta {
+    font-family: var(--font-mono); font-size: 16px;
+    color: #86EFAC; margin-left: 10px;
+  }
+  .jump-row .jump-num {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 48px; line-height: 1; letter-spacing: -0.04em;
+    color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+  .jump-row .jump-num .pct { font-size: 24px; color: var(--ink-soft); margin-left: 4px; font-weight: 400; }
+  .jump-row.final .jump-num { color: #86EFAC; font-size: 64px; }
+  .jump-row.final .jump-label { font-size: 24px; }
+  .jump-row .bar-wrap {
+    height: 10px; background: var(--bg-elev2);
+    border-radius: 5px; overflow: hidden; margin: 10px 0 8px;
+  }
+  .jump-row .bar { height: 100%; background: linear-gradient(90deg, var(--muted), var(--ink-soft)); border-radius: 5px; }
+  .jump-row.final .bar { background: linear-gradient(90deg, var(--ink-soft), #86EFAC); }
+  .jump-row .desc {
+    font-size: 16px; line-height: 1.5;
+    color: var(--ink-soft);
+  }
+  .jump-row .desc .em { color: var(--ink); font-weight: 500; }
+
+  .scoreboard .sb-foot {
+    margin-top: 14px; padding-top: 14px;
+    border-top: 1px solid var(--border-strong);
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: var(--font-mono); font-size: 15px;
+    color: var(--muted);
+  }
+  .scoreboard .sb-foot .em { color: var(--ink); font-size: 18px; }
+
+  /* Right: 3 harness changes */
+  .changelog {
+    padding: 24px 26px;
+    background: rgba(255,255,255,0.018);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex; flex-direction: column;
+  }
+  .changelog .clog-title {
+    font-family: var(--font-mono); font-size: 16px;
+    color: var(--muted); letter-spacing: 0.10em; text-transform: uppercase;
+    padding-bottom: 14px; margin-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .change {
+    padding: 16px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .change:last-child { border-bottom: none; padding-bottom: 0; }
+  .change .change-head {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 10px;
+  }
+  .change .dim-chip {
+    font-family: var(--font-mono); font-size: 16px;
+    color: var(--ink); letter-spacing: 0.06em;
+    background: var(--bg-elev2);
+    border: 1px solid var(--border-strong);
+    padding: 4px 10px; border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .change .change-title {
+    font-family: var(--font-display); font-weight: 600;
+    font-size: 22px; color: var(--ink); letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+  .change .desc {
+    font-size: 16px; line-height: 1.55;
+    color: var(--ink-soft);
+  }
+  .change .desc .em { color: var(--ink); font-weight: 500; }
+  .change .desc .code {
+    font-family: var(--font-mono); font-size: 16px;
+    color: var(--ink); background: var(--bg-elev2);
+    border: 1px solid var(--border); padding: 1px 6px; border-radius: 3px;
+  }
+  .change .desc ul { list-style: none; padding-left: 0; margin-top: 6px; }
+  .change .desc ul li { padding-left: 18px; position: relative; }
+  .change .desc ul li::before {
+    content: '·'; position: absolute; left: 6px;
+    color: var(--muted); font-weight: 700;
+  }
+
+  /* Footer */
+  .footer-row { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--border-strong); display: flex; justify-content: space-between; align-items: center; gap: 32px; }
+  .footer-row .conclusion {
+    font-family: var(--font-display); font-size: 26px;
+    font-weight: 500; color: var(--ink); letter-spacing: -0.015em;
+    line-height: 1.4;
+  }
+  .footer-row .conclusion .em { color: #86EFAC; }
+  .footer-row .conclusion .em-strong { color: var(--ink); border-bottom: 2px solid var(--ink); padding-bottom: 1px; }
+  .footer-row .ref {
+    font-family: var(--font-mono); font-size: 16px;
+    color: var(--muted); letter-spacing: 0.04em;
+    text-align: right; line-height: 1.6;
+    flex-shrink: 0;
+  }
+  .footer-row .ref .em { color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header class="chrome-top">
+    <span class="brand-bar"><span class="brand-dot"></span><span class="mono"><span class="chrome-section">§01</span> <span class="dim">/</span> Cold Open · Event B</span></span>
+    <span class="mono"><span class="chrome-page">03</span> <span class="dim">/</span> 19</span>
+  </header>
+
+  <div class="head">
+    <div>
+      <h1 class="h1">事件 B · LangChain Deep Agents
+        <!-- <span class="sub">2026 年 2 月，LangChain 仅优化 Harness 层，Benchmark直接提升13.7分</span></span> -->
+      </h1>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-cell">
+      <div class="label">Benchmark</div>
+      <div class="value text">Terminal Bench 2.0<span class="unit">89 tasks · ML / debug / biology</span></div>
+    </div>
+    <div class="stat-cell">
+      <div class="label">Score Δ</div>
+      <div class="value green">+13.7<span class="unit">52.8% → 66.5%</span></div>
+    </div>
+    <div class="stat-cell">
+      <div class="label">Leaderboard Rank</div>
+      <div class="value green">#5<span class="unit">仅次于 Mux 68.5%</span></div>
+    </div>
+    <div class="stat-cell">
+      <div class="label">Model Weight</div>
+      <div class="value text">不变<span class="unit">gpt-5.2-codex</span></div>
+    </div>
+  </div>
+
+  <div class="body-grid">
+    <div class="scoreboard">
+      <div class="sb-title">Three Jumps · 三次提升的拆解</div>
+
+      <div class="jump-row">
+        <div class="jump-head">
+          <span class="jump-label">Baseline</span>
+          <span class="jump-num">52.8<span class="pct">%</span></span>
+        </div>
+        <div class="bar-wrap"><div class="bar" style="width: 79%;"></div></div>
+        <div class="desc">基础 prompt + filesystem tools + planning</div>
+      </div>
+
+      <div class="jump-row">
+        <div class="jump-head">
+          <span class="jump-label">+ Custom Prompt & Middleware <span class="delta">+10.8</span></span>
+          <span class="jump-num">63.6<span class="pct">%</span></span>
+        </div>
+        <div class="bar-wrap"><div class="bar" style="width: 95%;"></div></div>
+        <div class="desc">引入 Build-Verify Loop · 环境上下文注入 · 循环检测 · 超时警告</div>
+      </div>
+
+      <div class="jump-row final">
+        <div class="jump-head">
+          <span class="jump-label">+ Adaptive Reasoning <span class="delta">+2.9</span></span>
+          <span class="jump-num">66.5<span class="pct">%</span></span>
+        </div>
+        <div class="bar-wrap"><div class="bar" style="width: 100%;"></div></div>
+        <div class="desc"><span class="em">"xhigh-high-xhigh" reasoning sandwich</span> —— 探索 / 实施 / 验证三阶段动态调推理预算</div>
+      </div>
+
+      <div class="sb-foot">
+        <span>LangChain Harness</span>
+        <!-- <span>反例 · 全程 xhigh</span> -->
+        <!-- <span class="em">53.9%（被 timeout 拖累）</span> -->
+      </div>
+    </div>
+
+    <div class="changelog">
+      <div class="clog-title">Three Harness Changes · 三处 Harness 改造</div>
+
+      <div class="change">
+        <div class="change-head">
+          <span class="dim-chip">Harness · 评估</span>
+          <span class="change-title">LangSmith Trace + Trace Analyzer Skill</span>
+        </div>
+        <div class="desc">每个 agent action 全 trace 入库；自研 <span class="em">Trace Analyzer Skill</span> 三步：拉 trace → 并行 sub-agent 分析 → 主 agent 综合改 prompt。<span class="em">不靠人工调 prompt，靠 trace 调 prompt</span>。</div>
+      </div>
+
+      <div class="change">
+        <div class="change-head">
+          <span class="dim-chip">Harness · 编排</span>
+          <span class="change-title">Build-Verify Loop · 4 阶段</span>
+        </div>
+        <div class="desc">系统提示词强制 4 阶段：<span class="em">Plan & Discovery → Build → Verify → Fix</span>。Verify 阶段必须 <span class="em">对照 task spec</span> 而非 agent 自己的代码。<span class="code">PreCompletionChecklistMiddleware</span> 在 exit 前 hook 一次强制再 verify（"Ralph Wiggum Loop"）。</div>
+      </div>
+
+      <div class="change">
+        <div class="change-head">
+          <span class="dim-chip">Harness · 记忆 + 编排</span>
+          <span class="change-title">Context Injection + Loop Detection</span>
+        </div>
+        <div class="desc">
+          <ul>
+            <li><span class="em">环境上下文主动注入</span>：sandbox / 工具 / runtime 约束在开局即给，避免试错</li>
+            <li><span class="code">LoopDetectionMiddleware</span>：per-file edit count，超过 N 次注入 "consider reconsidering"</li>
+            <li><span class="em">Adaptive Reasoning</span>：每个子任务动态选 high / xhigh，避免 token 浪费</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-row">
+    <div class="conclusion">同一模型，<span class="em-strong">仅优化 Agent Harness</span>，排名从 30+ 提升到 <span class="em">Top5</span>。</div>
+    <div class="ref">Source: <span class="em">blog.langchain.dev/improving-deep-agents-with-harness-engineering</span><br>Tooling: Harbor · Daytona sandbox · LangSmith</div>
+  </div>
+</div>
+</body>
+</html>

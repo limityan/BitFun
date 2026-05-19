@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>10 · Case 03 · Cursor</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<style>
+  .head { margin-bottom: 36px; padding-bottom: 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-end; }
+  .head .h1 { font-size: 56px; line-height: 1.1; font-weight: 600; letter-spacing: -0.03em; }
+  .head .h1 .sub { color: var(--muted); font-weight: 400; font-size: 24px; display: block; margin-top: 12px; letter-spacing: -0.005em; font-family: var(--font-mono); }
+  .head .meta { text-align: right; font-family: var(--font-mono); font-size: 16px; color: var(--muted); line-height: 1.7; }
+  .head .meta .tag { color: #FCA5A5; }
+
+  .layout { flex: 1; display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: stretch; }
+
+  .timeline { display: flex; flex-direction: column; gap: 0; padding-right: 12px; }
+  .step {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 16px;
+    padding: 16px 0 22px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .step:last-child { border-bottom: none; }
+  .step .idx {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    padding-top: 4px;
+  }
+  .step .what {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+  .step .why { font-size: 16px; color: var(--ink-soft); line-height: 1.5; }
+  .step .why .code { font-family: var(--font-mono); font-size: 16px; background: var(--bg-elev2); border: 1px solid var(--border); padding: 1px 6px; border-radius: 4px; color: var(--ink); }
+  .step.fatal .what { color: #FCA5A5; }
+  .step.fatal .idx { color: #FCA5A5; }
+
+  .quote-block {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 36px 36px 28px;
+    background: rgba(239,68,68,0.04);
+    border: 1px solid rgba(239,68,68,0.20);
+    border-radius: var(--radius-lg);
+    box-shadow: inset 3px 0 0 var(--red);
+  }
+  .quote-block .label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: #FCA5A5;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    margin-bottom: 22px;
+  }
+  .quote-block .en {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 1.45;
+    color: var(--ink);
+    letter-spacing: -0.005em;
+    margin-bottom: 22px;
+  }
+  .quote-block .cn {
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    margin-bottom: 28px;
+  }
+  .quote-block .takeaway {
+    padding-top: 22px;
+    border-top: 1px solid rgba(239,68,68,0.20);
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    line-height: 1.4;
+  }
+  .quote-block .takeaway .em { color: #FCA5A5; }
+
+  .footer-row { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border-strong); display: flex; justify-content: space-between; align-items: center; }
+  .footer-row .note { font-family: var(--font-display); font-size: 22px; color: var(--ink-soft); font-weight: 400; }
+  .footer-row .note .em { color: var(--ink); font-weight: 500; }
+  .footer-row .ref { font-family: var(--font-mono); font-size: 16px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header class="chrome-top">
+    <span class="brand-bar"><span class="brand-dot"></span><span class="mono"><span class="chrome-section">§04.1</span> <span class="dim">/</span> Case · Cursor</span></span>
+    <span class="mono"><span class="chrome-page">12</span> <span class="dim">/</span> 19</span>
+  </header>
+
+  <div class="head">
+    <div>
+      <h1 class="h1">案例 03 · Cursor 误删 Railway 生产数据卷<span class="sub">2026.04.25 · Production Incident · 全部位于 Harness 缺失</span></h1>
+    </div>
+    <div class="meta">
+      <span class="tag">● critical</span><br>
+      数据丢失：生产数据卷<br>
+      根因：约束层缺失<br>
+      <span style="color: var(--ink);">Prompt 中的"建议"无法替代硬拦截</span>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="timeline">
+      <div class="step">
+        <div class="idx">step 01</div>
+        <div>
+          <div class="what">Agent 自主获取访问凭证</div>
+          <div class="why">从环境变量与历史会话中提取 Railway API token，<span class="code">缺少最小权限隔离</span>。</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="idx">step 02</div>
+        <div>
+          <div class="what">误判执行环境</div>
+          <div class="why">将 staging 与 production 视为同一调用域，未校验 <span class="code">volumeId</span> 是否跨环境共享。</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="idx">step 03</div>
+        <div>
+          <div class="what">构造删除调用</div>
+          <div class="why">直接拼装 GraphQL <span class="code">volumeDelete(id: ...)</span>，无人工确认环节、无危险命令清单匹配。</div>
+        </div>
+      </div>
+      <div class="step fatal">
+        <div class="idx">step 04</div>
+        <div>
+          <div class="what">生产数据卷被删除</div>
+          <div class="why">操作返回成功，数据丢失。事后 Agent 才报告"已删除"。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="quote-block">
+      <div class="label">Agent 事后自白</div>
+      <p class="en">"I assumed the staging environment API call would apply only to staging. I did not verify. I did not check whether the volume ID was shared across environments."</p>
+      <p class="cn">"我假设 staging 环境的 API 调用只会作用于 staging。我没有验证。我没有检查 volume ID 是否跨环境共享。"</p>
+      <div class="takeaway">
+        <span class="em">提示词中的"小心"在 token 概率分布面前没有强制力。</span><br>
+        约束层必须在执行链路上做硬拦截，而不是写在 prompt 里。
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-row">
+    <div class="note">这就是 §05 第 4 步"危险命令硬拦截"<span class="em">必须存在</span>的原因。</div>
+    <div class="ref">Source: Cursor incident postmortem · 2026.04.25</div>
+  </div>
+</div>
+</body>
+</html>

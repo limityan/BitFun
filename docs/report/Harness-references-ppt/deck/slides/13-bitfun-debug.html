@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>14 · BitFun · Evidence Harness</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<style>
+  .head { margin-bottom: 28px; padding-bottom: 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-end; }
+  .head .h1 { font-size: 52px; line-height: 1.1; font-weight: 600; letter-spacing: -0.025em; }
+  .head .h1 .sub { color: var(--muted); font-weight: 400; font-size: 22px; display: block; margin-top: 10px; letter-spacing: -0.005em; font-family: var(--font-mono); }
+  .head .meta { text-align: right; font-family: var(--font-mono); font-size: 16px; color: var(--muted); line-height: 1.7; }
+  .head .meta .em { color: var(--ink); }
+
+  .layout { flex: 1; display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 56px; align-items: stretch; }
+
+  /* Left: Constraint quote */
+  .constraint {
+    padding: 28px 32px;
+    background: var(--bg-elev1);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+  }
+  .constraint .label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .constraint .label .path { color: var(--ink-soft); }
+  .constraint .quote {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    line-height: 1.65;
+    color: var(--ink);
+    margin-bottom: 22px;
+  }
+  .constraint .quote .key {
+    background: rgba(239,68,68,0.08);
+    border-bottom: 1px solid rgba(239,68,68,0.45);
+    padding: 1px 3px;
+  }
+  .constraint .quote .em { color: #FCA5A5; font-weight: 600; }
+  .constraint .why {
+    font-size: 16px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+  .constraint .why .em { color: var(--ink); font-weight: 500; }
+
+  /* Right: 5-step pipeline */
+  .pipeline {
+    padding: 26px 30px;
+    background: rgba(255,255,255,0.015);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .pipeline .pp-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .pp-step {
+    display: grid;
+    grid-template-columns: 50px 1fr;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px dashed var(--border);
+    align-items: baseline;
+  }
+  .pp-step:last-child { border-bottom: none; }
+  .pp-step .num {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--ink);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .pp-step .what {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 17px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+  .pp-step .why {
+    font-size: 16px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+  .pp-step .why .code { font-family: var(--font-mono); font-size: 16px; background: var(--bg-elev2); border: 1px solid var(--border); padding: 1px 5px; border-radius: 3px; }
+
+  .footer-row { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--border-strong); display: flex; justify-content: space-between; align-items: center; }
+  .footer-row .note { font-family: var(--font-display); font-size: 20px; color: var(--ink-soft); font-weight: 400; }
+  .footer-row .note .em { color: var(--ink); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header class="chrome-top">
+    <span class="brand-bar"><span class="brand-dot"></span><span class="mono"><span class="chrome-section">§06.2</span> <span class="dim">/</span> BitFun Debugge </span></span>
+    <span class="mono"><span class="chrome-page">16</span> <span class="dim">/</span> 19</span>
+  </header>
+
+  <div class="head">
+    <div>
+      <h1 class="h1">BitFun Debugger：把 TDD 的红绿循环用于排障<span class="sub">Test-Driven Debugging · 先制造可观察失败，再修复</span></h1>
+    </div>
+    <div class="meta">
+      TDD 的精神不是"多写测试"<br>
+      而是让失败先定义目标<br>
+      <span class="em">Debug Mode 把失败信号产品化</span>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="constraint">
+      <div class="label">
+        <span>BitFun · TDD-inspired debug contract</span>
+        <span class="path">prompts/debug_mode.md · L8–L26</span>
+      </div>
+      <div class="quote">You are now in <span class="em">DEBUG MODE</span>. You must debug with <span class="key em">runtime evidence</span>.<br><br><span class="key">Traditional AI agents jump to fixes claiming 100% confidence, but fail due to lacking runtime information. They guess based on code alone. You</span> <span class="key em">cannot</span><span class="key"> and</span> <span class="key em">must NOT</span><span class="key"> fix bugs this way</span>.<br><br>Critical constraints:<br>· <span class="key em">NEVER fix without runtime evidence first</span><br>· <span class="key">ALWAYS rely on runtime information + code</span><br>· Fixes often fail; iteration is expected.</div>
+      <p class="why"><span class="em">和 TDD 的关系：</span>TDD 用 Red / Green / Refactor 让失败测试驱动实现。BitFun Debug mode 把这个节奏迁移到排障：先得到可观察的 Red，再做最小修复到 Green，最后清理插桩并保留验证证据。</p>
+    </div>
+
+    <div class="pipeline">
+      <div class="pp-title">BitFun Debug Mode · TDD loop for bugs</div>
+      <div class="pp-step">
+        <span class="num">1</span>
+        <div>
+          <div class="what">Red: make the failure observable</div>
+          <div class="why">先列 3-5 个可证伪假设，再设计日志或复现步骤。BitFun 要的不是"我猜到了"，而是能稳定看到失败。</div>
+        </div>
+      </div>
+      <div class="pp-step">
+        <span class="num">2</span>
+        <div>
+          <div class="what">Red signal: instrument safely</div>
+          <div class="why">插入结构化、可回收、不可泄露 secrets 的日志；用 <span class="code">// #region agent log</span> 标记，形成临时测试探针。</div>
+        </div>
+      </div>
+      <div class="pp-step">
+        <span class="num">3</span>
+        <div>
+          <div class="what">Run: reproduce through product UI</div>
+          <div class="why">复现不是一句"你再试试"；UI 承接步骤、按钮和状态，让用户行为变成 Agent 可消费的测试运行。</div>
+        </div>
+      </div>
+      <div class="pp-step">
+        <span class="num">4</span>
+        <div>
+          <div class="what">Green: patch only confirmed cause</div>
+          <div class="why">每个假设先判定 <span class="code">CONFIRMED</span> / <span class="code">REJECTED</span> / <span class="code">INCONCLUSIVE</span>；只有 confirmed cause 才能进入修复。</div>
+        </div>
+      </div>
+      <div class="pp-step">
+        <span class="num">5</span>
+        <div>
+          <div class="what">Refactor: clean probes after green</div>
+          <div class="why">修复后再次复现，对比 before / after。只有 Green 后才能移除临时日志，必要时把用例沉淀进测试或 Debug 规则。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-row">
+    <div class="note">Debug Mode = <span class="em">TDD 的排障化落地</span>：先让失败可观察，再让修复对着失败闭环。</div>
+  </div>
+</div>
+</body>
+</html>

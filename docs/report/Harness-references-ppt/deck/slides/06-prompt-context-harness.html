@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>07 · Prompt ⊂ Context ⊂ Harness</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<style>
+  .head { margin-bottom: 40px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+  .head .eyebrow { color: var(--ink-soft); margin-bottom: 16px; }
+  .head .eyebrow::before { background: var(--ink-soft); }
+  .head .h1 { font-size: 60px; line-height: 1.1; font-weight: 600; letter-spacing: -0.03em; }
+
+  .layout { flex: 1; display: grid; grid-template-columns: 1fr 1.1fr; gap: 100px; align-items: center; }
+
+  /* nested rectangles · containment diagram */
+  .diagram {
+    position: relative;
+    height: 580px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ring {
+    position: absolute;
+    border-radius: 16px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 22px 26px;
+    transition: all 0.3s;
+  }
+  .ring .label {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+  }
+  .ring.outer {
+    inset: 0;
+    border: 1px solid var(--ink-soft);
+    background: rgba(255,255,255,0.02);
+  }
+  .ring.outer .label { color: var(--ink); font-weight: 600; font-size: 16px; }
+  .ring.middle {
+    inset: 110px 80px;
+    border: 1px solid var(--muted);
+    background: rgba(255,255,255,0.025);
+  }
+  .ring.middle .label { color: var(--ink); font-weight: 500; }
+  .ring.inner {
+    inset: 230px 200px;
+    border: 1px solid var(--dim);
+    background: rgba(255,255,255,0.03);
+  }
+  .ring.inner .label { color: var(--ink-soft); }
+
+  .legend { display: flex; flex-direction: column; gap: 18px; }
+  .legend-item { padding: 22px 26px; background: rgba(255,255,255,0.015); border: 1px solid var(--border); border-radius: var(--radius); }
+  .legend-item .level {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .legend-item .name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 26px;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+    margin-bottom: 8px;
+  }
+  .legend-item .scope { font-size: 17px; color: var(--ink-soft); line-height: 1.5; }
+  .legend-item .scope .em { color: var(--ink); font-weight: 500; }
+
+  .footer-row { margin-top: 32px; padding-top: 22px; border-top: 1px solid var(--border-strong); display: flex; justify-content: space-between; align-items: center; }
+  .footer-row .note { font-family: var(--font-display); font-size: 22px; color: var(--ink-soft); font-weight: 400; }
+  .footer-row .note .em { color: var(--ink); font-weight: 500; }
+  .footer-row .formula-mini { font-family: var(--font-mono); font-size: 18px; color: var(--ink); padding: 8px 16px; background: var(--bg-elev2); border: 1px solid var(--border); border-radius: 6px; }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header class="chrome-top">
+    <span class="brand-bar"><span class="brand-dot"></span><span class="mono"><span class="chrome-section">§02</span> <span class="dim">/</span> Definition</span></span>
+    <span class="mono"><span class="chrome-page">09</span> <span class="dim">/</span> 19</span>
+  </header>
+
+  <div class="head">
+    <div class="eyebrow">§02 · 与 Prompt / Context Engineering 的关系</div>
+    <h1 class="h1">三个概念是包含关系，不是并列。</h1>
+  </div>
+
+  <div class="layout">
+    <div class="diagram">
+      <div class="ring outer"><span class="label">Harness Engineering</span></div>
+      <div class="ring middle"><span class="label">Context Engineering</span></div>
+      <div class="ring inner"><span class="label">Prompt Engineering</span></div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="level">Layer 1 · innermost</div>
+        <div class="name">Prompt Engineering</div>
+        <div class="scope">研究<span class="em">如何向模型说话</span> —— 角色设定、指令格式、输出约束。</div>
+      </div>
+      <div class="legend-item">
+        <div class="level">Layer 2 · middle</div>
+        <div class="name">Context Engineering</div>
+        <div class="scope">研究<span class="em">如何把信息正确组装进上下文</span> —— 召回、压缩、注入、窗口管理。</div>
+      </div>
+      <div class="legend-item">
+        <div class="level">Layer 3 · outermost</div>
+        <div class="name">Harness Engineering</div>
+        <div class="scope">研究<span class="em">整个工作过程如何不出事</span> —— 涵盖以上两者，加上工具、循环、记忆、反馈、约束、评估。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-row">
+    <div class="note">三者非对立。<span class="em">Harness 是更外层的"壳"</span>，子集是另两者。</div>
+    <div class="formula-mini">Prompt &nbsp;⊂&nbsp; Context &nbsp;⊂&nbsp; Harness</div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>17 · Thank You</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<style>
+  .layout { flex: 1; display: grid; grid-template-rows: auto 1fr auto; gap: 32px; }
+
+  /* Top: take-away 三句话 (低调收纳，不再独立大字 hero) */
+  .takeaways {
+    padding: 22px 28px;
+    background: rgba(255,255,255,0.015);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .takeaways .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .takeaway-row {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--border);
+    align-items: baseline;
+  }
+  .takeaway-row:last-child { border-bottom: none; }
+  .takeaway-row .num {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  .takeaway-row .text {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    line-height: 1.4;
+  }
+  .takeaway-row .text .em-soft { color: var(--ink-soft); font-weight: 800; }
+
+  .center-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: stretch;
+  }
+
+  .left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .left .eyebrow { color: var(--ink-soft); margin-bottom: 24px; }
+  .left .eyebrow::before { background: var(--ink-soft); }
+  .left .thanks {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 168px;
+    line-height: 0.95;
+    letter-spacing: -0.05em;
+    color: var(--ink);
+    margin-bottom: 40px;
+  }
+  .left .speaker {
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+  .left .speaker .name {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+    margin-bottom: 8px;
+  }
+  .left .speaker .role {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    line-height: 1.7;
+  }
+  .left .speaker .role .sep { color: var(--dim); margin: 0 8px; }
+
+  .right { display: flex; flex-direction: column; }
+  .right .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ref-list { display: flex; flex-direction: column; gap: 0; }
+  .ref-item {
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border);
+    align-items: baseline;
+  }
+  .ref-item:last-child { border-bottom: none; }
+  .ref-item .idx {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 0.06em;
+  }
+  .ref-item .ref-text {
+    font-family: var(--font-display);
+    font-size: 16px;
+    color: var(--ink);
+    line-height: 1.4;
+    font-weight: 400;
+  }
+  .ref-item .ref-text .url {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--muted);
+    margin-left: 8px;
+    letter-spacing: 0.02em;
+  }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header class="chrome-top">
+    <span class="brand-bar"><span class="brand-dot"></span><span class="mono"><span class="chrome-section">END</span> <span class="dim">/</span> Take-aways · References</span></span>
+    <span class="mono"><span class="chrome-page">19</span> <span class="dim">/</span> 19</span>
+  </header>
+
+  <div class="layout">
+    <div class="takeaways">
+      <div class="label">总结</div>
+      <div class="takeaway-row">
+        <span class="num">01</span>
+        <span class="text">Coding Agent 的<span class="em-soft">上限</span>由 Model 决定，<span class="em-soft">下限</span>由 Harness 决定。</span>
+      </div>
+      <div class="takeaway-row">
+        <span class="num">02</span>
+        <span class="text">Vibe Coding<span class="em-soft"> 让你从 0 到 1</span>；Harness<span class="em-soft"> 让你从 1 到 100</span>；Self-iteration<span class="em-soft"> 让 Harness 自己变得更好</span>。</span>
+      </div>
+      <div class="takeaway-row">
+        <span class="num">03</span>
+        <span class="text">下一阶段 AI Coding 的竞争，<span class="em-soft">不是模型能力的竞争</span>，是 <span class="em-soft">可靠性工程</span>的竞争。</span>
+      </div>
+      <div class="takeaway-row">
+        <span class="num">04</span>
+        <span class="text">当 Harness 把可靠性推到足够高，Agent 才能把每次成功沉淀为下一轮能力，真正进入<span class="em-soft">可控的自我进化时代</span>。</span>
+      </div>
+    </div>
+
+    <div class="center-area">
+      <div class="left">
+        <div class="eyebrow">Q & A · 欢迎讨论</div>
+        <div class="thanks">THANKS</div>
+        <div class="speaker">
+          <div class="name">李文博 · l00566851</div>
+          <div class="role">
+            2012, IDE Lab · April 2026<br>
+            harness-engineering · 松鼠会
+          </div>
+        </div>
+      </div>
+
+      <div class="right">
+        <div class="label">主要参考资料</div>
+        <div class="ref-list">
+          <div class="ref-item"><span class="idx">01</span><span class="ref-text">Anthropic · Claude Code Quality Postmortem<span class="url">anthropic.com/engineering/april-23-postmortem</span></span></div>
+          <div class="ref-item"><span class="idx">02</span><span class="ref-text">LangChain · Improving Deep Agents with Harness Engineering<span class="url">blog.langchain.com</span></span></div>
+          <div class="ref-item"><span class="idx">03</span><span class="ref-text">LangChain · Evaluating Deep Agents on Terminal Bench 2.0<span class="url">langchain.com/blog</span></span></div>
+          <div class="ref-item"><span class="idx">04</span><span class="ref-text">Claude Code · Best practices for agentic coding<span class="url">anthropic.com/engineering/claude-code-best-practices</span></span></div>
+          <div class="ref-item"><span class="idx">05</span><span class="ref-text">Claude Code · Hooks reference<span class="url">code.claude.com/docs/hooks</span></span></div>
+          <div class="ref-item"><span class="idx">06</span><span class="ref-text">OpenAI Agents SDK · Guardrails / Tracing<span class="url">openai.github.io/openai-agents-python</span></span></div>
+          <div class="ref-item"><span class="idx">07</span><span class="ref-text">Model Context Protocol (MCP)<span class="url">anthropic.com/news/model-context-protocol</span></span></div>
+          <div class="ref-item"><span class="idx">08</span><span class="ref-text">AGENTS.md · Cursor Rules · Kiro<span class="url">agents.md · cursor.com/docs/rules · kiro.dev</span></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

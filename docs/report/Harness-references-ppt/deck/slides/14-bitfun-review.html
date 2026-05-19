@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>15 · BitFun · Review Harness</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<style>
+  .head { margin-bottom: 30px; padding-bottom: 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-end; }
+  .head .h1 { font-size: 52px; line-height: 1.1; font-weight: 600; letter-spacing: -0.025em; }
+  .head .h1 .sub { color: var(--muted); font-weight: 400; font-size: 22px; display: block; margin-top: 10px; letter-spacing: -0.005em; font-family: var(--font-mono); }
+  .head .meta { text-align: right; font-family: var(--font-mono); font-size: 16px; color: var(--muted); line-height: 1.7; max-width: 450px; }
+  .head .meta .em { color: var(--ink); }
+
+  .layout { flex: 1; display: grid; grid-template-columns: 0.92fr 1.18fr 0.9fr; gap: 24px; align-items: stretch; }
+
+  .panel {
+    padding: 26px 28px;
+    background: rgba(255,255,255,0.015);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+  }
+  .panel.strong { background: var(--bg-elev1); border-color: var(--border-strong); }
+  .panel .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .problem-title {
+    font-family: var(--font-display);
+    font-size: 30px;
+    line-height: 1.22;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 18px;
+  }
+  .problem-body {
+    font-size: 17px;
+    line-height: 1.62;
+    color: var(--ink-soft);
+  }
+  .problem-body .em { color: var(--ink); font-weight: 500; }
+  .anti-patterns { margin-top: auto; padding-top: 18px; border-top: 1px solid var(--border); display: grid; gap: 12px; }
+  .anti {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 12px;
+    align-items: baseline;
+  }
+  .anti .tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: #FCA5A5;
+    border: 1px solid rgba(239,68,68,0.32);
+    border-radius: 3px;
+    padding: 2px 6px;
+    text-align: center;
+  }
+  .anti .text { font-size: 16px; line-height: 1.45; color: var(--ink-soft); }
+
+  .flow { display: grid; grid-template-rows: auto 1fr auto; gap: 14px; }
+  .reviewer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .reviewer {
+    padding: 13px 14px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .reviewer .role {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink);
+    margin-bottom: 5px;
+    letter-spacing: 0.02em;
+  }
+  .reviewer .scope {
+    font-size: 16px;
+    color: var(--ink-soft);
+    line-height: 1.4;
+  }
+  .gate-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 14px;
+  }
+  .gate {
+    padding: 18px 18px;
+    border: 1px solid var(--border-strong);
+    background: rgba(255,255,255,0.025);
+    border-radius: var(--radius);
+  }
+  .gate .name {
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .gate .desc {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+  .gate .desc .code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    background: var(--bg-elev2);
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--ink);
+  }
+
+  .ladder { display: grid; gap: 13px; }
+  .ladder-step {
+    display: grid;
+    grid-template-columns: 38px 1fr;
+    gap: 12px;
+    padding: 13px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .ladder-step:last-child { border-bottom: none; }
+  .ladder-step .num {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .ladder-step .title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    margin-bottom: 4px;
+  }
+  .ladder-step .desc {
+    font-size: 16px;
+    line-height: 1.45;
+    color: var(--ink-soft);
+  }
+  .ladder-step .desc .em { color: var(--ink); font-weight: 500; }
+
+  .footer-row { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-strong); display: flex; justify-content: space-between; align-items: center; }
+  .footer-row .note { font-family: var(--font-display); font-size: 20px; color: var(--ink-soft); font-weight: 400; }
+  .footer-row .note .em { color: var(--ink); font-weight: 500; }
+  .footer-row .ref { font-family: var(--font-mono); font-size: 16px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header class="chrome-top">
+    <span class="brand-bar"><span class="brand-dot"></span><span class="mono"><span class="chrome-section">§06.3</span> <span class="dim">/</span> BitFun Reviewer </span></span>
+    <span class="mono"><span class="chrome-page">17</span> <span class="dim">/</span> 19</span>
+  </header>
+
+  <div class="head">
+    <div>
+      <h1 class="h1">BitFun Reviewer：把"模型自审"改成独立反馈层<span class="sub">Feedback · findings must be produced, judged, and fixed separately</span></h1>
+    </div>
+    <div class="meta">
+      对 Agent 来说，review 不是再问一遍<br>
+      "你觉得自己写得好吗"<br>
+      <span class="em">而是建立外部质量信号</span>
+    </div>
+  </div>
+
+  <div class="layout">
+    <section class="panel strong">
+      <div class="label">Why review needs harness</div>
+      <div class="problem-title">执行者天然看不见自己的盲区。</div>
+      <p class="problem-body">同一个 Agent 刚刚写完代码，再让它"自审"，很容易只复述自己的实现理由。BitFun 的设计是把 Review 从执行链路里拆出来：<span class="em">发现问题的人、判断问题的人、修问题的人，不是同一个角色</span>。</p>
+      <div class="anti-patterns">
+        <div class="anti"><span class="tag">BAD</span><span class="text">让实现 Agent 自己宣布 clean，缺少独立反馈源。</span></div>
+        <div class="anti"><span class="tag">BAD</span><span class="text">单 reviewer 容易只看一个领域，漏掉跨层风险。</span></div>
+        <div class="anti"><span class="tag">BAD</span><span class="text">finding 没有仲裁，false positive 和真正 bug 混在一起。</span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="label">BitFun Deep Review loop</div>
+      <div class="flow">
+        <div class="reviewer-grid">
+          <div class="reviewer"><div class="role">Business</div><div class="scope">需求偏差、边界条件、业务不变量</div></div>
+          <div class="reviewer"><div class="role">Architecture</div><div class="scope">分层依赖、平台边界、长期维护成本</div></div>
+          <div class="reviewer"><div class="role">Security</div><div class="scope">权限、注入、敏感信息与越权路径</div></div>
+          <div class="reviewer"><div class="role">Performance</div><div class="scope">复杂度、N+1、资源消耗、响应路径</div></div>
+          <div class="reviewer"><div class="role">Frontend</div><div class="scope">用户路径、状态管理、可访问性、视觉回归</div></div>
+          <div class="reviewer"><div class="role">Verification</div><div class="scope">测试缺口、验证命令、失败输出回注</div></div>
+        </div>
+        <div class="gate-row">
+          <div class="gate">
+            <div class="name">Judge</div>
+            <div class="desc">只做仲裁：每个 finding 标记为 <span class="code">validated</span> / <span class="code">rejected</span> / <span class="code">downgraded</span>，合并重复项。</div>
+          </div>
+          <div class="gate">
+            <div class="name">Fixer</div>
+            <div class="desc">只修 validated finding，按 severity 排序，修完重新跑对应验证；不能绕过 Judge。</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="label">What becomes feedback</div>
+      <div class="ladder">
+        <div class="ladder-step">
+          <span class="num">1</span>
+          <div><div class="title">Finding 必须可定位</div><div class="desc">不是"这里可能有问题"，而是指向具体文件、逻辑、风险和复现条件。</div></div>
+        </div>
+        <div class="ladder-step">
+          <span class="num">2</span>
+          <div><div class="title">Judge 才能进入修复</div><div class="desc">reviewer 提供候选信号，Judge 决定哪些信号进入执行队列。</div></div>
+        </div>
+        <div class="ladder-step">
+          <span class="num">3</span>
+          <div><div class="title">Fix 必须带验证</div><div class="desc">修复不是改完代码，而是让失败检查、测试或 review finding 关闭。</div></div>
+        </div>
+        <div class="ladder-step">
+          <span class="num">4</span>
+          <div><div class="title">结果进入 trace</div><div class="desc">finding 来源、仲裁理由、修复 diff、验证结果都保留，成为下一轮 Agent 的<span class="em">可学习反馈</span>。</div></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="footer-row">
+    <div class="note">Review Harness = <span class="em">把质量信号从执行者手里拿出来</span>：独立发现、独立仲裁、按证据修复。</div>
+    <div class="ref">Source: deep_review_policy.rs · review_quality_gate_agent.md</div>
+  </div>
+</div>
+</body>
+</html>

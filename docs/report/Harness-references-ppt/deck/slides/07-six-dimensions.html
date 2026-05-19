@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>08 · Six Dimensions</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<style>
+  .head { margin-bottom: 32px; padding-bottom: 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-end; }
+  .head .eyebrow { color: var(--ink-soft); margin-bottom: 14px; }
+  .head .eyebrow::before { background: var(--ink-soft); }
+  .head .h1 { font-size: 56px; line-height: 1.1; font-weight: 600; letter-spacing: -0.03em; }
+  .head .meta { text-align: right; font-family: var(--font-mono); font-size: 16px; color: var(--muted); line-height: 1.7; max-width: 480px; }
+
+  .grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: 1fr 1fr;
+    gap: 20px;
+  }
+  .dim-card {
+    padding: 26px 26px 22px;
+    background: rgba(255,255,255,0.015);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+  }
+  .dim-card .head-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 18px;
+  }
+  .dim-card .num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+  }
+  .dim-card .name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .dim-card .name .en { color: var(--muted); font-weight: 400; font-size: 16px; margin-left: 10px; letter-spacing: 0.02em; }
+  .dim-card .role {
+    font-size: 16px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin-bottom: 18px;
+    flex: 1;
+  }
+  .dim-card .row { display: grid; grid-template-columns: 70px 1fr; gap: 12px; padding: 6px 0; align-items: baseline; }
+  .dim-card .row .label { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; padding-top: 2px; }
+  .dim-card .row .value { font-size: 16px; color: var(--ink); line-height: 1.45; }
+  .dim-card .row.fail .value { color: #FCA5A5; }
+
+  .footer-row { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-strong); display: flex; justify-content: space-between; align-items: center; }
+  .footer-row .note { font-family: var(--font-display); font-size: 20px; color: var(--ink-soft); font-weight: 400; }
+  .footer-row .note .em { color: var(--ink); font-weight: 500; }
+  .footer-row .ref { font-family: var(--font-mono); font-size: 16px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header class="chrome-top">
+    <span class="brand-bar"><span class="brand-dot"></span><span class="mono"><span class="chrome-section">§03</span> <span class="dim">/</span> Six Dimensions</span></span>
+    <span class="mono"><span class="chrome-page">10</span> <span class="dim">/</span> 19</span>
+  </header>
+
+  <div class="head">
+    <div>
+      <div class="eyebrow">§03 · 工程划分</div>
+      <h1 class="h1">Harness 的六个维度。</h1>
+    </div>
+    <!-- <div class="meta">
+      业界尚无统一切法（Anthropic Session/Harness/Sandbox、<br>LangChain 五大组件 + Middleware、Daily Dose 11 组件）。<br>
+      <span style="color: var(--ink);">本框架以"便于讨论 + 便于排错"为目标。</span>
+    </div> -->
+  </div>
+
+  <div class="grid">
+    <div class="dim-card">
+      <div class="head-row">
+        <span class="num">01</span>
+      </div>
+      <div class="name">执行<span class="en">Execution</span></div>
+      <div class="role">让模型有"手"，能调用外部能力。</div>
+      <div class="row"><span class="label">实现</span><span class="value">Function Calling · MCP · Sandbox</span></div>
+      <!-- <div class="row fail"><span class="label">失效</span><span class="value">工具调不通、权限越界</span></div> -->
+    </div>
+
+    <div class="dim-card">
+      <div class="head-row">
+        <span class="num">02</span>
+      </div>
+      <div class="name">记忆<span class="en">Memory</span></div>
+      <div class="role">让模型记住"该记住的"信息。</div>
+      <div class="row"><span class="label">实现</span><span class="value">CLAUDE.md · .cursorrules · 会话持久化 · Skill 沉淀</span></div>
+      <!-- <div class="row fail"><span class="label">失效</span><span class="value">长循环忘约束、反复踩同一坑</span></div> -->
+    </div>
+
+    <div class="dim-card">
+      <div class="head-row">
+        <span class="num">03</span>
+      </div>
+      <div class="name">反馈<span class="en">Feedback</span></div>
+      <div class="role">让模型知道自己做错了。</div>
+      <div class="row"><span class="label">实现</span><span class="value">Lint · Test · CI · Review · 错误回注上下文</span></div>
+      <!-- <div class="row fail"><span class="label">失效</span><span class="value">模型自我宣布完成、错而不知</span></div> -->
+    </div>
+
+    <div class="dim-card">
+      <div class="head-row">
+        <span class="num">04</span>
+      </div>
+      <div class="name">编排<span class="en">Orchestration</span></div>
+      <div class="role">让模型有计划地推进任务。</div>
+      <div class="row"><span class="label">实现</span><span class="value">TODO · Spec-Driven Development · 模式切换 · 循环检测</span></div>
+      <!-- <div class="row fail"><span class="label">失效</span><span class="value">跑偏、死循环、永远做不完</span></div> -->
+    </div>
+
+    <div class="dim-card">
+      <div class="head-row">
+        <span class="num">05</span>
+      </div>
+      <div class="name">约束<span class="en">Constraint</span></div>
+      <div class="role">硬拦截危险动作。</div>
+      <div class="row"><span class="label">实现</span><span class="value">危险命令清单 · 删除/写库二次确认 · 最小权限 · 用户确认</span></div>
+      <!-- <div class="row fail"><span class="label">失效</span><span class="value">删生产数据、强推 main</span></div> -->
+    </div>
+
+    <div class="dim-card">
+      <div class="head-row">
+        <span class="num">06</span>
+      </div>
+      <div class="name">评估<span class="en">Evaluation</span></div>
+      <div class="role">调试 Harness 自身。</div>
+      <div class="row"><span class="label">实现</span><span class="value">Trace · Eval 集 · 可观测性</span></div>
+      <!-- <div class="row fail"><span class="label">失效</span><span class="value">出问题只能"猜"，不能"看"</span></div> -->
+    </div>
+  </div>
+
+  <div class="footer-row">
+    <div class="note">下一节四个案例，<span class="em">全部按此六维归因</span>。</div>
+    <div class="ref">注 · 编排与反馈在产品中通常耦合，本框架拆开仅为排错定位</div>
+  </div>
+</div>
+</body>
+</html>

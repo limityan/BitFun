@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>04 · §01 Conclusion</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<style>
+  .layout {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .eyebrow-row { color: var(--ink-soft); margin-bottom: 28px; }
+  .eyebrow-row::before { background: var(--ink-soft); }
+
+  /* Headline · 克制陈述句，非 slogan */
+  .headline {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 64px;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    max-width: 1620px;
+    text-wrap: balance;
+    margin-bottom: 44px;
+  }
+  .headline .em-soft { color: var(--ink-soft); font-weight: 500; }
+  .headline .em-red { color: #FCA5A5; }
+  .headline .em-green { color: #86EFAC; }
+
+  /* Two-card compare · 红 vs 绿 */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr;
+    gap: 0;
+    align-items: stretch;
+    margin-bottom: 44px;
+  }
+
+  .vs-axis {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    color: var(--muted);
+  }
+  .vs-axis .arr { font-size: 22px; color: var(--ink-soft); }
+  .vs-axis .vs { font-size: 13px; letter-spacing: 0.12em; }
+
+  .case-card {
+    padding: 28px 32px;
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .case-card.red {
+    border: 1px solid rgba(239,68,68,0.32);
+    background: rgba(239,68,68,0.04);
+  }
+  .case-card.green {
+    border: 1px solid rgba(134,239,172,0.32);
+    background: rgba(134,239,172,0.04);
+  }
+
+  .case-card .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .case-card .tag {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding: 4px 11px;
+    border-radius: 4px;
+  }
+  .case-card.red .tag { color: #FCA5A5; background: rgba(239,68,68,0.10); border: 1px solid rgba(239,68,68,0.42); }
+  .case-card.green .tag { color: #86EFAC; background: rgba(134,239,172,0.10); border: 1px solid rgba(134,239,172,0.42); }
+
+  .case-card .case-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 26px;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+  }
+
+  .case-row {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 18px;
+    align-items: baseline;
+  }
+  .case-row .key {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+  }
+  .case-row .val {
+    font-size: 20px;
+    line-height: 1.45;
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .case-row .val .em-red { color: #FCA5A5; font-family: var(--font-mono); }
+  .case-row .val .em-green { color: #86EFAC; font-family: var(--font-mono); }
+  .case-row .val .dim { color: var(--ink-soft); font-weight: 400; font-size: 16px; }
+
+  /* Bottom callout */
+  .term-callout {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 18px;
+    padding: 16px 26px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.02);
+    align-self: flex-start;
+  }
+  .term-callout .label {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+  }
+  .term-callout .term {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+  .term-callout .term .arrow { color: var(--ink-soft); margin: 0 8px; font-weight: 400; }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header class="chrome-top">
+    <span class="brand-bar"><span class="brand-dot"></span><span class="mono"><span class="chrome-section">§01</span> <span class="dim">/</span> Cold Open · Conclusion</span></span>
+    <span class="mono"><span class="chrome-page">04</span> <span class="dim">/</span> 19</span>
+  </header>
+
+  <div class="layout">
+    <div class="eyebrow-row eyebrow">两个事件，同一个观察</div>
+
+    <p class="headline">
+      <span class="em-soft">模型权重全程未变。</span><br>
+      Harness 层<span class="em-red">改坏</span>了 50 天，全球质疑 Claude 降智<br>
+      Harness 层<span class="em-green">改好</span>了 +13.7 分，直接跻身全球 Top5
+    </p>
+
+    <!-- <div class="compare">
+      <div class="case-card red">
+        <div class="card-head">
+          <span class="tag">▲ Incident · 事件 A</span>
+          <span class="case-name">Claude Code</span>
+        </div>
+        <div class="case-row">
+          <span class="key">改动</span>
+          <span class="val">Harness 三处 <span class="dim">编排 · 记忆 · 约束</span></span>
+        </div>
+        <div class="case-row">
+          <span class="key">结果</span>
+          <span class="val"><span class="em-red">劣化 50 天</span> <span class="dim">thinking −73% · read-to-edit −70%</span></span>
+        </div>
+        <div class="case-row">
+          <span class="key">模型层</span>
+          <span class="val">Sonnet/Opus 权重 <span class="dim">完全未动</span></span>
+        </div>
+      </div>
+
+      <div class="vs-axis">
+        <span class="arr">▲</span>
+        <span class="vs">vs</span>
+        <span class="arr">▼</span>
+      </div>
+
+      <div class="case-card green">
+        <div class="card-head">
+          <span class="tag">▼ Improvement · 事件 B</span>
+          <span class="case-name">LangChain Deep Agents</span>
+        </div>
+        <div class="case-row">
+          <span class="key">改动</span>
+          <span class="val">Harness 三处 <span class="dim">评估 · 编排 · 记忆</span></span>
+        </div>
+        <div class="case-row">
+          <span class="key">结果</span>
+          <span class="val"><span class="em-green">+13.7 / Top 30 → Top 5</span> <span class="dim">52.8% → 66.5%</span></span>
+        </div>
+        <div class="case-row">
+          <span class="key">模型层</span>
+          <span class="val">gpt-5.2-codex <span class="dim">全程固定</span></span>
+        </div>
+      </div>
+    </div> -->
+
+    <div class="term-callout">
+      <span class="label">WHY?</span>
+      <span class="term">Harness <span class="arrow">·</span> Engineering</span>
+    </div>
+  </div>
+
+  <footer class="chrome-bottom">
+    <span class="mono"><span class="dim">harness-engineering</span></span>
+    <span class="mono"><span class="dim">v3.2</span></span>
+  </footer>
+</div>
+</body>
+</html>

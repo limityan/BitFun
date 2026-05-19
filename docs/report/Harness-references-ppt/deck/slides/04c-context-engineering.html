@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>07 · Context Engineering</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<style>
+  .head { margin-bottom: 34px; padding-bottom: 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-end; }
+  .head .eyebrow { color: var(--ink-soft); margin-bottom: 14px; }
+  .head .eyebrow::before { background: var(--ink-soft); }
+  .head .h1 { font-size: 60px; line-height: 1.08; font-weight: 600; letter-spacing: -0.03em; }
+  .head .meta { text-align: right; font-family: var(--font-mono); font-size: 16px; color: var(--muted); line-height: 1.7; max-width: 450px; }
+  .head .meta .em { color: var(--ink); }
+
+  .layout { flex: 1; display: grid; grid-template-columns: 0.95fr 1.05fr; gap: 34px; align-items: stretch; }
+  .panel {
+    padding: 30px 34px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.015);
+    display: flex;
+    flex-direction: column;
+  }
+  .panel.strong { background: var(--bg-elev1); border-color: var(--border-strong); }
+  .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding-bottom: 14px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .big {
+    font-family: var(--font-display);
+    font-size: 38px;
+    line-height: 1.16;
+    letter-spacing: -0.025em;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 20px;
+  }
+  .body { font-size: 18px; line-height: 1.62; color: var(--ink-soft); }
+  .body .em { color: var(--ink); font-weight: 500; }
+
+  .context-stack { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border); display: grid; gap: 10px; }
+  .stack-row {
+    display: grid;
+    grid-template-columns: 118px 1fr;
+    gap: 12px;
+    align-items: baseline;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .stack-row:last-child { border-bottom: none; }
+  .stack-row .name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink);
+    letter-spacing: 0.03em;
+  }
+  .stack-row .desc { font-size: 16px; color: var(--ink-soft); line-height: 1.45; }
+
+  .ops { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .op {
+    padding: 18px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.018);
+  }
+  .op .num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    margin-bottom: 8px;
+  }
+  .op .name {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .op .desc { font-size: 16px; color: var(--ink-soft); line-height: 1.48; }
+  .op .desc .em { color: var(--ink); font-weight: 500; }
+
+  .rule {
+    margin-top: auto;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-display);
+    font-size: 20px;
+    line-height: 1.45;
+    color: var(--ink-soft);
+    background: rgba(255, 255, 255, 0);
+  }
+  .rule .em { color: var(--ink); font-weight: 500; }
+
+  .footer-row { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--border-strong); display: flex; justify-content: space-between; align-items: center; }
+  .footer-row .note { font-family: var(--font-display); font-size: 20px; color: var(--ink-soft); font-weight: 400; }
+  .footer-row .note .em { color: var(--ink); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header class="chrome-top">
+    <span class="brand-bar"><span class="brand-dot"></span><span class="mono"><span class="chrome-section">§02.0</span> <span class="dim">/</span> Context Engineering</span></span>
+    <span class="mono"><span class="chrome-page">07</span> <span class="dim">/</span> 19</span>
+  </header>
+
+  <div class="head">
+    <div>
+      <div class="eyebrow">§02.0 · Context Engineering</div>
+      <h1 class="h1">Context 决定模型此刻看见哪个世界</h1>
+    </div>
+    <div class="meta">
+      上下文不是越多越好<br>
+      而是让模型在每一步拿到<br>
+      <span class="em">足够、相关、最新、可验证</span>的信息
+    </div>
+  </div>
+
+  <div class="layout">
+    <section class="panel strong">
+      <div class="label">What context engineering means</div>
+      <div class="big">Context 工程是让模型只关注必要的事</div>
+      <p class="body">Prompt 告诉模型"该怎么做"，Context 告诉模型"现在面对什么"。Agent 的稳定性往往取决于：该放进来的信息有没有进来，不该进来的噪音有没有被挡住，过期的信息有没有被刷新。</p>
+      <div class="context-stack">
+        <div class="stack-row"><span class="name">Task</span><span class="desc">当前目标、约束、审批状态、成功条件。</span></div>
+        <div class="stack-row"><span class="name">Codebase</span><span class="desc">相关文件、接口、依赖、架构边界。</span></div>
+        <div class="stack-row"><span class="name">Memory</span><span class="desc">仓库规则、AGENTS.md、历史决策、已知坑。</span></div>
+        <div class="stack-row"><span class="name">Observation</span><span class="desc">工具返回、测试失败、日志、review finding。</span></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="label">Context operations</div>
+      <div class="ops">
+        <div class="op"><div class="num">01</div><div class="name">Select</div><div class="desc">从仓库、会话、工具结果中选出与当前步骤相关的信息。</div></div>
+        <div class="op"><div class="num">02</div><div class="name">Compress</div><div class="desc">把长历史压缩成决策、约束和未完成事项，而不是全文粘贴。</div></div>
+        <div class="op"><div class="num">03</div><div class="name">Refresh</div><div class="desc">工具调用后更新观察结果：测试失败、日志、diff、用户审批。</div></div>
+        <div class="op"><div class="num">04</div><div class="name">Scope</div><div class="desc">按模式限制上下文：Plan 看架构与需求，Debug 看 runtime evidence，Review 看 diff 与验证。</div></div>
+        <div class="op"><div class="num">05</div><div class="name">Ground</div><div class="desc">关键判断必须引用外部事实：文件、命令输出、日志、finding。</div></div>
+        <div class="op"><div class="num">06</div><div class="name">Persist</div><div class="desc">把可复用经验沉淀进规则、session trace 或 skill，进入下一轮。</div></div>
+      </div>
+      <div class="rule">Context Engineering 的目标不是塞满窗口，而是<span class="em">让 Agent 每一步都站在正确事实上</span>。</div>
+    </section>
+  </div>
+
+  <div class="footer-row">
+    <div class="note">从这里开始，Prompt 进入 Context，Context 再进入更大的<span class="em"> Harness</span>。</div>
+  </div>
+</div>
+</body>
+</html>

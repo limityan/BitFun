@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>16 · BitFun · Self-iteration Harness</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<style>
+  .head { margin-bottom: 32px; padding-bottom: 22px; border-bottom: 1px solid var(--border); }
+  .head .eyebrow { color: var(--ink-soft); margin-bottom: 14px; }
+  .head .eyebrow::before { background: var(--ink-soft); }
+  .head .h1 { font-size: 56px; line-height: 1.1; font-weight: 600; letter-spacing: -0.025em; }
+
+  .layout { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: stretch; }
+
+  /* Real-life scenario · 一次具体的"BitFun 改 BitFun" */
+  .scene {
+    padding: 28px 32px;
+    background: var(--bg-elev1);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+  }
+  .scene .label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding-bottom: 14px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .scene .label .meta { color: var(--ink-soft); }
+
+  .timeline-row {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 14px;
+    padding: 13px 0;
+    border-bottom: 1px dashed var(--border);
+    align-items: baseline;
+  }
+  .timeline-row:last-child { border-bottom: none; }
+  .timeline-row .when {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    padding-top: 2px;
+  }
+  .timeline-row .what {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+  }
+  .timeline-row .what .em { color: var(--ink); font-weight: 500; }
+  .timeline-row .what .code { font-family: var(--font-mono); font-size: 16px; background: var(--bg-elev2); border: 1px solid var(--border); padding: 1px 6px; border-radius: 3px; color: var(--ink); }
+
+  .timeline-row.harness-pass { background: rgba(34,211,238,0.04); border-radius: var(--radius-sm); padding: 13px 12px; margin: 0 -12px; }
+  .timeline-row.harness-pass .what .em { color: var(--ink); }
+  .timeline-row.harness-pass .when { color: var(--cyan-bright); }
+
+  /* Right side: which Harness dimensions did this scenario exercise */
+  .map {
+    padding: 28px 32px;
+    background: rgba(255,255,255,0.015);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+  }
+  .map .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding-bottom: 14px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .map-row {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 14px;
+    padding: 11px 0;
+    border-bottom: 1px dashed var(--border);
+    align-items: baseline;
+  }
+  .map-row:last-child { border-bottom: none; }
+  .map-row .dim-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .map-row .dim-name .en {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-left: 6px;
+    letter-spacing: 0.04em;
+  }
+  .map-row .role {
+    font-size: 16px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+  .map-row .role .em { color: var(--ink); font-weight: 500; }
+
+  .tagline-row {
+    margin-top: auto;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 18px;
+    line-height: 1.5;
+    color: var(--ink);
+    font-weight: 400;
+  }
+  .tagline-row .quote-en { font-size: 22px; font-weight: 500; }
+  .tagline-row .quote-cn { color: var(--ink-soft); margin-top: 6px; }
+
+  .footer-row { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--border-strong); display: flex; justify-content: space-between; align-items: center; }
+  .footer-row .note { font-family: var(--font-display); font-size: 20px; color: var(--ink-soft); font-weight: 400; }
+  .footer-row .note .em { color: var(--ink); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header class="chrome-top">
+    <span class="brand-bar"><span class="brand-dot"></span><span class="mono"><span class="chrome-section">§06.4</span> <span class="dim">/</span> Self-iteration Harness</span></span>
+    <span class="mono"><span class="chrome-page">18</span> <span class="dim">/</span> 19</span>
+  </header>
+
+  <div class="head">
+    <div class="eyebrow">§06.4 · BitFun 用自己改进自己</div>
+    <h1 class="h1">基于 Harness Engineering 的 Agent 自迭代。</h1>
+  </div>
+
+  <div class="layout">
+    <div class="scene">
+      <div class="label">
+        <span>Self-iteration protocol · 从失败 trace 到新 Harness</span>
+        <span class="meta">失败复盘 · 规则沉淀 · 产品化</span>
+      </div>
+
+      <div class="timeline-row">
+        <span class="when">Intent</span>
+        <span class="what">一次真实调试任务里，Agent 只读代码后给出"高置信"修复，但用户复现后问题仍在。失败点不是模型不努力，而是<span class="em">缺少 runtime 证据</span>。</span>
+      </div>
+      <div class="timeline-row harness-pass">
+        <span class="when">Trace</span>
+        <span class="what"><span class="em">Session trace</span> 回放显示：Agent 读了相关文件、跳过复现、直接 patch，并把"看起来合理"当成完成信号。Harness 失效点被定位出来。</span>
+      </div>
+      <div class="timeline-row">
+        <span class="when">Extract</span>
+        <span class="what">把失败模式抽象成规则：<span class="em">debug 任务不能只靠代码推理</span>；必须先提出多个假设，再通过日志、复现和证据分类来收敛。</span>
+      </div>
+      <div class="timeline-row">
+        <span class="when">Design</span>
+        <span class="what">新增 Debug Mode Harness：假设列表、插桩日志、用户复现入口、<span class="code">CONFIRMED / REJECTED / INCONCLUSIVE</span> 判定、修复后再验证。</span>
+      </div>
+      <div class="timeline-row">
+        <span class="when">Implement</span>
+        <span class="what">Agent 在 Plan 审批后修改自己的工作流：更新 debug prompt、日志采集约定、UI reproduction step、临时日志清理规则。</span>
+      </div>
+      <div class="timeline-row harness-pass">
+        <span class="when">Validate</span>
+        <span class="what"><span class="em">用同类 bug 回放验证</span>：新 Debug Mode 不允许直接修，必须先拿到 runtime log；修复结论要引用证据，而不是引用模型自信。</span>
+      </div>
+      <div class="timeline-row">
+        <span class="when">Review</span>
+        <span class="what">Deep Review 检查这个新 Harness 本身：是否会泄露敏感日志、是否能清理插桩、是否把用户复现流程做成产品状态。</span>
+      </div>
+      <div class="timeline-row">
+        <span class="when">Package</span>
+        <span class="what">成功路径被固化为模式，而不是留在某次对话里：以后用户说"debug"，Agent 自动进入 evidence-first 工作流。</span>
+      </div>
+      <div class="timeline-row harness-pass">
+        <span class="when">Ship</span>
+        <span class="what"><span class="em">一次失败变成下一版 Agent 的能力</span>。自迭代的对象不是业务代码，而是 Agent 自己的 Harness。</span>
+      </div>
+    </div>
+
+    <div class="map">
+      <div class="label">Why this proves Harness Engineering</div>
+      <div class="map-row">
+        <div class="dim-name">编排<span class="en">Mode</span></div>
+        <div class="role"><span class="em">模式是产品状态</span>：普通编码与 Debug Mode 走不同流程；debug 不能跳过假设、插桩和复现。</div>
+      </div>
+      <div class="map-row">
+        <div class="dim-name">记忆<span class="en">Rules</span></div>
+        <div class="role"><span class="em">失败经验进入上下文</span>：一次 session trace 里的失败模式，被沉淀成后续 debug 的默认规则。</div>
+      </div>
+      <div class="map-row">
+        <div class="dim-name">反馈<span class="en">Checks</span></div>
+        <div class="role"><span class="em">复现日志 + Deep Review</span> 一起构成反馈层；用户复现结果不再停留在口头描述。</div>
+      </div>
+      <div class="map-row">
+        <div class="dim-name">约束<span class="en">Guard</span></div>
+        <div class="role"><span class="em">取证也要有边界</span>：日志数量、位置、敏感信息、清理时机都被写进 Debug Mode 约束。</div>
+      </div>
+      <div class="map-row">
+        <div class="dim-name">评估<span class="en">Trace</span></div>
+        <div class="role"><span class="em">自迭代的起点</span>：先找到 Harness 失败点，再用同类任务回放验证新 Harness 是否真的改善。</div>
+      </div>
+
+      <div class="tagline-row">
+        <div class="quote-en">"The way you customize it is by using it."</div>
+        <div class="quote-cn">— 自迭代成立的前提，是 Agent 的每一次自我增强都可控、可审、可回滚。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-row">
+    <div class="note">第 11-15 页的结论：<span class="em">BitFun 的产品设计本身就是一套 Harness Engineering 实践</span>。</div>
+  </div>
+</div>
+</body>
+</html>

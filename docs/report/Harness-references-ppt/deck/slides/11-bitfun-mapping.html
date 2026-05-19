@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>12 · BitFun · Harness Mapping</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<style>
+  .head { margin-bottom: 30px; padding-bottom: 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-end; }
+  .head .eyebrow { color: var(--ink-soft); margin-bottom: 14px; }
+  .head .eyebrow::before { background: var(--ink-soft); }
+  .head .h1 { font-size: 56px; line-height: 1.1; font-weight: 600; letter-spacing: -0.03em; }
+  .head .meta { text-align: right; font-family: var(--font-mono); font-size: 16px; color: var(--muted); line-height: 1.7; max-width: 500px; }
+  .head .meta .em { color: var(--ink); }
+
+  .layout { flex: 1; display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 34px; align-items: stretch; }
+
+  .thesis {
+    padding: 30px 34px;
+    background: var(--bg-elev1);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+  }
+  .thesis .label, .map .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding-bottom: 14px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .thesis .big {
+    font-family: var(--font-display);
+    font-size: 36px;
+    line-height: 1.18;
+    letter-spacing: -0.025em;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 24px;
+  }
+  .thesis .body {
+    font-size: 18px;
+    line-height: 1.65;
+    color: var(--ink-soft);
+  }
+  .thesis .body .em { color: var(--ink); font-weight: 500; }
+  .principles { margin-top: auto; padding-top: 22px; border-top: 1px solid var(--border); display: grid; gap: 12px; }
+  .principle { display: grid; grid-template-columns: 92px 1fr; gap: 14px; align-items: baseline; }
+  .principle .tag { font-family: var(--font-mono); font-size: 11px; color: var(--ink); background: var(--bg-elev2); border: 1px solid var(--border); border-radius: 3px; padding: 3px 8px; text-align: center; }
+  .principle .text { font-size: 16px; line-height: 1.5; color: var(--ink-soft); }
+  .principle .text .em { color: var(--ink); font-weight: 500; }
+
+  .map {
+    padding: 24px 28px;
+    background: rgba(255,255,255,0.015);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+  }
+  .map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; flex: 1; }
+  .dim-card {
+    padding: 16px 18px;
+    background: rgba(255,255,255,0.018);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    display: flex;
+    flex-direction: column;
+  }
+  .dim-card .top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .dim-card .num { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: 0.08em; }
+  .dim-card .name { font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--ink); letter-spacing: -0.015em; }
+  .dim-card .name .en { font-family: var(--font-mono); font-size: 11px; color: var(--muted); font-weight: 400; margin-left: 8px; letter-spacing: 0.03em; }
+  .dim-card .role { font-size: 16px; color: var(--ink-soft); line-height: 1.48; flex: 1; }
+  .dim-card .role .em { color: var(--ink); font-weight: 500; }
+  .dim-card .path { margin-top: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); line-height: 1.45; }
+
+  .footer-row { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-strong); display: flex; justify-content: space-between; align-items: center; }
+  .footer-row .note { font-family: var(--font-display); font-size: 20px; color: var(--ink-soft); font-weight: 400; }
+  .footer-row .note .em { color: var(--ink); font-weight: 500; }
+  .footer-row .ref { font-family: var(--font-mono); font-size: 16px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header class="chrome-top">
+    <span class="brand-bar"><span class="brand-dot"></span><span class="mono"><span class="chrome-section">§06</span> <span class="dim">/</span> BitFun as Harnessed Agent</span></span>
+    <span class="mono"><span class="chrome-page">14</span> <span class="dim">/</span> 19</span>
+  </header>
+
+  <div class="head">
+    <div>
+      <div class="eyebrow">§06 · Harness落地实践 · 以BitFun为例</div>
+      <h1 class="h1">Harness 方法论如何落到一个 Coding Agent 里。</h1>
+    </div>
+    <div class="meta">
+      下面不是 BitFun 架构复盘<br>
+      而是一个 AI Coding Agent<br>
+      <span class="em">如何按 Harness 六维设计</span>
+    </div>
+  </div>
+
+  <div class="layout">
+    <section class="thesis">
+      <div class="label">Harness landing pattern</div>
+      <div class="big">BitFun Agent 的设计重点，不是"让模型更会写代码"，而是给每一种编码行为配一层 Harness。</div>
+      <p class="body">同一个模型，在不同 Harness 下会表现成不同的 Agent：能规划、能调试、能修复、能审查。BitFun 的设计细节可以理解为把 <span class="em">Context / Tools / Guardrails / Feedback / Trace</span> 这些方法论组件逐一产品化。</p>
+      <div class="principles">
+        <div class="principle">
+          <span class="tag">Context</span>
+          <span class="text">先让 Agent 看见正确上下文：仓库规则、模块边界、历史会话、当前任务模式。上下文不是聊天记录堆叠，而是<span class="em">可选择、可更新、可继承</span>的工作记忆。</span>
+        </div>
+        <div class="principle">
+          <span class="tag">Tools</span>
+          <span class="text">再把能力暴露成受控工具：读文件、改代码、跑命令、取日志、做 review。Agent 不直接"拥有系统"，而是通过<span class="em">工具边界</span>操作系统。</span>
+        </div>
+        <div class="principle">
+          <span class="tag">Loop</span>
+          <span class="text">最后让结果回到闭环：Plan 要审批，Debug 要 runtime 证据，Review 要独立仲裁，交付要测试与 trace。关键判断必须落到<span class="em">外部信号</span>，不能只落在模型自信里。</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="map">
+      <div class="label">Six Harness dimensions in BitFun</div>
+      <div class="map-grid">
+        <div class="dim-card">
+          <div class="top"><span class="num">01</span></div>
+          <div class="name">执行<span class="en">Execution</span></div>
+          <div class="role">工具通过 <span class="em">tool registry / transport adapter</span> 统一收口，让所有 Agent 在受控工具箱中工作。</div>
+          <div class="path">core/agentic/tools · transport/adapters</div>
+        </div>
+        <div class="dim-card">
+          <div class="top"><span class="num">02</span></div>
+          <div class="name">记忆<span class="en">Memory</span></div>
+          <div class="role">仓库规则、模块边界、会话历史进入上下文，并自动更新，避免 Agent 每轮重新学习架构。</div>
+          <div class="path">AGENTS.md · .bitfun/sessions</div>
+        </div>
+        <div class="dim-card">
+          <div class="top"><span class="num">03</span></div>
+          <div class="name">反馈<span class="en">Feedback</span></div>
+          <div class="role">lint / test / cargo check / Deep Review 都是外部反馈；模型不能靠一句"looks good"宣布完成。</div>
+          <div class="path">verification matrix · deep_review_policy</div>
+        </div>
+        <div class="dim-card">
+          <div class="top"><span class="num">04</span></div>
+          <div class="name">编排<span class="en">Orchestration</span></div>
+          <div class="role">Sub-Agent: Plan / Default / Debug / Review 不只靠提示词控制行为，而是通过预设状态机+原子能力设定规划行为。</div>
+          <div class="path">agent prompts · session runtime</div>
+        </div>
+        <div class="dim-card">
+          <div class="top"><span class="num">05</span></div>
+          <div class="name">约束<span class="en">Constraint</span></div>
+          <div class="role">写文件、运行命令、调试插桩、危险操作等权限都必须被显式约束；能力开放与风险控制一起设计。</div>
+          <div class="path">mode prompts · tool permissions</div>
+        </div>
+        <div class="dim-card">
+          <div class="top"><span class="num">06</span></div>
+          <div class="name">评估<span class="en">Evaluation</span></div>
+          <div class="role">每轮模型输入、工具调用、结果与 diff 可追踪，方便定位 Harness 失效点，保证原子粒度误操作可回滚；任务结束后通过反思总结自主进化。</div>
+          <div class="path">.bitfun/sessions/{session_id}</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="footer-row">
+    <div class="note">这页的重点：<span class="em">用 BitFun Agent 说明 Harness 六维如何变成产品设计细节</span>。</div>
+    <div class="ref">Next: Plan / Debug / Deep Review / Self-iteration</div>
+  </div>
+</div>
+</body>
+</html>

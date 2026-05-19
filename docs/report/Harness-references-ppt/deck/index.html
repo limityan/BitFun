@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>从 Vibe Coding 到 Harness Engineering · v3.2</title>
+<!--
+  Deck index · 多文件幻灯片聚合演示
+  键盘：← / → / Space / PgUp / PgDown / Home / End / 1-9 跳页 / P 打印
+  双击页码可输入跳页；F11 全屏演讲
+-->
+<script>
+  window.DECK_MANIFEST = [
+    { file: "slides/01-cover.html",                     label: "Cover" },
+    { file: "slides/02-claude-code-postmortem.html",    label: "Claude Code Postmortem" },
+    { file: "slides/03-langchain-deepagents.html",      label: "LangChain Deep Agents" },
+    { file: "slides/04-quote-same-model.html",          label: "Quote · Same Model" },
+    { file: "slides/04a-agent-architecture.html",        label: "§02.0 · Agent Architecture" },
+    { file: "slides/04b-prompt-engineering.html",        label: "§02.0 · Prompt Engineering" },
+    { file: "slides/04c-context-engineering.html",       label: "§02.0 · Context Engineering" },
+    { file: "slides/05-formula.html",                   label: "§02 · Agent = Model + Harness" },
+    { file: "slides/06-prompt-context-harness.html",    label: "Prompt ⊂ Context ⊂ Harness" },
+    { file: "slides/07-six-dimensions.html",            label: "§03 · Six Dimensions" },
+    { file: "slides/08-four-cases.html",                label: "§04 · Four Cases" },
+    { file: "slides/09-case-cursor-detail.html",        label: "Case · Cursor Incident" },
+    { file: "slides/10-six-steps.html",                 label: "§05 · Six Steps" },
+    { file: "slides/11-bitfun-mapping.html",            label: "§06 · BitFun as Harnessed Agent" },
+    { file: "slides/12-bitfun-plan.html",               label: "§06.1 · Planning Harness" },
+    { file: "slides/13-bitfun-debug.html",              label: "§06.2 · Evidence Harness" },
+    { file: "slides/14-bitfun-review.html",             label: "§06.3 · Review Harness" },
+    { file: "slides/15-self-iteration.html",            label: "§06.4 · Self-iteration Harness" },
+    { file: "slides/16-end.html",                       label: "End · Take-aways · Q&A" },
+  ];
+  window.DECK_WIDTH = 1920;
+  window.DECK_HEIGHT = 1080;
+</script>
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%;
+    background: #000;
+    overflow: hidden;
+    font-family: "JetBrains Mono", "SF Mono", "IBM Plex Mono", "Cascadia Mono", "Consolas", "Noto Sans SC", "Microsoft YaHei", "Microsoft JhengHei", "Noto Sans CJK SC", "Source Han Sans SC", "PingFang SC", "Hiragino Sans GB", monospace;
+  }
+  #stage {
+    position: fixed;
+    top: 0; left: 0;
+    transform-origin: top left;
+    will-change: transform;
+    background: #000;
+    box-shadow: 0 10px 60px rgba(0,0,0,0.6);
+  }
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+    background: #000;
+  }
+  .counter {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    background: rgba(20,20,20,0.85);
+    color: #FAFAFA;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+    z-index: 100;
+    user-select: none;
+    opacity: 0.65;
+    transition: opacity 0.2s;
+    border: 1px solid rgba(255,255,255,0.10);
+  }
+  .counter:hover { opacity: 1; }
+  .counter .label { color: rgba(255,255,255,0.55); margin-left: 8px; }
+  .counter .num { color: #22D3EE; font-weight: 600; }
+  .nav-zone {
+    position: fixed;
+    top: 0; bottom: 0;
+    width: 12%;
+    cursor: pointer;
+    z-index: 50;
+  }
+  .nav-zone.left  { left: 0; }
+  .nav-zone.right { right: 0; }
+  .nav-hint {
+    position: absolute;
+    top: 50%; transform: translateY(-50%);
+    width: 38px; height: 38px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .nav-zone.left  .nav-hint { left: 16px; }
+  .nav-zone.right .nav-hint { right: 16px; }
+  .nav-zone:hover .nav-hint { opacity: 1; }
+
+  @media print {
+    @page { size: 1920px 1080px; margin: 0; }
+    html, body { background: #fff; overflow: visible; height: auto; }
+    #stage { position: static; transform: none !important; box-shadow: none; }
+    .counter, .nav-zone { display: none !important; }
+    .print-stack { display: block; }
+    .print-stack iframe {
+      width: 1920px;
+      height: 1080px;
+      page-break-after: always;
+      display: block;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <iframe id="frame" src="about:blank"></iframe>
+</div>
+
+<div class="nav-zone left"  id="navL"><div class="nav-hint">‹</div></div>
+<div class="nav-zone right" id="navR"><div class="nav-hint">›</div></div>
+<div class="counter" id="counter">1 / 19</div>
+
+<div class="print-stack" id="printStack" style="display:none;"></div>
+
+<script>
+(function () {
+  const W = window.DECK_WIDTH || 1920;
+  const H = window.DECK_HEIGHT || 1080;
+  const deck = window.DECK_MANIFEST || [];
+  const stage = document.getElementById('stage');
+  const frame = document.getElementById('frame');
+  const counter = document.getElementById('counter');
+  const printStack = document.getElementById('printStack');
+  const storageKey = 'deck-harness-eng';
+  let current = 0;
+
+  stage.style.width  = W + 'px';
+  stage.style.height = H + 'px';
+
+  function fit() {
+    const s = Math.min(window.innerWidth / W, window.innerHeight / H);
+    const x = (window.innerWidth  - W * s) / 2;
+    const y = (window.innerHeight - H * s) / 2;
+    stage.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
+  }
+
+  function show(idx) {
+    if (idx < 0 || idx >= deck.length) return;
+    current = idx;
+    frame.src = deck[idx].file;
+    counter.innerHTML = `<span class="num">${idx + 1}</span> / ${deck.length} <span class="label">${deck[idx].label || ''}</span>`;
+    try { localStorage.setItem(storageKey, String(idx)); } catch (_) {}
+    if (location.hash !== '#' + (idx + 1)) {
+      history.replaceState(null, '', '#' + (idx + 1));
+    }
+  }
+
+  function next() { show(Math.min(current + 1, deck.length - 1)); }
+  function prev() { show(Math.max(current - 1, 0)); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    switch (e.key) {
+      case 'ArrowRight': case ' ': case 'PageDown': e.preventDefault(); next(); break;
+      case 'ArrowLeft':  case 'PageUp':              e.preventDefault(); prev(); break;
+      case 'Home':                                    e.preventDefault(); show(0); break;
+      case 'End':                                     e.preventDefault(); show(deck.length - 1); break;
+      case 'p': case 'P':                             window.print(); break;
+      default:
+        if (e.key >= '1' && e.key <= '9') {
+          const i = parseInt(e.key, 10) - 1;
+          if (i < deck.length) { e.preventDefault(); show(i); }
+        }
+    }
+  });
+
+  document.getElementById('navL').addEventListener('click', prev);
+  document.getElementById('navR').addEventListener('click', next);
+  window.addEventListener('resize', fit);
+  window.addEventListener('hashchange', () => {
+    const m = location.hash.match(/^#(\d+)$/);
+    if (m) show(parseInt(m[1], 10) - 1);
+  });
+
+  const hashMatch = location.hash.match(/^#(\d+)$/);
+  if (hashMatch) current = Math.min(parseInt(hashMatch[1], 10) - 1, deck.length - 1);
+  else try {
+    const v = parseInt(localStorage.getItem(storageKey), 10);
+    if (!isNaN(v) && v >= 0 && v < deck.length) current = v;
+  } catch (_) {}
+  fit();
+  show(current);
+
+  window.addEventListener('beforeprint', () => {
+    printStack.innerHTML = '';
+    deck.forEach(item => {
+      const f = document.createElement('iframe');
+      f.src = item.file;
+      printStack.appendChild(f);
+    });
+    printStack.style.display = 'block';
+    document.getElementById('stage').style.display = 'none';
+  });
+  window.addEventListener('afterprint', () => {
+    printStack.innerHTML = '';
+    printStack.style.display = 'none';
+    document.getElementById('stage').style.display = '';
+  });
+})();
+</script>
+
+</body>
+</html>

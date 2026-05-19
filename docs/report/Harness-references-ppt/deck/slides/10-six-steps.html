@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>11 · Six Steps</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<style>
+  .head { margin-bottom: 32px; padding-bottom: 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-end; }
+  .head .eyebrow { color: var(--ink-soft); margin-bottom: 14px; }
+  .head .eyebrow::before { background: var(--ink-soft); }
+  .head .h1 { font-size: 56px; line-height: 1.1; font-weight: 600; letter-spacing: -0.03em; }
+  .head .meta { text-align: right; font-family: var(--font-mono); font-size: 16px; color: var(--muted); line-height: 1.7; }
+
+  .grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .step {
+    padding: 24px 26px 22px;
+    background: rgba(255,255,255,0.015);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .step .head-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .step .num {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 40px;
+    line-height: 1;
+    color: var(--ink);
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+  .step .num .prefix { color: var(--muted); font-weight: 400; font-size: 14px; vertical-align: 0.5em; margin-right: 4px; }
+  .step .badges { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .step .badge-dim {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink);
+    background: var(--bg-elev2);
+    border: 1px solid var(--border);
+    padding: 2px 9px;
+    border-radius: 999px;
+    letter-spacing: 0.04em;
+  }
+  .step .badge-time {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+  .step .what {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 22px;
+    color: var(--ink);
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+    margin-bottom: 12px;
+  }
+  .step .why {
+    font-size: 16px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+    flex: 1;
+  }
+  .step .why .code {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    background: var(--bg-elev2);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--ink);
+  }
+
+  .footer-row { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-strong); display: flex; justify-content: space-between; align-items: center; }
+  .footer-row .note { font-family: var(--font-display); font-size: 22px; color: var(--ink-soft); font-weight: 400; }
+  .footer-row .note .em { color: var(--ink); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header class="chrome-top">
+    <span class="brand-bar"><span class="brand-dot"></span><span class="mono"><span class="chrome-section">§05</span> <span class="dim">/</span> Minimal Harness</span></span>
+    <span class="mono"><span class="chrome-page">13</span> <span class="dim">/</span> 19</span>
+  </header>
+
+  <div class="head">
+    <div>
+      <div class="eyebrow">§05 · 最小可用 Harness</div>
+      <h1 class="h1">六步落地清单。</h1>
+    </div>
+    <div class="meta">
+      每步对应六维之一<br>
+      投入按从短到长排列<br>
+      <!-- <span style="color: var(--ink);">总计约 5 个工作日，可全部完成</span> -->
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="step">
+      <div class="head-row">
+        <span class="num"><span class="prefix">step</span>01</span>
+        <div class="badges">
+          <span class="badge-dim">记忆</span>
+          <span class="badge-time">≈ 1 hr</span>
+        </div>
+      </div>
+      <div class="what">编写 Rules 文件</div>
+      <div class="why">仓库根目录建 <span class="code">AGENTS.md</span> 或 <span class="code">CLAUDE.md</span>，≤ 50 行覆盖 Setup / Architecture / Style / Don't 四类。模块级冲突时遵循"近者优先"。</div>
+    </div>
+
+    <div class="step">
+      <div class="head-row">
+        <span class="num"><span class="prefix">step</span>02</span>
+        <div class="badges">
+          <span class="badge-dim">编排</span>
+          <span class="badge-time">≈ 1 day</span>
+        </div>
+      </div>
+      <div class="what">区分模式（探索 / 交付）</div>
+      <div class="why">至少分两种：探索模式（轻 Harness）+ 交付模式（强制先输出 Spec 经审核）。行有余力补 Debug / Review。</div>
+    </div>
+
+    <div class="step">
+      <div class="head-row">
+        <span class="num"><span class="prefix">step</span>03</span>
+        <div class="badges">
+          <span class="badge-dim">反馈</span>
+          <span class="badge-time">≈ 1 day</span>
+        </div>
+      </div>
+      <div class="what">绑定外部验证</div>
+      <div class="why">在 Rules 中定义验证矩阵（lint / type-check / test / build）。Agent 不可自我宣布完成，失败输出回注上下文进入下一轮。</div>
+    </div>
+
+    <div class="step">
+      <div class="head-row">
+        <span class="num"><span class="prefix">step</span>04</span>
+        <div class="badges">
+          <span class="badge-dim">约束</span>
+          <span class="badge-time">≈ 0.5 day</span>
+        </div>
+      </div>
+      <div class="what">挂危险命令硬拦截 Hook</div>
+      <div class="why">Claude Code <span class="code">PreToolUse</span> / LangChain <span class="code">wrap_tool_call</span> / Kiro <span class="code">hooks.yaml</span>。最小清单：<span class="code">rm -rf</span>、<span class="code">push --force</span>、DB 写删、production 调用。</div>
+    </div>
+
+    <div class="step">
+      <div class="head-row">
+        <span class="num"><span class="prefix">step</span>05</span>
+        <div class="badges">
+          <span class="badge-dim">评估</span>
+          <span class="badge-time">≈ 2 days</span>
+        </div>
+      </div>
+      <div class="what">建立 Trace 系统</div>
+      <div class="why">每轮可回放：模型读了哪些文件、输出了哪些 Function Call、工具返回了什么。Agent原子粒度误操作可回滚。</div>
+    </div>
+
+    <div class="step">
+      <div class="head-row">
+        <span class="num"><span class="prefix">step</span>06</span>
+        <div class="badges">
+          <span class="badge-dim">持续</span>
+          <span class="badge-time">ongoing</span>
+        </div>
+      </div>
+      <div class="what">成功路径内化为 Skill</div>
+      <div class="why">将反复出现的成功流程打包为 Skill：该读哪些文件 / 按什么顺序 / 跑什么验证 / 输出什么。Skill = <strong style="color:var(--ink);">已验证的 Harness 流程</strong>。</div>
+    </div>
+  </div>
+
+  <div class="footer-row">
+    <div class="note">六步全部对应六维之一。完成顺序 = <span class="em">从最短投入开始</span>。</div>
+  </div>
+</div>
+</body>
+</html>

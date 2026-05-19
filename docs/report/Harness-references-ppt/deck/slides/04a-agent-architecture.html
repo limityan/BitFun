@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>05 · Agent Architecture</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<style>
+  .head { margin-bottom: 28px; padding-bottom: 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-end; }
+  .head .eyebrow { color: var(--ink-soft); margin-bottom: 14px; }
+  .head .eyebrow::before { background: var(--ink-soft); }
+  .head .h1 { font-size: 60px; line-height: 1.08; font-weight: 600; letter-spacing: -0.03em; }
+  .head .meta { text-align: right; font-family: var(--font-mono); font-size: 16px; color: var(--muted); line-height: 1.7; max-width: 470px; }
+  .head .meta .em { color: var(--ink); }
+
+  .layout { flex: 1; display: grid; grid-template-columns: 1.14fr 0.86fr; gap: 34px; align-items: stretch; }
+  .main-panel, .side-panel {
+    padding: 28px 32px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.015);
+    display: flex;
+    flex-direction: column;
+  }
+  .main-panel { background: var(--bg-elev1); border-color: var(--border-strong); }
+  .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .loop-map {
+    position: relative;
+    flex: 1;
+    min-height: 590px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .model-row {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 18px;
+    align-items: stretch;
+    margin-bottom: 26px;
+  }
+  .model-box {
+    padding: 22px 24px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.025);
+  }
+  .model-box .name {
+    font-family: var(--font-display);
+    font-size: 34px;
+    line-height: 1;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.025em;
+    margin-bottom: 10px;
+  }
+  .model-box .desc { font-size: 16px; color: var(--ink-soft); line-height: 1.45; }
+  .model-note {
+    padding: 20px 24px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    color: var(--ink-soft);
+    font-size: 18px;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+  }
+  .model-note .em { color: var(--ink); font-weight: 500; }
+
+  .pipeline {
+    display: grid;
+    grid-template-columns: 1fr 42px 1fr 42px 1fr 42px 1fr;
+    align-items: stretch;
+  }
+  .stage {
+    min-height: 210px;
+    padding: 20px 22px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: rgba(0,0,0,0.38);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .stage.active {
+    border-color: rgba(34,211,238,0.35);
+    background: rgba(34,211,238,0.055);
+  }
+  .stage .step {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .stage .title {
+    font-family: var(--font-display);
+    font-size: 28px;
+    line-height: 1.14;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    margin-bottom: 10px;
+  }
+  .stage .text {
+    font-size: 16px;
+    line-height: 1.48;
+    color: var(--ink-soft);
+  }
+  .stage .text .em { color: var(--ink); font-weight: 500; }
+  .pipe-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 24px;
+    color: var(--ink-soft);
+  }
+  .return-loop {
+    margin: 28px 126px 0;
+    height: 82px;
+    border: 1px dashed rgba(255,255,255,0.22);
+    border-top: none;
+    border-radius: 0 0 40px 40px;
+    position: relative;
+  }
+  .return-loop::before {
+    content: "repeat with observation";
+    position: absolute;
+    left: 50%;
+    bottom: -10px;
+    transform: translateX(-50%);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    background: var(--bg);
+    padding: 0 12px;
+  }
+  .return-loop::after {
+    content: "↺";
+    position: absolute;
+    left: -10px;
+    top: -17px;
+    font-family: var(--font-mono);
+    font-size: 28px;
+    color: var(--cyan-bright);
+  }
+
+  .side-panel { gap: 16px; }
+  .block {
+    padding: 18px 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.018);
+  }
+  .block .title {
+    font-family: var(--font-display);
+    font-size: 24px;
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+  .items { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  .item {
+    padding: 11px 12px;
+    background: var(--bg-elev1);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+  }
+  .item .name { font-family: var(--font-mono); font-size: 16px; color: var(--ink); margin-bottom: 4px; }
+  .item .desc { font-size: 16px; line-height: 1.35; color: var(--ink-soft); }
+  .hooks { display: grid; gap: 10px; }
+  .hook {
+    display: grid;
+    grid-template-columns: 84px 1fr;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid rgba(34,211,238,0.24);
+    background: rgba(34,211,238,0.045);
+    border-radius: var(--radius-sm);
+  }
+  .hook .name { font-family: var(--font-mono); font-size: 16px; color: var(--cyan-bright); }
+  .hook .desc { font-size: 16px; line-height: 1.38; color: var(--ink-soft); }
+  .finish-rule {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 16px;
+    line-height: 1.52;
+    color: var(--ink-soft);
+  }
+  .finish-rule .em { color: var(--ink); font-weight: 500; }
+
+  .footer-row { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border-strong); display: flex; justify-content: space-between; align-items: center; }
+  .footer-row .note { font-family: var(--font-display); font-size: 20px; color: var(--ink-soft); font-weight: 400; }
+  .footer-row .note .em { color: var(--ink); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header class="chrome-top">
+    <span class="brand-bar"><span class="brand-dot"></span><span class="mono"><span class="chrome-section">§02.0</span> <span class="dim">/</span> Agent Architecture</span></span>
+    <span class="mono"><span class="chrome-page">05</span> <span class="dim">/</span> 19</span>
+  </header>
+
+  <div class="head">
+    <div>
+      <div class="eyebrow">§02.0 · Agent 的基本架构</div>
+      <h1 class="h1">Agent 只是一个 While 循环</h1>
+    </div>
+    <div class="meta">
+      最小循环：<span class="em">思考 → 工具调用 → 观察 → 再思考</span><br>
+      直到任务完成或主动停止
+    </div>
+  </div>
+
+  <div class="layout">
+    <section class="main-panel">
+      <div class="label">Agent control loop</div>
+      <div class="loop-map">
+        <div class="model-row">
+          <div class="model-box">
+            <div class="name">AI Model</div>
+            <div class="desc">只负责生成下一步意图；不直接拥有系统权限。</div>
+          </div>
+          <div class="model-note">Agent 框架把模型输出变成<span class="em">可执行、可观察、可回滚</span>的原子步骤。</div>
+        </div>
+
+        <div class="pipeline">
+          <div class="stage">
+            <div>
+              <div class="step">01 · Think</div>
+              <div class="title">思考</div>
+            </div>
+            <div class="text">读取上下文，决定继续推理、调用工具、请求输入或结束。</div>
+          </div>
+          <div class="pipe-arrow">→</div>
+          <div class="stage active">
+            <div>
+              <div class="step">02 · Act</div>
+              <div class="title">工具调用</div>
+            </div>
+            <div class="text">通过 tool / MCP / skill 执行动作；前后都有 hook。</div>
+          </div>
+          <div class="pipe-arrow">→</div>
+          <div class="stage">
+            <div>
+              <div class="step">03 · Observe</div>
+              <div class="title">观察</div>
+            </div>
+            <div class="text">工具返回、错误、日志、测试输出进入下一轮上下文。</div>
+          </div>
+          <div class="pipe-arrow">→</div>
+          <div class="stage">
+            <div>
+              <div class="step">04 · Finish</div>
+              <div class="title">完成</div>
+            </div>
+            <div class="text">满足外部证据后结束；否则继续循环或请求人工确认。</div>
+          </div>
+        </div>
+        <div class="return-loop"></div>
+      </div>
+    </section>
+
+    <section class="side-panel">
+      <div class="label">Function calling surface</div>
+      <div class="block">
+        <div class="title">Act 阶段的能力面</div>
+        <div class="items">
+          <div class="item"><div class="name">Tools</div><div class="desc">文件、终端、浏览器、测试。</div></div>
+          <div class="item"><div class="name">MCP</div><div class="desc">外部系统统一包装。</div></div>
+          <div class="item"><div class="name">Skills</div><div class="desc">按任务载入已验证流程。</div></div>
+          <div class="item"><div class="name">Trace</div><div class="desc">记录输入、输出和副作用。</div></div>
+        </div>
+      </div>
+      <div class="block">
+        <div class="title">原子动作前后都有闸门</div>
+        <div class="hooks">
+          <div class="hook"><div class="name">Pre-hook</div><div class="desc">权限检查、危险命令拦截、上下文补全、确认请求。</div></div>
+          <div class="hook"><div class="name">Post-hook</div><div class="desc">结果解析、错误回注、状态更新、审计留痕。</div></div>
+        </div>
+      </div>
+      <div class="finish-rule">Finish 不是一句"完成了"。<br/>它要绑定<span class="em">测试、用户确认、review finding、计划项状态或失败说明</span>这些外部信号。</div>
+    </section>
+  </div>
+
+  <div class="footer-row">
+    <!-- <div class="note">Harness Engineering 的对象不是单条 prompt，而是<span class="em">整条 Agent 循环</span>。</div> -->
+  </div>
+</div>
+</body>
+</html>

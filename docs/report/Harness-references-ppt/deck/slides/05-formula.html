@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>05 · Definition · Harness</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<style>
+  .head { margin-bottom: 38px; padding-bottom: 22px; border-bottom: 1px solid var(--border); }
+  .head .eyebrow { color: var(--ink-soft); margin-bottom: 16px; }
+  .head .eyebrow::before { background: var(--ink-soft); }
+  .head .h1 { font-size: 64px; line-height: 1.1; font-weight: 600; letter-spacing: -0.03em; }
+  .head .h1 .em { color: var(--ink); }
+  .head .h1 .em-soft { color: var(--ink-soft); font-weight: 400; }
+
+  /* Top: 2 column · 词源 + 公式 */
+  .top {
+    display: grid;
+    grid-template-columns: 1fr 1.05fr;
+    gap: 56px;
+    margin-bottom: 32px;
+  }
+
+  /* Etymology card */
+  .etym {
+    padding: 32px 36px;
+    background: rgba(255,255,255,0.018);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+  }
+  .etym .label {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .etym .word {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 88px;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .etym .word .cn {
+    font-size: 42px;
+    color: var(--ink-soft);
+    font-weight: 500;
+    margin-left: 14px;
+    letter-spacing: -0.01em;
+  }
+  .etym .ipa {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--muted);
+    margin-bottom: 22px;
+  }
+  .etym .meaning {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 22px;
+    line-height: 1.5;
+    color: var(--ink);
+    font-weight: 400;
+    padding: 16px 0;
+    border-top: 1px dashed var(--border);
+    border-bottom: 1px dashed var(--border);
+    margin-bottom: 18px;
+  }
+  .etym .meaning .em { font-style: normal; font-weight: 600; color: var(--ink); }
+  .etym .source {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+  .etym .source .em { color: var(--ink-soft); }
+
+  /* Formula card */
+  .formula {
+    padding: 32px 36px;
+    background: rgba(255,255,255,0.018);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+  }
+  .formula .label {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding-bottom: 16px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .formula .eq-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .formula .eq {
+    font-family: var(--font-mono);
+    font-size: 60px;
+    font-weight: 500;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 28px;
+  }
+  .formula .eq .op { color: var(--muted); margin: 0 14px; }
+  .formula .eq .model { color: #67E8F9; }
+  .formula .eq .harness { color: #C084FC; }
+  .formula .anno-row {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr;
+    gap: 0;
+    width: 100%;
+    align-items: start;
+    padding-top: 16px;
+    border-top: 1px dashed var(--border);
+  }
+  .formula .anno-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .formula .anno-col .arrow {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--ink-soft);
+    letter-spacing: 0.05em;
+  }
+  .formula .anno-col .arrow.model { color: #67E8F9; }
+  .formula .anno-col .arrow.harness { color: #C084FC; }
+  .formula .anno-col .label-cn {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: -0.005em;
+  }
+  .formula .anno-col .label-en {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+  .formula .source {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--muted);
+    margin-top: 16px;
+    text-align: center;
+  }
+  .formula .source .em { color: var(--ink-soft); }
+
+  /* Bottom · authoritative quote 业内定义 */
+  .quote-band {
+    padding: 26px 36px;
+    background: rgba(255,255,255,0.018);
+    border-left: 3px solid var(--ink-soft);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 36px;
+    align-items: center;
+  }
+  .quote-band .quote-text {
+    font-family: var(--font-display);
+    font-size: 26px;
+    line-height: 1.45;
+    color: var(--ink);
+    font-weight: 400;
+    letter-spacing: -0.005em;
+  }
+  .quote-band .quote-text .em { font-weight: 600; }
+  .quote-band .quote-text .em-key { color: var(--ink); border-bottom: 2px solid var(--ink-soft); padding-bottom: 1px; }
+  .quote-band .attribution {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--muted);
+    line-height: 1.7;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .quote-band .attribution .em { color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header class="chrome-top">
+    <span class="brand-bar"><span class="brand-dot"></span><span class="mono"><span class="chrome-section">§02</span> <span class="dim">/</span> Definition</span></span>
+    <span class="mono"><span class="chrome-page">08</span> <span class="dim">/</span> 19</span>
+  </header>
+
+  <div class="head">
+    <div class="eyebrow">§02 · 先把 "Harness" 这个词讲清楚</div>
+    <h1 class="h1"><span class="em">Harness</span><span class="em-soft"> · Engineering</span></h1>
+  </div>
+
+  <div class="top">
+    <div class="etym">
+      <div class="label">Etymology · 词源 / 直译</div>
+      <div class="word">harness<span class="cn">马具 · 挽具</span></div>
+      <div class="ipa">/ˈhɑːnɪs/ · 名词 · 动词</div>
+      <p class="meaning">"directs a powerful animal's energy toward <span class="em">useful work</span> without letting it <span class="em">run wild</span>"</p>
+      <p class="source">把<span class="em">强大动物的能量</span>导向有用工作，<br>同时不让它跑偏。<br><br>—— Anthropic 在 Effective Agents 文档中<br>把这个词正式引入 Agent 工程语境。</p>
+    </div>
+
+    <div class="formula">
+      <div class="label">The Working Formula · 工作公式</div>
+      <div class="eq-block">
+        <div class="eq">
+          <span style="color:var(--ink);">Agent</span>
+          <span class="op">=</span>
+          <br/>
+          <span class="model">Model</span>
+          <span class="op">+</span>
+          <span class="harness">Harness</span>
+        </div>
+        <div class="anno-row">
+          <div class="anno-col">
+            <span class="arrow model">↑ Model</span>
+            <span class="label-cn">决定<span style="color:var(--ink-soft);font-weight:400;">上限</span></span>
+            <span class="label-en">capability ceiling</span>
+          </div>
+          <div></div>
+          <div class="anno-col">
+            <span class="arrow harness">↓ Harness</span>
+            <span class="label-cn">决定<span style="color:var(--ink-soft);font-weight:400;">下限</span></span>
+            <span class="label-en">reliability floor</span>
+          </div>
+        </div>
+        <p class="source">公式由 LangChain 在 <span class="em">"Anatomy of an Agent Harness"</span> 中提出，<br>已被 Anthropic / OpenAI 文档广泛沿用。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="quote-band">
+    <p class="quote-text">"Harness Engineering 是<span class="em-key">设计、构建、运维模型外部所有基础设施</span>的工程实践 —— 上下文组装、工具编排、验证回路、约束与可观测性。它决定 Agent 在生产环境<span class="em-key">是否可靠</span>。"</p>
+    <p class="attribution">综合自<br><span class="em">Anthropic</span> · effective harnesses<br><span class="em">Martin Fowler</span> · Boeckeler 三组件定义<br><span class="em">LangChain</span> · agent harness anatomy</p>
+  </div>
+</div>
+</body>
+</html>

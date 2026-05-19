@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>06 · Prompt Engineering</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<style>
+  .head { margin-bottom: 30px; padding-bottom: 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-end; }
+  .head .eyebrow { color: var(--ink-soft); margin-bottom: 14px; }
+  .head .eyebrow::before { background: var(--ink-soft); }
+  .head .h1 { font-size: 60px; line-height: 1.08; font-weight: 600; letter-spacing: -0.03em; }
+  .head .meta { text-align: right; font-family: var(--font-mono); font-size: 16px; color: var(--muted); line-height: 1.7; max-width: 450px; }
+  .head .meta .em { color: var(--ink); }
+
+  .layout { flex: 1; display: grid; grid-template-columns: 0.78fr 1.22fr; gap: 34px; align-items: stretch; }
+  .thesis, .stack {
+    padding: 28px 32px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: rgba(255,255,255,0.015);
+    display: flex;
+    flex-direction: column;
+  }
+  .thesis { background: var(--bg-elev1); border-color: var(--border-strong); }
+  .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .big {
+    font-family: var(--font-display);
+    font-size: 38px;
+    line-height: 1.16;
+    letter-spacing: -0.025em;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 20px;
+  }
+  .body { font-size: 18px; line-height: 1.62; color: var(--ink-soft); }
+  .body .em { color: var(--ink); font-weight: 500; }
+  .limit {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+  .limit .em { color: #FCA5A5; font-weight: 500; }
+
+  .prompt-stack { display: grid; gap: 12px; }
+  .layer {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: 18px;
+    padding: 16px 18px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.018);
+    align-items: start;
+  }
+  .layer.primary { border-color: var(--border-strong); background: rgba(255,255,255,0.025); }
+  .layer .name {
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 1.15;
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+  }
+  .layer .name .en {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    margin-top: 5px;
+  }
+  .layer .desc {
+    font-size: 16px;
+    color: var(--ink-soft);
+    line-height: 1.48;
+  }
+  .layer .desc .em { color: var(--ink); font-weight: 500; }
+  .layer .desc .code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink);
+    background: var(--bg-elev2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+
+  .contract {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+  }
+  .chip {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    text-align: center;
+    padding: 7px 6px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg-elev1);
+  }
+
+  .footer-row { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--border-strong); display: flex; justify-content: space-between; align-items: center; }
+  .footer-row .note { font-family: var(--font-display); font-size: 20px; color: var(--ink-soft); font-weight: 400; }
+  .footer-row .note .em { color: var(--ink); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header class="chrome-top">
+    <span class="brand-bar"><span class="brand-dot"></span><span class="mono"><span class="chrome-section">§02.0</span> <span class="dim">/</span> Prompt Engineering</span></span>
+    <span class="mono"><span class="chrome-page">06</span> <span class="dim">/</span> 19</span>
+  </header>
+
+  <div class="head">
+    <div>
+      <div class="eyebrow">§02.0 · Prompt Engineering</div>
+      <h1 class="h1">Prompt 不只是用户输入的部分</h1>
+    </div>
+    <div class="meta">
+      Prompt 定义了每个角色、工具和技能<br>
+      <span class="em">在当前回合应如何行动</span>
+    </div>
+  </div>
+
+  <div class="layout">
+    <section class="thesis">
+      <div class="label">What prompt controls</div>
+      <div class="big">Prompt 工程是控制模型的起点</div>
+      <p class="body">在 Agent 系统里，Prompt 分布在多个层级：主 Agent 的任务协议、Sub-Agent 的角色协议、Tool 的调用说明、MCP 的资源语义、Skills 的可复用流程。它们共同决定模型如何解释任务、选择动作、调用能力和停止。</p>
+      <div class="limit"><span class="em">局限也在这里：</span><br>Prompt 能约束"模型怎么想和怎么说"，但工具权限、上下文装载、外部验证、审计追踪，必须由更外层 Harness 执行。</div>
+    </section>
+
+    <section class="stack">
+      <div class="label">Prompt layers inside an agent</div>
+      <div class="prompt-stack">
+        <div class="layer primary">
+          <div class="name">主 Agent Prompt<span class="en">main agent</span></div>
+          <div class="desc">定义整体任务协议：身份、目标、默认工作方式、完成条件、遇到不确定性时是否提问。它决定一轮任务的<span class="em">主控制语气和边界</span>。</div>
+        </div>
+        <div class="layer">
+          <div class="name">Sub-Agent Prompt<span class="en">role agent</span></div>
+          <div class="desc">把复杂任务拆给专门角色，例如 planner、debugger、reviewer、fixer。每个子角色有自己的输入、输出和禁止事项。</div>
+        </div>
+        <div class="layer">
+          <div class="name">Tool Prompt<span class="en">tool schema</span></div>
+          <div class="desc">告诉模型工具能做什么、参数怎么填、返回值怎么读、失败时怎么处理。好的工具说明会减少误调用和幻觉参数。</div>
+        </div>
+        <div class="layer">
+          <div class="name">MCP Prompt<span class="en">external context</span></div>
+          <div class="desc">MCP server 暴露资源和工具，也会携带语义说明：哪些资源可读、哪些操作有副作用、何时需要用户授权。</div>
+        </div>
+        <div class="layer">
+          <div class="name">Skills<span class="en">stored workflow</span></div>
+          <div class="desc">Skill 是被沉淀下来的成功流程：何时触发、先读什么、调用什么工具、输出什么格式。它让 Prompt 从单次技巧变成<span class="em">可复用方法</span>。</div>
+        </div>
+      </div>
+      <div class="contract">
+        <div class="chip">Role</div>
+        <div class="chip">Goal</div>
+        <div class="chip">Constraints</div>
+        <div class="chip">Process</div>
+        <div class="chip">Output</div>
+        <div class="chip">Stop</div>
+      </div>
+    </section>
+  </div>
+
+  <div class="footer-row">
+    <div class="note">Prompt Engineering 是入口，但不是终点：<span class="em">Prompt 要被工具、上下文和反馈闭环接住</span>。</div>
+  </div>
+</div>
+</body>
+</html>

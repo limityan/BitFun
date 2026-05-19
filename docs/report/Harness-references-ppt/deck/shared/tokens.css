@@ -1,0 +1,373 @@
+/* ──────────────────────────────────────────────────────────────
+ * Design tokens — Vercel × Linear · 深色现代科技风 v3
+ * 纯黑底 · Geist 无衬线 · 双 accent (cyan + purple) glow · 玻璃容器 · 微网格背景
+ * 参考：Vercel.com · Linear.app · Anthropic Console · Resend.com
+ * ──────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Color · Vercel 黑灰阶 · 极克制 */
+  --bg:        #000000;
+  --bg-elev1:  #0A0A0A;          /* 卡片底 */
+  --bg-elev2:  #111111;          /* hover/highlight */
+  --bg-elev3:  #1A1A1A;          /* 容器边界 */
+  --ink:       #FAFAFA;          /* 主文字 */
+  --ink-soft:  #A1A1AA;          /* 次文字 (zinc-400) */
+  --muted:     #71717A;          /* zinc-500 */
+  --dim:       #52525B;          /* zinc-600 chrome */
+  --border:    rgba(255,255,255,0.10);
+  --border-strong: rgba(255,255,255,0.18);
+
+  /* Accent · 电光双色 · cyan 主 + purple 副 */
+  --cyan:        #22D3EE;
+  --cyan-bright: #67E8F9;
+  --cyan-deep:   #0891B2;
+  --cyan-soft:   rgba(34,211,238,0.12);
+  --cyan-glow:   rgba(34,211,238,0.45);
+
+  --purple:        #A855F7;
+  --purple-bright: #C084FC;
+  --purple-soft:   rgba(168,85,247,0.12);
+  --purple-glow:   rgba(168,85,247,0.45);
+
+  --green:    #22C55E;          /* success / OK */
+  --red:      #EF4444;          /* fail / incident */
+  --red-soft: rgba(239,68,68,0.10);
+  --orange:   #F97316;          /* warning */
+
+  /* Type · 全无衬线 · Geist 模拟用 Inter + 中文 Noto Sans SC
+   * Windows 上英文 mono/display 字体通常不含中文字形；必须显式给中文无衬线 fallback，
+   * 否则包含中文的 mono 标签会退到 SimSun/宋体。
+   */
+  --font-sans-cn: "Noto Sans SC", "Microsoft YaHei", "Microsoft JhengHei", "Noto Sans CJK SC", "Source Han Sans SC", "PingFang SC", "Hiragino Sans GB";
+  --font-display: "Inter", var(--font-sans-cn), "Segoe UI", Arial, sans-serif;
+  --font-body:    "Inter", var(--font-sans-cn), "Segoe UI", Arial, sans-serif;
+  --font-mono:    "JetBrains Mono", "SF Mono", "IBM Plex Mono", "Cascadia Mono", "Consolas", var(--font-sans-cn), monospace;
+
+  /* Scale · Linear 风 · 紧凑信息密度 + 适度 hero */
+  --hero-num:  168px;   /* 大数字 */
+  --h1:        96px;    /* 章节大标题 */
+  --h2:        56px;    /* 页内主标题 */
+  --h3:        32px;
+  --body:      24px;
+  --small:     18px;
+  --mono:      18px;
+  --chrome:    13px;
+
+  /* Spacing */
+  --pad-x: 96px;
+  --pad-y: 80px;
+
+  /* Radii · Linear 标志小圆角 */
+  --radius-sm: 6px;
+  --radius:    10px;
+  --radius-lg: 14px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--body);
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.slide {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  padding: var(--pad-y) var(--pad-x);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ── 背景 · 仅极淡 dot grid，无 radial glow ─────────── */
+.slide::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,0.035) 1px, transparent 0);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+.slide > * { position: relative; z-index: 1; }
+
+/* ── Page chrome · 极简顶/底 status bar ──────────────── */
+.chrome-top, .chrome-bottom {
+  position: absolute;
+  left: var(--pad-x); right: var(--pad-x);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: var(--chrome);
+  color: var(--dim);
+  letter-spacing: 0.04em;
+  z-index: 10;
+}
+.chrome-top    { top: 36px; }
+.chrome-bottom { bottom: 36px; }
+
+.chrome-section { color: var(--cyan); font-weight: 500; }
+.chrome-page    { font-variant-numeric: tabular-nums; color: var(--ink-soft); }
+
+/* logo lockup · 左上 brand bar (静态克制) */
+.brand-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.brand-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--ink-soft);
+}
+
+/* ── Type primitives ─────────────────────────────────── */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: var(--small);
+  font-weight: 500;
+  color: var(--cyan);
+  letter-spacing: 0.04em;
+  margin-bottom: 28px;
+}
+.eyebrow::before {
+  content: "";
+  display: inline-block;
+  width: 24px; height: 1px;
+  background: var(--cyan);
+}
+
+.h1 {
+  font-family: var(--font-display);
+  font-size: var(--h1);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+}
+.h2 {
+  font-family: var(--font-display);
+  font-size: var(--h2);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+.h3 {
+  font-family: var(--font-display);
+  font-size: var(--h3);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.body {
+  font-family: var(--font-body);
+  font-size: var(--body);
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+.lede {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.cyan { color: var(--cyan); }
+.cyan-glow { color: var(--cyan); text-shadow: 0 0 24px var(--cyan-glow); }
+.purple { color: var(--purple); }
+.purple-glow { color: var(--purple); text-shadow: 0 0 24px var(--purple-glow); }
+.muted  { color: var(--muted); }
+.dim    { color: var(--dim); }
+
+/* gradient text · cyan→purple */
+.grad {
+  background: linear-gradient(135deg, var(--cyan-bright) 0%, var(--purple-bright) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* hero number */
+.hero-num {
+  font-family: var(--font-display);
+  font-size: var(--hero-num);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Glass card · Linear 标志容器 ────────────────────── */
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 32px;
+  backdrop-filter: blur(8px);
+}
+.card.elevated {
+  background: var(--bg-elev1);
+  border-color: var(--border-strong);
+}
+.card.accent-glow {
+  border-color: var(--cyan);
+  box-shadow:
+    0 0 0 1px var(--cyan-soft),
+    0 8px 40px var(--cyan-glow);
+}
+
+/* ── Pills / Badges ──────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  background: var(--bg-elev2);
+  color: var(--ink-soft);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.badge.cyan {
+  color: var(--cyan-bright);
+  background: var(--cyan-soft);
+  border-color: rgba(34,211,238,0.30);
+}
+.badge.purple {
+  color: var(--purple-bright);
+  background: var(--purple-soft);
+  border-color: rgba(168,85,247,0.30);
+}
+.badge.red {
+  color: #FCA5A5;
+  background: var(--red-soft);
+  border-color: rgba(239,68,68,0.35);
+}
+.badge.green {
+  color: #86EFAC;
+  background: rgba(34,197,94,0.10);
+  border-color: rgba(34,197,94,0.30);
+}
+.badge .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ── Tables · Linear/Vercel data table ────────────────── */
+.spec-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: var(--font-body);
+}
+.spec-table thead th {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0 24px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-strong);
+}
+.spec-table tbody tr {
+  transition: background 0.15s;
+}
+.spec-table tbody td {
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* ── Code block · syntax-highlight feeling ──────────── */
+.code {
+  background: var(--bg-elev1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: var(--mono);
+  line-height: 1.7;
+  color: var(--ink);
+  padding: 24px 32px;
+  white-space: pre;
+  overflow: hidden;
+  position: relative;
+}
+.code::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--cyan), var(--purple));
+}
+.code .kw { color: var(--purple-bright); }
+.code .str { color: #86EFAC; }
+.code .com { color: var(--muted); }
+.code .num { color: var(--cyan-bright); }
+
+/* ── Pull quote ───────────────────────────────────────── */
+.pull-quote {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 72px;
+  line-height: 1.18;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+/* ── Hairline ─────────────────────────────────────────── */
+.rule {
+  height: 1px;
+  background: var(--border);
+  margin: 32px 0;
+}
+.rule.gradient {
+  background: linear-gradient(90deg, transparent, var(--cyan), var(--purple), transparent);
+  height: 1px;
+  opacity: 0.6;
+}
+
+/* ── Two-column ──────────────────────────────────────── */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: stretch;
+  flex: 1;
+}

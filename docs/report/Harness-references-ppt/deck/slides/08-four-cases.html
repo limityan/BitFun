@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>15 · Four Cases</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<style>
+  .head { margin-bottom: 40px; }
+  .head .eyebrow {
+    color: var(--ink-soft);
+    margin-bottom: 18px;
+  }
+  .head .eyebrow::before { background: var(--ink-soft); }
+  .head .h1 {
+    font-size: 60px;
+    line-height: 1.1;
+    max-width: 1500px;
+    margin-bottom: 18px;
+    font-weight: 600;
+  }
+  .head .lede {
+    font-size: 22px;
+    color: var(--ink-soft);
+    max-width: 1500px;
+  }
+
+  .cases {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+  }
+  .cases thead th {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding: 0 20px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-strong);
+  }
+  .cases tbody td {
+    padding: 22px 20px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+
+  .cases .num {
+    width: 80px;
+    font-family: var(--font-mono);
+    color: var(--dim);
+    font-size: 15px;
+    padding-top: 26px;
+    letter-spacing: 0.05em;
+  }
+
+  .cases .case-name { width: 380px; }
+  .cases .case-name .name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 22px;
+    color: var(--ink);
+    line-height: 1.25;
+    margin-bottom: 6px;
+    letter-spacing: -0.015em;
+  }
+  .cases .case-name .meta {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  .cases .dims { width: 360px; }
+  .cases .dims .badge {
+    margin: 2px 4px 2px 0;
+  }
+
+  .cases .why {
+    color: var(--ink);
+    font-weight: 400;
+  }
+  .cases .why code,
+  .cases .why .mono-inline {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--ink);
+    background: var(--bg-elev2);
+    border: 1px solid var(--border);
+    padding: 2px 7px;
+    border-radius: 4px;
+  }
+
+  /* Cursor 事故行：克制红色边框 */
+  .cases tr.incident td {
+    background: rgba(239,68,68,0.04);
+  }
+  .cases tr.incident td:first-child {
+    box-shadow: inset 2px 0 0 var(--red);
+  }
+  .cases tr.incident .num { color: var(--red); }
+
+  .footer-note {
+    margin-top: 28px;
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    display: flex;
+    justify-content: space-between;
+  }
+  .footer-note .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 24px;
+  }
+  .footer-note .legend-bar {
+    display: inline-block;
+    width: 12px; height: 2px;
+    background: var(--red);
+  }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header class="chrome-top">
+    <span class="brand-bar">
+      <span class="brand-dot"></span>
+      <span class="mono"><span class="chrome-section">§04</span> <span class="dim">/</span> Four Cases</span>
+    </span>
+    <span class="mono"><span class="chrome-page">11</span> <span class="dim">/</span> 19</span>
+  </header>
+
+  <div class="head">
+    <div class="eyebrow">§04 · 案例归因</div>
+    <h1 class="h1">四个真实案例的六维归因</h1>
+    <p class="lede">2026 年 3–4 月发生的四件事，统一按 §03 的六维框架进行问题定位。</p>
+  </div>
+
+  <table class="cases">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>case</th>
+        <th>dimensions</th>
+        <th>attribution</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="num">01</td>
+        <td class="case-name">
+          <div class="name">Claude Code 质量回归</div>
+          <div class="meta">2026.04 · Anthropic Postmortem</div>
+        </td>
+        <td class="dims">
+          <span class="badge">编排</span>
+          <span class="badge">记忆</span>
+          <span class="badge">约束</span>
+        </td>
+        <td class="why">默认推理力度由 high 调降至 medium（编排）、缓存清空多轮思考历史（记忆）、提示词施加输出长度上限（约束）—— 三个维度同时退化。</td>
+      </tr>
+      <tr>
+        <td class="num">02</td>
+        <td class="case-name">
+          <div class="name">LangChain Deep Agents</div>
+          <div class="meta">Terminal Bench 2.0 · 52.8 → 66.5</div>
+        </td>
+        <td class="dims">
+          <span class="badge">评估</span>
+          <span class="badge">记忆</span>
+          <span class="badge">编排</span>
+        </td>
+        <td class="why">模型权重不变，仅引入 trace（评估）、环境扫描注入上下文（记忆）、循环检测与自适应推理力度（编排）—— 排名由 Top 30 升至 Top 5。</td>
+      </tr>
+      <tr class="incident">
+        <td class="num">03</td>
+        <td class="case-name">
+          <div class="name">Cursor 误删 Railway 生产数据卷</div>
+          <div class="meta">2026.04.25 · Production Incident</div>
+        </td>
+        <td class="dims">
+          <span class="badge red">− 记忆</span>
+          <span class="badge red">− 约束</span>
+          <span class="badge red">− 编排</span>
+        </td>
+        <td class="why">Agent 自主获取访问 token 并构造 <code>volumeDelete</code> GraphQL 调用，执行链路缺少危险操作硬拦截。详见 §04.1。</td>
+      </tr>
+      <tr>
+        <td class="num">04</td>
+        <td class="case-name">
+          <div class="name">BitFun</div>
+          <div class="meta">15 contributors · 97% 代码由 Agent 产出</div>
+        </td>
+        <td class="dims">
+          <span class="badge">六维全部覆盖</span>
+        </td>
+        <td class="why">非模型能力差异，而是 Harness 体系将 Agent 产出从 demo 级提升至产品级稳定输出。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer-note">
+    <span><span class="legend-bar"></span>&nbsp;&nbsp;<span style="color:#FCA5A5;">−</span> 标记表示该维度缺失</span>
+    <span>case 03 详见次页 · case 04 落地详情见 §06</span>
+  </div>
+</div>
+</body>
+</html>

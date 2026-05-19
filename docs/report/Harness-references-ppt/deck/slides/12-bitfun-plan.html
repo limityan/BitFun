@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>13 · BitFun · Planning Harness</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<style>
+  .head { margin-bottom: 32px; padding-bottom: 22px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-end; }
+  .head .h1 { font-size: 52px; line-height: 1.1; font-weight: 600; letter-spacing: -0.025em; }
+  .head .h1 .sub { color: var(--muted); font-weight: 400; font-size: 22px; display: block; margin-top: 10px; letter-spacing: -0.005em; font-family: var(--font-mono); }
+  .head .meta { text-align: right; font-family: var(--font-mono); font-size: 16px; color: var(--muted); line-height: 1.7; }
+  .head .meta .em { color: var(--ink); }
+
+  .layout { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: stretch; }
+
+  /* Prompt 截图卡片 */
+  .prompt-card {
+    padding: 28px 32px;
+    background: var(--bg-elev1);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+  }
+  .prompt-card .label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .prompt-card .label .path { color: var(--ink-soft); }
+  .prompt-card .quote {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--ink);
+    margin-bottom: 18px;
+  }
+  .prompt-card .quote .key {
+    background: rgba(239,68,68,0.08);
+    border-bottom: 1px solid rgba(239,68,68,0.45);
+    padding: 1px 3px;
+  }
+  .prompt-card .quote .em { color: #FCA5A5; font-weight: 500; }
+  .prompt-card .why {
+    font-size: 16px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+  }
+  .prompt-card .why .em { color: var(--ink); font-weight: 500; }
+
+  /* 工作流卡片 */
+  .workflow {
+    padding: 28px 32px;
+    background: rgba(255,255,255,0.015);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .workflow .wf-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .step-row {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 14px;
+    padding: 12px 0;
+    border-bottom: 1px dashed var(--border);
+    align-items: baseline;
+  }
+  .step-row:last-child { border-bottom: none; }
+  .step-row .step-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  .step-row .step-text {
+    font-family: var(--font-display);
+    font-size: 17px;
+    color: var(--ink);
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: -0.005em;
+  }
+  .step-row .step-text .em { font-weight: 600; color: var(--ink); }
+  .step-row .step-text .dim { color: var(--muted); font-size: 16px; }
+
+  .footer-row { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--border-strong); display: flex; justify-content: space-between; align-items: center; }
+  .footer-row .note { font-family: var(--font-display); font-size: 20px; color: var(--ink-soft); font-weight: 400; }
+  .footer-row .note .em { color: var(--ink); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="slide">
+  <header class="chrome-top">
+    <span class="brand-bar"><span class="brand-dot"></span><span class="mono"><span class="chrome-section">§06.1</span> <span class="dim">/</span> BitFun Planner </span></span>
+    <span class="mono"><span class="chrome-page">15</span> <span class="dim">/</span> 19</span>
+  </header>
+
+  <div class="head">
+    <div>
+      <h1 class="h1">BitFun Planner：把 SDD 变成 Agent 的默认入口<span class="sub">Spec-Driven Development · 先让 Spec 成为交付合同</span></h1>
+    </div>
+    <div class="meta">
+      SDD 的核心不是"多写文档"<br>
+      而是先建立单一事实源<br>
+      <span class="em">再让 Agent 围绕 Spec 执行</span>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="prompt-card">
+      <div class="label">
+        <span>BitFun · SDD contract</span>
+        <span class="path">prompts/plan_mode.md · L1–L3</span>
+      </div>
+      <div class="quote">You are a software architect and planning specialist for designing implementation plans.<br><br><span class="key em">You MUST NOT make any edits</span><span class="key"> (with the exception of the plan file you created), run any non-readonly tools, or otherwise make any changes to the system.</span> <span class="key em">This supersedes any other instructions you have received</span>.</div>
+      <p class="why"><span class="em">和 SDD 的关系：</span>SDD 强调 spec 先于代码，spec 是需求、设计、任务和证据之间的中心工件。BitFun 的 Plan mode 把这件事做成 Agent 协议：先只读探索，再生成可审批 spec，审批前不进入实现。</p>
+    </div>
+
+    <div class="workflow">
+      <div class="wf-title">BitFun Plan Mode · SDD in practice</div>
+      <div class="step-row">
+        <span class="step-num">step 01</span>
+        <span class="step-text"><span class="em">Specify</span> intent <span class="dim">— 把一句需求改写成目标、范围、非目标</span></span>
+      </div>
+      <div class="step-row">
+        <span class="step-num">step 02</span>
+        <span class="step-text"><span class="em">Ground</span> in codebase <span class="dim">— 只读探索 BitFun 现有模块、约束和相似实现</span></span>
+      </div>
+      <div class="step-row">
+        <span class="step-num">step 03</span>
+        <span class="step-text"><span class="em">Design</span> contract <span class="dim">— 写清改哪些层、哪些文件、哪些边界不能碰</span></span>
+      </div>
+      <div class="step-row">
+        <span class="step-num">step 04</span>
+        <span class="step-text"><span class="em">Plan</span> executable steps <span class="dim">— 将 spec 拆成可验证的实施步骤</span></span>
+      </div>
+      <div class="step-row">
+        <span class="step-num">step 05</span>
+        <span class="step-text">进入 <span class="em">reviewable checkpoint</span><span class="dim"> — 用户审的是事实源，不是模型即兴解释</span></span>
+      </div>
+      <div class="step-row">
+        <span class="step-num">step 06</span>
+        <span class="step-text"><span class="em">Build</span> against spec <span class="dim">— 审批后 Agent 才获得写权限并按 spec 交付</span></span>
+      </div>
+      <div class="step-row">
+        <span class="step-num">关键</span>
+        <span class="step-text"><span class="dim">在 BitFun 里，SDD 不是流程口号，而是 Plan → Approve → Implement 的状态机</span></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-row">
+    <div class="note">Plan Mode = <span class="em">SDD 的 Agent 化落地</span>：先把意图固化成 Spec，再让模型在 Spec 内执行。</div>
+  </div>
+</div>
+</body>
+</html>
