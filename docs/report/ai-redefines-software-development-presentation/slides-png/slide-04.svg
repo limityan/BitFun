@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <pattern id="lightDots" width="34" height="34" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1.7" fill="#C4C6C1" opacity="0.55"/>
+    </pattern>
+    <filter id="paperShadow" x="-18%" y="-18%" width="136%" height="150%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#4B5563" flood-opacity="0.13"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#106BEF" stroke-width="2"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#A5A9AE" stroke-width="2"/>
+    </marker>
+  </defs>
+  <rect width="1920" height="1080" fill="#FBFAF7"/>
+  
+    <rect x="1560" y="76" width="168" height="134" rx="12" fill="none" stroke="#D7D7D2" stroke-width="2"/>
+    <path d="M1578 118 h42 m-42 28 h112 m-112 28 h88" stroke="#D7D7D2" stroke-width="2" stroke-dasharray="5 8" fill="none"/>
+    <path d="M1848 56 h-88 q-28 0 -28 28 v126" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M1782 890 v-190 q0 -32 32 -32 h50" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M1650 820 h112 q30 0 30 -30 v-80" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <circle cx="1800" cy="708" r="7" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <circle cx="1762" cy="820" r="7" fill="#106BEF"/>
+    <circle cx="1848" cy="622" r="6" fill="#FF5A1F"/>
+    <rect x="1378" y="720" width="180" height="120" fill="url(#lightDots)" opacity="0.48"/>
+    <rect x="152" y="318" width="128" height="96" fill="url(#lightDots)" opacity="0.42"/>
+    <path d="M70 740 h120 v118 h250" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M50 510 h116 q26 0 26 26 v52" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <circle cx="150" cy="857" r="5" fill="#FF5A1F"/>
+    
+    <g opacity="0.26" transform="translate(1350 820) scale(0.72)">
+      <path d="M0 120 L110 60 L220 120 L110 180 Z" fill="none" stroke="#C4C6C1" stroke-width="2"/>
+      <path d="M110 60 V180 M0 120 V220 M220 120 V220 M0 220 H320" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M260 50 h70 v170 h-70 Z M280 80 h30 M280 116 h30 M280 152 h30" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M360 96 h90 v124 h-90 Z M382 122 h46 M382 154 h46 M382 186 h46" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M88 144 h42 v76 h-42 Z M150 126 h48 v94 h-48 Z" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+    </g>
+  
+  
+  
+    <style>
+      text { font-family: "Microsoft YaHei", "Noto Sans SC", "PingFang SC", "Segoe UI", Arial, sans-serif; dominant-baseline: hanging; }
+      .brand5 { font-size: 42px; font-weight: 900; fill: #050608; }
+      .num5 { font-family: "Arial", "Microsoft YaHei", sans-serif; font-weight: 900; fill: #050608; }
+      .h15 { font-size: 68px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .h25 { font-size: 58px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .sub5 { font-size: 31px; font-weight: 560; fill: #5F6670; }
+      .body5 { font-size: 30px; font-weight: 700; fill: #050608; }
+      .muted5 { font-size: 24px; font-weight: 560; fill: #5F6670; }
+      .label5 { font-size: 29px; font-weight: 900; fill: #050608; }
+      .small5 { font-size: 23px; font-weight: 760; fill: #5F6670; }
+      .micro5 { font-size: 19px; font-weight: 760; fill: #5F6670; }
+    </style>
+    <text x="42" y="46" class="brand5">BitFun</text>
+    <text x="1840" y="50" class="small5" text-anchor="end">04 / 11</text>
+  
+  
+    
+    <text x="96" y="132" class="small5" style="fill:#106BEF;font-weight:900">01 / 开场案例</text>
+    <text x="96" y="188" class="h15" style="font-size:66px">18w+ 行代码之后，问题真的变少了吗？</text>
+    <text x="100" y="282" class="sub5">AI 放大的不只是产能，也会放大速度、风险和组织方式的重分配。</text>
+    <path d="M96 356 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="230" cy="356" r="5.5" fill="#FF5A1F"/>
+  
+    <rect x="128" y="432" width="590" height="400" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="178" y="502" class="small5" style="fill:#106BEF;font-weight:900">BitFun 开场现象</text>
+    <path d="M560 540 C612 506 648 476 672 444" stroke="#106BEF" stroke-width="6" fill="none" marker-end="url(#arrowBlue)"/>
+    <text x="178" y="592" class="num5" style="font-size:72px;fill:#106BEF">18w+ 行代码</text>
+    <path d="M190 744 H654" stroke="#C4C6C1" stroke-width="3"/>
+    <text x="178" y="766" class="body5">不是结论，是问题入口</text>
+    <text x="178" y="796" class="muted5">产品成熟度、质量检查、团队共识是否同步跟上？</text>
+    <path d="M728 620 H828" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
+    
+    <rect x="858" y="380" width="380" height="118" rx="14" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <g transform="translate(888 410) scale(0.90625)"><path d="M18 18 L34 32 L18 46" stroke="#106BEF" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M38 48 h16" stroke="#106BEF" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    
+    <text x="976" y="406" class="label5" style="font-size:29px">局部编码</text>
+    <text x="976" y="446" class="small5" style="font-size:23px">任务完成更快</text>
+  
+    
+    <rect x="1318" y="380" width="380" height="118" rx="14" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <g transform="translate(1348 410) scale(0.90625)"><rect x="12" y="10" width="40" height="44" rx="4" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M22 32 l8 8 l14 -18" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    
+    <text x="1436" y="406" class="label5" style="font-size:29px">测试验证</text>
+    <text x="1436" y="446" class="small5" style="font-size:23px">失败会返工</text>
+  
+    
+    <rect x="858" y="610" width="380" height="118" rx="14" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <g transform="translate(888 640) scale(0.90625)"><circle cx="32" cy="22" r="8" stroke="#106BEF" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="18" cy="30" r="6" stroke="#106BEF" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="46" cy="30" r="6" stroke="#106BEF" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M14 50 q18 -16 36 0 M4 54 q14 -12 28 -5 M32 49 q14 -7 28 5" stroke="#106BEF" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    
+    <text x="976" y="636" class="label5" style="font-size:29px">代码检视</text>
+    <text x="976" y="676" class="small5" style="font-size:23px">认知成本转移</text>
+  
+    
+    <rect x="1318" y="610" width="380" height="118" rx="14" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <g transform="translate(1348 640) scale(0.90625)"><path d="M48 18 A22 22 0 0 0 14 24 M14 24 h12 M14 24 v-12 M16 46 A22 22 0 0 0 50 40 M50 40 H38 M50 40 v12" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M24 34 l7 7 l13 -17" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    
+    <text x="1436" y="636" class="label5" style="font-size:29px">问题修复</text>
+    <text x="1436" y="676" class="small5" style="font-size:23px">收益被重新分配</text>
+  
+    <path d="M1238 439 H1300" stroke="#106BEF" stroke-width="4" fill="none" marker-end="url(#arrowBlue)"/>
+    <path d="M1238 669 H1300" stroke="#106BEF" stroke-width="4" fill="none" marker-end="url(#arrowBlue)"/>
+    <path d="M1048 510 V592" stroke="#C4C6C1" stroke-width="3" stroke-dasharray="8 9"/>
+    <path d="M1508 510 V592" stroke="#C4C6C1" stroke-width="3" stroke-dasharray="8 9"/>
+    <rect x="202" y="846" width="1508" height="78" rx="12" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+    <text x="238" y="891" class="small5" style="fill:#106BEF;font-weight:900">核心判断</text>
+    <text x="390" y="891" class="small5">AI 首先改变的是速度、风险和组织方式如何被重新分配。</text>
+    
+    <rect x="330" y="946" width="1260" height="82" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <path d="M412 968 v38" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <text x="460" y="964" class="body5" style="font-size:32px">不要问代码是否变多，先问验证、维护、协作和交付是否跟得上。</text>
+  
+  
+</svg>

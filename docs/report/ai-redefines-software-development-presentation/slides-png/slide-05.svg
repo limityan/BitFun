@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <pattern id="lightDots" width="34" height="34" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1.7" fill="#C4C6C1" opacity="0.55"/>
+    </pattern>
+    <filter id="paperShadow" x="-18%" y="-18%" width="136%" height="150%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#4B5563" flood-opacity="0.13"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#106BEF" stroke-width="2"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#A5A9AE" stroke-width="2"/>
+    </marker>
+  </defs>
+  <rect width="1920" height="1080" fill="#FBFAF7"/>
+  
+    <rect x="1560" y="76" width="168" height="134" rx="12" fill="none" stroke="#D7D7D2" stroke-width="2"/>
+    <path d="M1578 118 h42 m-42 28 h112 m-112 28 h88" stroke="#D7D7D2" stroke-width="2" stroke-dasharray="5 8" fill="none"/>
+    <path d="M1848 56 h-88 q-28 0 -28 28 v126" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M1782 890 v-190 q0 -32 32 -32 h50" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M1650 820 h112 q30 0 30 -30 v-80" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <circle cx="1800" cy="708" r="7" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <circle cx="1762" cy="820" r="7" fill="#106BEF"/>
+    <circle cx="1848" cy="622" r="6" fill="#FF5A1F"/>
+    <rect x="1378" y="720" width="180" height="120" fill="url(#lightDots)" opacity="0.48"/>
+    <rect x="152" y="318" width="128" height="96" fill="url(#lightDots)" opacity="0.42"/>
+    <path d="M70 740 h120 v118 h250" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M50 510 h116 q26 0 26 26 v52" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <circle cx="150" cy="857" r="5" fill="#FF5A1F"/>
+    
+    <g opacity="0.26" transform="translate(1350 820) scale(0.72)">
+      <path d="M0 120 L110 60 L220 120 L110 180 Z" fill="none" stroke="#C4C6C1" stroke-width="2"/>
+      <path d="M110 60 V180 M0 120 V220 M220 120 V220 M0 220 H320" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M260 50 h70 v170 h-70 Z M280 80 h30 M280 116 h30 M280 152 h30" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M360 96 h90 v124 h-90 Z M382 122 h46 M382 154 h46 M382 186 h46" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M88 144 h42 v76 h-42 Z M150 126 h48 v94 h-48 Z" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+    </g>
+  
+  
+  
+    <style>
+      text { font-family: "Microsoft YaHei", "Noto Sans SC", "PingFang SC", "Segoe UI", Arial, sans-serif; dominant-baseline: hanging; }
+      .brand5 { font-size: 42px; font-weight: 900; fill: #050608; }
+      .num5 { font-family: "Arial", "Microsoft YaHei", sans-serif; font-weight: 900; fill: #050608; }
+      .h15 { font-size: 68px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .h25 { font-size: 58px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .sub5 { font-size: 31px; font-weight: 560; fill: #5F6670; }
+      .body5 { font-size: 30px; font-weight: 700; fill: #050608; }
+      .muted5 { font-size: 24px; font-weight: 560; fill: #5F6670; }
+      .label5 { font-size: 29px; font-weight: 900; fill: #050608; }
+      .small5 { font-size: 23px; font-weight: 760; fill: #5F6670; }
+      .micro5 { font-size: 19px; font-weight: 760; fill: #5F6670; }
+    </style>
+    <text x="42" y="46" class="brand5">BitFun</text>
+    <text x="1840" y="50" class="small5" text-anchor="end">05 / 11</text>
+  
+  
+    
+    <text x="96" y="132" class="small5" style="fill:#106BEF;font-weight:900">02 / 探索方式</text>
+    <text x="96" y="188" class="h15" style="font-size:70px">AI 先改变探索方式</text>
+    <text x="100" y="282" class="sub5">探索可以想法驱动，但交付必须证据驱动。</text>
+    <path d="M96 356 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="230" cy="356" r="5.5" fill="#FF5A1F"/>
+  
+    <rect x="146" y="410" width="720" height="386" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <rect x="1054" y="410" width="720" height="386" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="210" y="474" class="small5" style="fill:#A5A9AE;font-weight:900">过去常见节奏</text>
+    <text x="210" y="548" class="num5" style="font-size:54px">排期驱动</text>
+    <text x="210" y="612" class="muted5">想法进入 backlog，等待排人、评估、实现和验收。</text>
+    <path d="M240 686 H760" stroke="#C4C6C1" stroke-width="4"/>
+    <text x="210" y="744" class="small5">适合稳定需求，但不适合高频探索。</text>
+    <text x="1118" y="474" class="small5" style="fill:#106BEF;font-weight:900">AI 介入之后</text>
+    <text x="1118" y="548" class="num5" style="font-size:54px;fill:#106BEF">想法驱动</text>
+    <text x="1118" y="612" class="muted5">一个人和 Agent 可以快速做出可运行版本。</text>
+    <path d="M1148 686 H1668" stroke="#106BEF" stroke-width="4"/>
+    <text x="1118" y="744" class="small5">适合原型验证，但必须回到证据。</text>
+    <path d="M902 626 H1012" stroke="#106BEF" stroke-width="6" fill="none" marker-end="url(#arrowBlue)"/>
+    
+    <rect x="194" y="818" width="360" height="90" rx="14" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <g transform="translate(224 839) scale(0.75)"><path d="M18 18 L34 32 L18 46" stroke="#106BEF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M38 48 h16" stroke="#106BEF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    
+    <text x="302" y="834" class="label5" style="font-size:27px">更快原型</text>
+    <text x="302" y="868" class="small5" style="font-size:21px">几天内可运行</text>
+  
+    
+    <rect x="584" y="818" width="360" height="90" rx="14" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <g transform="translate(614 839) scale(0.75)"><path d="M48 18 A22 22 0 0 0 14 24 M14 24 h12 M14 24 v-12 M16 46 A22 22 0 0 0 50 40 M50 40 H38 M50 40 v12" stroke="#106BEF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M24 34 l7 7 l13 -17" stroke="#106BEF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    
+    <text x="692" y="834" class="label5" style="font-size:27px">灵活变更</text>
+    <text x="692" y="868" class="small5" style="font-size:21px">低成本试错</text>
+  
+    
+    <rect x="974" y="818" width="360" height="90" rx="14" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <g transform="translate(1004 839) scale(0.75)"><circle cx="32" cy="22" r="8" stroke="#FF5A1F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="18" cy="30" r="6" stroke="#FF5A1F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="46" cy="30" r="6" stroke="#FF5A1F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M14 50 q18 -16 36 0 M4 54 q14 -12 28 -5 M32 49 q14 -7 28 5" stroke="#FF5A1F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    
+    <text x="1082" y="834" class="label5" style="font-size:27px">少量配合</text>
+    <text x="1082" y="868" class="small5" style="font-size:21px">个人可先探索</text>
+  
+    
+    <rect x="1364" y="818" width="360" height="90" rx="14" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <g transform="translate(1394 839) scale(0.75)"><rect x="10" y="10" width="18" height="18" stroke="#FF5A1F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/><rect x="36" y="10" width="18" height="18" stroke="#FF5A1F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/><rect x="10" y="36" width="18" height="18" stroke="#FF5A1F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M41 36 l14 9 l-14 9 l-14 -9 Z" stroke="#FF5A1F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    
+    <text x="1472" y="834" class="label5" style="font-size:27px">覆盖更广</text>
+    <text x="1472" y="868" class="small5" style="font-size:21px">想法更容易验证</text>
+  
+    
+    <rect x="320" y="946" width="1280" height="82" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <path d="M402 968 v38" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <text x="450" y="964" class="body5" style="font-size:32px">原型更快，不等于交付更稳；真实工程仍要验收、回滚和审计。</text>
+  
+  
+</svg>
