@@ -60,7 +60,7 @@
     
     <text x="96" y="132" class="small5" style="fill:#106BEF;font-weight:900">目录 / 15 分钟</text>
     <text x="96" y="188" class="h15" style="font-size:72px">报告目录</text>
-    <text x="100" y="282" class="sub5">把 8 个内容页收敛为 4 个问题域</text>
+    <text x="100" y="282" class="sub5">四个主题串起软件工程的新变化</text>
     <path d="M96 356 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
     <circle cx="230" cy="356" r="5.5" fill="#FF5A1F"/>
   
@@ -95,10 +95,5 @@
     <path d="M314 798 H1606" stroke="#106BEF" stroke-width="5" stroke-linecap="round" opacity="0.86"/>
     <text x="330" y="842" class="body5">主线：</text>
     <text x="448" y="844" class="muted5">代码补全 → Agentic Coding → 全生命周期介入 → 工程治理变化 → 组织智能协作系统</text>
-    
-    <rect x="320" y="936" width="1280" height="82" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
-    <path d="M402 958 v38" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="450" y="954" class="body5" style="font-size:32px">本报告不展开项目细节，而是用 BitFun 引出更上层的软件工程变化。</text>
-  
   
 </svg>

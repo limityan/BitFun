@@ -54,7 +54,7 @@ const C = {
 const intro =
   "本报告以 BitFun 为引子，讨论 AI 如何从代码补全走向 Agentic Coding，并进一步影响软件开发全生命周期。内容将结合 Context Engineering、质量门禁、平台工程与人类监督等概念，分析企业研发流程、工程治理方式和开发者角色的变化，理解 AI 时代软件工程从“写代码”走向“组织智能协作系统”的新范式。";
 
-const speakerName = process.env.SPEAKER_NAME || "limityan";
+const speakerName = process.env.SPEAKER_NAME || "颜仲南";
 
 const slides = [
   {
@@ -72,7 +72,7 @@ const slides = [
   {
     section: "AGENDA",
     title: "报告目录",
-    subtitle: "把 8 个内容页收敛为 4 个问题域",
+    subtitle: "四个主题串起软件工程的新变化",
     time: "约 0.5 分钟",
     focus: "目录页：用 4 个主题串起后续内容。",
     question: "这 15 分钟，我们围绕哪些问题展开？",
@@ -95,13 +95,13 @@ const slides = [
   },
   {
     section: "CAPACITY SHOCK",
-    title: "18w+ 行代码之后，问题真的变少了吗？",
+    title: "xx w+ 行代码之后，问题真的变少了吗？",
     subtitle: "AI 首先改变的是速度、风险和组织方式如何被重新分配。",
     time: "约 2 分钟",
-    focus: "开场案例：用 BitFun 一个月 18w+ 行代码引出产能放大后的工程问题。",
-    question: "如果一个项目一个月写出 18w+ 行代码，我们应该先兴奋，还是先紧张？",
+    focus: "开场案例：用 BitFun 一个月 xx w+ 行代码引出产能放大后的工程问题。",
+    question: "如果一个项目一个月写出 xx w+ 行代码，我们应该先兴奋，还是先紧张？",
     script:
-      "先看一个现象：如果一个项目借助 AI，一个月可以产出 18w+ 行代码，我们应该先兴奋，还是先紧张？这里不要把数字讲成产能宣传，而要把它讲成问题入口。代码写得更快，是否意味着产品更快成熟？需求改得更频繁，是否意味着方向更灵活，还是更容易失控？团队协作变少，是否意味着效率更高，还是质量检查被省略？如果进入开源高质量协作或复杂组织交付，还缺什么？这页的核心判断是：AI 首先改变的不是“代码怎么写”，而是软件开发的速度、风险和组织方式如何被重新分配。",
+      "先看一个现象：如果一个项目借助 AI，一个月可以产出 xx w+ 行代码，我们应该先兴奋，还是先紧张？这里不要把数字讲成产能宣传，而要把它讲成问题入口。代码写得更快，是否意味着产品更快成熟？需求改得更频繁，是否意味着方向更灵活，还是更容易失控？团队协作变少，是否意味着效率更高，还是质量检查被省略？如果进入开源高质量协作或复杂组织交付，还缺什么？这页的核心判断是：AI 首先改变的不是“代码怎么写”，而是软件开发的速度、风险和组织方式如何被重新分配。",
     transition: "接下来先讲 AI 的正面价值：探索变快，变化也变快。",
     render: slideShockV5,
   },
@@ -120,12 +120,12 @@ const slides = [
   {
     section: "QUALITY BACKSIDE",
     title: "速度的背面：质量责任被重新定义",
-    subtitle: "代码很多，但 review、测试、追溯和长期维护不一定同步跟上。",
+    subtitle: "代码很多，但评审、测试、追溯和长期维护不一定同步跟上。",
     time: "约 2 分钟",
     focus: "大纲第 4 页：速度放大之后，解释质量责任、追溯、协作和长期维护缺口。",
     question: "AI 生成的代码能跑之后，距离可合并、可发布、可长期维护还差什么？",
     script:
-      "速度放大之后，新的问题会出现。非商用探索阶段，很多问题可以暂时接受：功能能跑，但边界不一定稳定；需求变化很快，但设计决策不一定沉淀；代码很多，但 review 和测试不一定跟上；一个人推进很快，但知识可能没有进入团队流程；Agent 能修问题，但修复依据可能来自模型自信，而不是外部证据。这里也能引出概率性和确定性的关系：AI 生成过程允许多路径探索，但软件工程的放行依据必须是可复现、可审查、可回滚的确定性证据。",
+      "速度放大之后，新的问题会出现。非商用探索阶段，很多问题可以暂时接受：功能能跑，但边界不一定稳定；需求变化很快，但设计决策不一定沉淀；代码很多，但评审和测试不一定跟上；一个人推进很快，但知识可能没有进入团队流程；Agent 能修问题，但修复依据可能来自模型自信，而不是外部证据。这里也能引出概率性和确定性的关系：AI 生成过程允许多路径探索，但软件工程的放行依据必须是可复现、可审查、可回滚的确定性证据。",
     transition: "走出个人探索之后，会出现两类不同的高质量要求。",
     render: slideLifecycleV5,
   },
@@ -144,7 +144,7 @@ const slides = [
   {
     section: "ENGINEERING RESPONSES",
     title: "成熟补法：让快速变化进入工程护栏",
-    subtitle: "code review、架构稳定性、性能看护和发布风险控制共同接住 AI 产出。",
+    subtitle: "代码检视、架构稳定性、性能看护和发布风险控制共同接住 AI 产出。",
     time: "约 2.5 分钟",
     focus: "大纲第 6 页：以解决问题的方式讲成熟工程补法，不单独平铺术语。",
     question: "Finish 是一句“我完成了”，还是一组外部证据？",
@@ -180,12 +180,12 @@ const slides = [
   {
     section: "THANKS AND Q&A",
     title: "谢谢",
-    subtitle: "答疑互动：课程教学、开源协作与企业研发流程",
+    subtitle: "答疑互动：AI 编程、工程治理、开发者角色",
     time: "Q&A",
     focus: "致谢页，并明确进入答疑互动环节。",
-    question: "欢迎围绕 AI 编程、工程治理和高校教学继续讨论。",
+    question: "围绕 AI 编程、工程治理和开发者角色继续讨论。",
     script:
-      "以上就是今天的主要内容。最后留一个互动问题：如果 AI 能让个人产能接近一个小团队，团队协作、质量责任和课程评价应该如何重新设计？接下来进入答疑互动，欢迎围绕课程教学、开源协作或企业研发流程继续交流。",
+      "以上就是今天的主要内容。最后留一个互动问题：如果 AI 能让个人产能接近一个小团队，团队协作、质量责任和课程评价应该如何重新设计？接下来进入答疑互动，围绕 AI 编程、工程治理和开发者角色继续交流。",
     transition: "答疑互动。",
     render: slideThanksV5,
   },
@@ -1424,8 +1424,8 @@ function v5Header(kicker, titleValue, subtitle, titleSize = 72) {
 function v5Takeaway(textValue, y = 918, width = 1260) {
   return `
     <rect x="${(1920 - width) / 2}" y="${y}" width="${width}" height="82" rx="10" fill="${L.paper}" stroke="${L.line2}" stroke-width="2"/>
-    <path d="M${(1920 - width) / 2 + 82} ${y + 22} v38" stroke="${L.blue}" stroke-width="8" stroke-linecap="round"/>
-    <text x="${(1920 - width) / 2 + 130}" y="${y + 18}" class="body5" style="font-size:32px">${esc(textValue)}</text>
+    <path d="M${(1920 - width) / 2 + 82} ${y + 21} v40" stroke="${L.blue}" stroke-width="8" stroke-linecap="round"/>
+    <text x="${(1920 - width) / 2 + 130}" y="${y + 22}" class="body5" style="font-size:31px">${esc(textValue)}</text>
   `;
 }
 
@@ -1502,7 +1502,7 @@ function slideTitleV5(slide, index) {
     ${v5Icon("check", 1394, 402, 78, L.orange)}
     ${v5Icon("team", 1522, 292, 78, L.blue)}
     <text x="96" y="610" class="body5">演讲者：${esc(speakerName)}</text>
-    <text x="96" y="664" class="muted5">2026.05 / 15 分钟报告</text>
+    <text x="96" y="664" class="muted5">2026.05</text>
     <rect x="96" y="760" width="920" height="112" rx="14" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
     <text x="134" y="792" class="label5">报告定位</text>
     <text x="134" y="836" class="small5">从代码补全走向 Agentic Coding，再看软件开发全生命周期如何被 AI 改写。</text>
@@ -1512,7 +1512,7 @@ function slideTitleV5(slide, index) {
 
 function slideAgendaV5(slide, index) {
   const body = `
-    ${v5Header("目录 / 15 分钟", "报告目录", "把 8 个内容页收敛为 4 个问题域", 72)}
+    ${v5Header("目录 / 15 分钟", "报告目录", "四个主题串起软件工程的新变化", 72)}
     ${agendaItem5(170, 398, "01", "开场与主线", "软件工程对象正在扩大；BitFun 作为问题入口。", "03-04", L.blue)}
     ${agendaItem5(990, 398, "02", "产能与探索", "AI 让探索变快，也让变化变快。", "05", L.blue)}
     ${agendaItem5(170, 580, "03", "质量与治理", "质量责任、开源协作、大厂交付和工程护栏。", "06-08", L.orange)}
@@ -1520,7 +1520,6 @@ function slideAgendaV5(slide, index) {
     <path d="M314 798 H1606" stroke="${L.blue}" stroke-width="5" stroke-linecap="round" opacity="0.86"/>
     <text x="330" y="842" class="body5">主线：</text>
     <text x="448" y="844" class="muted5">代码补全 → Agentic Coding → 全生命周期介入 → 工程治理变化 → 组织智能协作系统</text>
-    ${v5Takeaway("本报告不展开项目细节，而是用 BitFun 引出更上层的软件工程变化。", 936, 1280)}
   `;
   return svgBaseV5(slide, index, body);
 }
@@ -1530,10 +1529,10 @@ function slideCoverV5(slide, index) {
     ${v5Header("主题一 / 全局主线", "从写代码，到组织智能协作系统", "软件工程对象正在扩大", 68)}
     <text x="104" y="420" class="body5">核心不是 AI 会写多少代码，而是软件工程的对象正在扩大。</text>
     <text x="104" y="472" class="muted5">从代码、函数和文件，扩展到任务、上下文、工具、验证、反馈、人类监督和组织流程。</text>
-    <path d="M180 715 C420 610 650 740 870 655 C1080 574 1220 560 1420 640" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
-    <path d="M180 715 C420 610 650 740 870 655 C1080 574 1220 560 1420 640" stroke="${L.line2}" stroke-width="2" fill="none" opacity="0.55"/>
+    <path d="M180 720 C420 630 650 746 870 686 C1050 632 1226 642 1420 666" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
+    <path d="M180 720 C420 630 650 746 870 686 C1050 632 1226 642 1420 666" stroke="${L.line2}" stroke-width="2" fill="none" opacity="0.55"/>
     ${v5Step(196, 662, "terminal", "01", "概率性生成", "AI 产出建议", L.blue)}
-    ${v5Step(660, 602, "check", "02", "确定性验证", "构建 / 测试 / review", L.orange)}
+    ${v5Step(660, 602, "check", "02", "确定性验证", "构建 / 测试 / 评审", L.orange)}
     ${v5Step(1110, 610, "team", "03", "工程节奏", "稳定吸收变化", L.blue)}
     <rect x="1358" y="462" width="430" height="178" rx="14" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
     <text x="1392" y="504" class="small5" style="fill:${L.blue};font-weight:900">报告主线</text>
@@ -1546,14 +1545,14 @@ function slideCoverV5(slide, index) {
 
 function slideShockV5(slide, index) {
   const body = `
-    ${v5Header("01 / 开场案例", "18w+ 行代码之后，问题真的变少了吗？", "AI 放大的不只是产能，也会放大速度、风险和组织方式的重分配。", 66)}
-    <rect x="128" y="432" width="590" height="400" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="178" y="502" class="small5" style="fill:${L.blue};font-weight:900">BitFun 开场现象</text>
+    ${v5Header("01 / 开场案例", "xx w+ 行代码之后，问题真的变少了吗？", "AI 放大的不只是产能，也会放大速度、风险和组织方式的重分配。", 64)}
+    <rect x="128" y="440" width="590" height="360" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="178" y="500" class="small5" style="fill:${L.blue};font-weight:900">开场问题</text>
     <path d="M560 540 C612 506 648 476 672 444" stroke="${L.blue}" stroke-width="6" fill="none" marker-end="url(#arrowBlue)"/>
-    <text x="178" y="592" class="num5" style="font-size:72px;fill:${L.blue}">18w+ 行代码</text>
-    <path d="M190 744 H654" stroke="${L.line2}" stroke-width="3"/>
-    <text x="178" y="766" class="body5">不是结论，是问题入口</text>
-    <text x="178" y="796" class="muted5">产品成熟度、质量检查、团队共识是否同步跟上？</text>
+    <text x="178" y="588" class="num5" style="font-size:68px;fill:${L.blue}">xx w+ 行代码</text>
+    <path d="M190 712 H654" stroke="${L.line2}" stroke-width="3"/>
+    <text x="178" y="738" class="body5">不是结论，是问题入口</text>
+    <text x="178" y="772" class="muted5">成熟度、质量检查、团队共识是否跟上？</text>
     <path d="M728 620 H828" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
     ${v5Card(858, 380, 380, 118, "terminal", "局部编码", "任务完成更快", "", L.blue)}
     ${v5Card(1318, 380, 380, 118, "check", "测试验证", "失败会返工", "", L.orange)}
@@ -1563,9 +1562,9 @@ function slideShockV5(slide, index) {
     <path d="M1238 669 H1300" stroke="${L.blue}" stroke-width="4" fill="none" marker-end="url(#arrowBlue)"/>
     <path d="M1048 510 V592" stroke="${L.line2}" stroke-width="3" stroke-dasharray="8 9"/>
     <path d="M1508 510 V592" stroke="${L.line2}" stroke-width="3" stroke-dasharray="8 9"/>
-    <rect x="202" y="846" width="1508" height="78" rx="12" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
-    <text x="238" y="891" class="small5" style="fill:${L.blue};font-weight:900">核心判断</text>
-    <text x="390" y="891" class="small5">AI 首先改变的是速度、风险和组织方式如何被重新分配。</text>
+    <rect x="202" y="842" width="1508" height="82" rx="12" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    <text x="238" y="870" class="small5" style="fill:${L.blue};font-weight:900">核心判断</text>
+    <text x="390" y="870" class="small5">AI 首先改变的是速度、风险和组织方式如何被重新分配。</text>
     ${v5Takeaway("不要问代码是否变多，先问验证、维护、协作和交付是否跟得上。", 946, 1260)}
   `;
   return svgBaseV5(slide, index, body);
@@ -1598,7 +1597,7 @@ function slideExplorationV5(slide, index) {
 
 function slideLifecycleV5(slide, index) {
   const body = `
-    ${v5Header("03 / 速度的背面", "速度放大之后，质量责任被重新定义", "代码很多，但 review、测试、追溯和长期维护不一定同步跟上。", 64)}
+    ${v5Header("03 / 速度的背面", "速度放大之后，质量责任被重新定义", "代码很多，但评审、测试、追溯和长期维护不一定同步跟上。", 64)}
     <rect x="176" y="410" width="1568" height="430" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
     <path d="M960 410 V840" stroke="${L.line2}" stroke-width="2" stroke-dasharray="10 10"/>
     <path d="M176 625 H1744" stroke="${L.line2}" stroke-width="2" stroke-dasharray="10 10"/>
@@ -1614,9 +1613,9 @@ function slideLifecycleV5(slide, index) {
     ${v5Icon("loop", 1030, 690, 68, L.orange)}
     <text x="1130" y="712" class="label5">修复凭自信</text>
     <text x="1130" y="760" class="small5">Agent 能修问题，但必须回到外部证据</text>
-    <rect x="500" y="852" width="920" height="70" rx="12" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
-    <text x="540" y="895" class="small5" style="fill:${L.blue};font-weight:900">工程确定性</text>
-    <text x="720" y="895" class="small5">生成过程可以探索，放行依据必须可复现、可审查、可回滚。</text>
+    <rect x="440" y="850" width="1040" height="82" rx="12" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    <text x="486" y="878" class="body5" style="font-size:28px;fill:${L.blue};font-weight:900">工程确定性</text>
+    <text x="700" y="878" class="body5" style="font-size:28px;fill:${L.ink2};font-weight:760">生成过程可以探索，放行依据必须可复现、可审查、可回滚。</text>
     ${v5Takeaway("AI 把“能不能写出来”的问题，推向“谁负责、凭什么放行”。", 946, 1260)}
   `;
   return svgBaseV5(slide, index, body);
@@ -1632,9 +1631,9 @@ function slideQualityV5(slide, index) {
     <path d="M308 612 C505 465 720 480 830 590" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
     <path d="M1612 612 C1415 465 1200 480 1090 590" stroke="${L.orange}" stroke-width="5" fill="none"/>
     ${v5Card(190, 472, 430, 122, "file", "开源高质量协作", "开发者对提交负责", "", L.blue)}
-    ${v5Card(190, 646, 430, 122, "team", "CODEOWNERS", "owner / required checks", "", L.blue)}
+    ${v5Card(190, 646, 430, 122, "team", "代码归属", "负责人 / 必过检查", "", L.blue)}
     ${v5Card(1300, 472, 430, 122, "grid", "大厂复杂交付", "组织对系统连续性负责", "", L.orange)}
-    ${v5Card(1300, 646, 430, 122, "loop", "SLO / 回滚", "canary / trace / budget", "", L.orange)}
+    ${v5Card(1300, 646, 430, 122, "loop", "服务目标 / 回滚", "灰度 / 追踪 / 预算", "", L.orange)}
     <text x="440" y="830" class="body5">通过单测只是起点，离“可合并、可发布、可长期维护”仍有距离。</text>
     ${v5Takeaway("关键不是多跑测试，而是责任链和证据链。", 936, 1000)}
   `;
@@ -1643,13 +1642,13 @@ function slideQualityV5(slide, index) {
 
 function slideResponsesV5(slide, index) {
   const body = `
-    ${v5Header("05 / 成熟补法", "让快速变化进入工程护栏", "用 code review、架构稳定性、性能看护和发布控制接住 AI 产出。", 66)}
+    ${v5Header("05 / 成熟补法", "让快速变化进入工程护栏", "用代码检视、架构稳定性、性能看护和发布控制接住 AI 产出。", 66)}
     <path d="M300 668 H1620" stroke="${L.line2}" stroke-width="4"/>
     <path d="M300 668 H1620" stroke="${L.blue}" stroke-width="5" stroke-linecap="round" opacity="0.82"/>
-    ${v5Card(120, 460, 390, 136, "team", "Code Review", "owner / checks", "", L.blue)}
-    ${v5Card(550, 460, 390, 136, "cube", "架构稳定性", "ADR / RFC / 边界检查", "", L.blue)}
-    ${v5Card(980, 460, 390, 136, "server", "性能看护", "benchmark / trace", "", L.orange)}
-    ${v5Card(1410, 460, 390, 136, "shield", "发布控制", "canary / rollback", "", L.orange)}
+    ${v5Card(120, 460, 390, 136, "team", "代码检视", "负责人 / 检查", "", L.blue)}
+    ${v5Card(550, 460, 390, 136, "cube", "架构稳定性", "设计记录 / 边界检查", "", L.blue)}
+    ${v5Card(980, 460, 390, 136, "server", "性能看护", "基准测试 / 追踪", "", L.orange)}
+    ${v5Card(1410, 460, 390, 136, "shield", "发布控制", "灰度 / 回滚", "", L.orange)}
     <rect x="190" y="724" width="1540" height="136" rx="16" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
     <text x="240" y="776" class="label5">共同目标：把“模型说完成”变成“工程证据可放行”</text>
     <text x="240" y="818" class="small5">生成过程可以概率化；合并、发布和线上运行必须依赖可复现、可比较、可审计的确定性验证。</text>
@@ -1668,10 +1667,10 @@ function slideBitfunV5(slide, index) {
     <path d="M748 610 A212 212 0 0 1 960 398" stroke="${L.orange}" stroke-width="8" fill="none"/>
     <text x="960" y="550" class="body5" text-anchor="middle" style="font-size:44px">开发过程</text>
     <text x="960" y="620" class="body5" text-anchor="middle" style="font-size:44px">产品化</text>
-    ${v5Card(225, 430, 430, 122, "loop", "Self-iteration", "失败沉淀成下一版工作流", "", L.orange)}
-    ${v5Card(680, 318, 430, 122, "file", "Planning", "先探索和计划，再实现", "", L.blue)}
-    ${v5Card(1260, 520, 430, 122, "check", "Evidence", "debug 先取证，不凭自信", "", L.blue)}
-    ${v5Card(690, 790, 430, 122, "team", "Review", "执行者、审查者、仲裁者分离", "", L.orange)}
+    ${v5Card(225, 430, 430, 122, "loop", "自迭代", "失败沉淀成下一版工作流", "", L.orange)}
+    ${v5Card(680, 318, 430, 122, "file", "计划", "先探索和计划，再实现", "", L.blue)}
+    ${v5Card(1260, 520, 430, 122, "check", "证据", "调试先取证，不凭自信", "", L.blue)}
+    ${v5Card(690, 790, 430, 122, "team", "评审", "执行者、审查者、仲裁者分离", "", L.orange)}
     ${v5Takeaway("AI 工具的未来形态不是更会聊天，而是组织可治理的开发闭环。", 940, 1300)}
   `;
   return svgBaseV5(slide, index, body);
@@ -1685,10 +1684,11 @@ function slideRoleV5(slide, index) {
     ${roleStep5(230, 768, "01", "写代码", "理解语言、框架和系统行为", L.soft)}
     ${roleStep5(520, 692, "02", "定义任务", "把模糊需求变成可执行问题", L.blue)}
     ${roleStep5(810, 616, "03", "组织上下文", "让 Agent 看见正确事实", L.blue)}
-    ${roleStep5(1100, 540, "04", "设计验证闭环", "测试、评审、指标、trace", L.orange)}
+    ${roleStep5(1100, 540, "04", "设计验证闭环", "测试、评审、指标、追踪", L.orange)}
     ${roleStep5(1390, 464, "05", "治理协作系统", "权限、责任、回滚、复盘", L.orange)}
-    <text x="250" y="860" class="body5">留给高校课堂：</text>
-    <text x="520" y="862" class="muted5">评价从“代码能跑”扩展到“定义问题、验证结果、解释风险”。</text>
+    <rect x="250" y="826" width="1420" height="78" rx="12" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    <path d="M292 848 v34" stroke="${L.blue}" stroke-width="7" stroke-linecap="round"/>
+    <text x="330" y="848" class="body5" style="font-size:30px;fill:${L.blue};font-weight:900">评价从“代码能跑”扩展到“定义问题、验证结果、解释风险”。</text>
     ${v5Takeaway("未来优秀的软件人才，是会设计人与 AI Agent 共同工作的工程系统的人。", 938, 1320)}
   `;
   return svgBaseV5(slide, index, body);
@@ -1698,19 +1698,19 @@ function slideThanksV5(slide, index) {
   const body = `
     <text x="96" y="142" class="small5" style="fill:${L.blue};font-weight:900">THANKS / Q&amp;A</text>
     <text x="96" y="238" class="h15" style="font-size:86px">谢谢</text>
-    <text x="100" y="356" class="sub5">答疑互动：课程教学、开源协作与企业研发流程</text>
+    <text x="100" y="356" class="sub5">答疑互动：AI 编程、工程治理、开发者角色</text>
     <path d="M96 430 h144" stroke="${L.blue}" stroke-width="9" stroke-linecap="round"/>
     <circle cx="270" cy="430" r="6" fill="${L.orange}"/>
-    <rect x="170" y="552" width="1580" height="318" rx="22" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="240" y="610" class="label5">留给讨论的三个问题</text>
-    <text x="240" y="668" class="body5" style="font-size:28px">1. AI 能完成大部分编程作业后，软件工程课应该训练什么？</text>
-    <text x="240" y="728" class="body5" style="font-size:28px">2. AI 让个人产能接近小团队后，质量责任如何重新设计？</text>
-    <text x="240" y="788" class="body5" style="font-size:28px">3. 开源与大厂场景下，哪些决策仍必须由人负责？</text>
+    <rect x="170" y="522" width="1580" height="360" rx="22" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="240" y="586" class="label5">留给讨论的三个问题</text>
+    <text x="240" y="650" class="body5" style="font-size:30px">1. AI 完成大部分编程作业后，软件工程课训练什么？</text>
+    <text x="240" y="724" class="body5" style="font-size:30px">2. 个人产能接近小团队后，质量责任如何重新设计？</text>
+    <text x="240" y="798" class="body5" style="font-size:30px">3. 开源与大厂场景下，哪些决策必须由人负责？</text>
     <rect x="1070" y="238" width="490" height="190" rx="18" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
     <text x="1124" y="286" class="num5" style="font-size:54px;fill:${L.blue}">Q&amp;A</text>
     <text x="1128" y="354" class="small5">答疑互动环节</text>
     ${v5Icon("chat", 1430, 292, 86, L.blue)}
-    ${v5Takeaway("欢迎继续讨论：AI 编程、工程治理、课程教学与开发者角色变化。", 908, 1280)}
+    ${v5Takeaway("AI 编程、工程治理、开发者角色", 914, 980)}
   `;
   return svgBaseV5(slide, index, body);
 }

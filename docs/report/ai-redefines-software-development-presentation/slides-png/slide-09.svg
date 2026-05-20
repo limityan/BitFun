@@ -75,34 +75,34 @@
     <rect x="225" y="430" width="430" height="122" rx="14" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
     <g transform="translate(255 462) scale(0.90625)"><path d="M48 18 A22 22 0 0 0 14 24 M14 24 h12 M14 24 v-12 M16 46 A22 22 0 0 0 50 40 M50 40 H38 M50 40 v12" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M24 34 l7 7 l13 -17" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
     
-    <text x="343" y="458" class="label5" style="font-size:29px">Self-iteration</text>
+    <text x="343" y="458" class="label5" style="font-size:29px">自迭代</text>
     <text x="343" y="498" class="small5" style="font-size:23px">失败沉淀成下一版工作流</text>
   
     
     <rect x="680" y="318" width="430" height="122" rx="14" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
     <g transform="translate(710 350) scale(0.90625)"><path d="M18 8 h22 l10 10 v38 H18 Z M40 8 v12 h12 M26 32 h20 M26 42 h18" stroke="#106BEF" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
     
-    <text x="798" y="346" class="label5" style="font-size:29px">Planning</text>
+    <text x="798" y="346" class="label5" style="font-size:29px">计划</text>
     <text x="798" y="386" class="small5" style="font-size:23px">先探索和计划，再实现</text>
   
     
     <rect x="1260" y="520" width="430" height="122" rx="14" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
     <g transform="translate(1290 552) scale(0.90625)"><rect x="12" y="10" width="40" height="44" rx="4" stroke="#106BEF" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M22 32 l8 8 l14 -18" stroke="#106BEF" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
     
-    <text x="1378" y="548" class="label5" style="font-size:29px">Evidence</text>
-    <text x="1378" y="588" class="small5" style="font-size:23px">debug 先取证，不凭自信</text>
+    <text x="1378" y="548" class="label5" style="font-size:29px">证据</text>
+    <text x="1378" y="588" class="small5" style="font-size:23px">调试先取证，不凭自信</text>
   
     
     <rect x="690" y="790" width="430" height="122" rx="14" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
     <g transform="translate(720 822) scale(0.90625)"><circle cx="32" cy="22" r="8" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="18" cy="30" r="6" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="46" cy="30" r="6" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M14 50 q18 -16 36 0 M4 54 q14 -12 28 -5 M32 49 q14 -7 28 5" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
     
-    <text x="808" y="818" class="label5" style="font-size:29px">Review</text>
+    <text x="808" y="818" class="label5" style="font-size:29px">评审</text>
     <text x="808" y="858" class="small5" style="font-size:23px">执行者、审查者、仲裁者分离</text>
   
     
     <rect x="310" y="940" width="1300" height="82" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
-    <path d="M392 962 v38" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="440" y="958" class="body5" style="font-size:32px">AI 工具的未来形态不是更会聊天，而是组织可治理的开发闭环。</text>
+    <path d="M392 961 v40" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <text x="440" y="962" class="body5" style="font-size:31px">AI 工具的未来形态不是更会聊天，而是组织可治理的开发闭环。</text>
   
   
 </svg>

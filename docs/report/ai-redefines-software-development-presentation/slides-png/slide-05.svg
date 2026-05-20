@@ -107,8 +107,8 @@
   
     
     <rect x="320" y="946" width="1280" height="82" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
-    <path d="M402 968 v38" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="450" y="964" class="body5" style="font-size:32px">原型更快，不等于交付更稳；真实工程仍要验收、回滚和审计。</text>
+    <path d="M402 967 v40" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <text x="450" y="968" class="body5" style="font-size:31px">原型更快，不等于交付更稳；真实工程仍要验收、回滚和审计。</text>
   
   
 </svg>

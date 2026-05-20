@@ -81,8 +81,8 @@
     <rect x="190" y="646" width="430" height="122" rx="14" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
     <g transform="translate(220 678) scale(0.90625)"><circle cx="32" cy="22" r="8" stroke="#106BEF" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="18" cy="30" r="6" stroke="#106BEF" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="46" cy="30" r="6" stroke="#106BEF" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M14 50 q18 -16 36 0 M4 54 q14 -12 28 -5 M32 49 q14 -7 28 5" stroke="#106BEF" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
     
-    <text x="308" y="674" class="label5" style="font-size:29px">CODEOWNERS</text>
-    <text x="308" y="714" class="small5" style="font-size:23px">owner / required checks</text>
+    <text x="308" y="674" class="label5" style="font-size:29px">代码归属</text>
+    <text x="308" y="714" class="small5" style="font-size:23px">负责人 / 必过检查</text>
   
     
     <rect x="1300" y="472" width="430" height="122" rx="14" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
@@ -95,14 +95,14 @@
     <rect x="1300" y="646" width="430" height="122" rx="14" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
     <g transform="translate(1330 678) scale(0.90625)"><path d="M48 18 A22 22 0 0 0 14 24 M14 24 h12 M14 24 v-12 M16 46 A22 22 0 0 0 50 40 M50 40 H38 M50 40 v12" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M24 34 l7 7 l13 -17" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
     
-    <text x="1418" y="674" class="label5" style="font-size:29px">SLO / 回滚</text>
-    <text x="1418" y="714" class="small5" style="font-size:23px">canary / trace / budget</text>
+    <text x="1418" y="674" class="label5" style="font-size:29px">服务目标 / 回滚</text>
+    <text x="1418" y="714" class="small5" style="font-size:23px">灰度 / 追踪 / 预算</text>
   
     <text x="440" y="830" class="body5">通过单测只是起点，离“可合并、可发布、可长期维护”仍有距离。</text>
     
     <rect x="460" y="936" width="1000" height="82" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
-    <path d="M542 958 v38" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="590" y="954" class="body5" style="font-size:32px">关键不是多跑测试，而是责任链和证据链。</text>
+    <path d="M542 957 v40" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <text x="590" y="958" class="body5" style="font-size:31px">关键不是多跑测试，而是责任链和证据链。</text>
   
   
 </svg>

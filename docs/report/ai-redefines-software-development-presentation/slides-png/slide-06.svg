@@ -60,7 +60,7 @@
     
     <text x="96" y="132" class="small5" style="fill:#106BEF;font-weight:900">03 / 速度的背面</text>
     <text x="96" y="188" class="h15" style="font-size:64px">速度放大之后，质量责任被重新定义</text>
-    <text x="100" y="282" class="sub5">代码很多，但 review、测试、追溯和长期维护不一定同步跟上。</text>
+    <text x="100" y="282" class="sub5">代码很多，但评审、测试、追溯和长期维护不一定同步跟上。</text>
     <path d="M96 356 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
     <circle cx="230" cy="356" r="5.5" fill="#FF5A1F"/>
   
@@ -79,13 +79,13 @@
     <g transform="translate(1030 690) scale(1.0625)"><path d="M48 18 A22 22 0 0 0 14 24 M14 24 h12 M14 24 v-12 M16 46 A22 22 0 0 0 50 40 M50 40 H38 M50 40 v12" stroke="#FF5A1F" stroke-width="2.823529411764706" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M24 34 l7 7 l13 -17" stroke="#FF5A1F" stroke-width="2.823529411764706" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
     <text x="1130" y="712" class="label5">修复凭自信</text>
     <text x="1130" y="760" class="small5">Agent 能修问题，但必须回到外部证据</text>
-    <rect x="500" y="852" width="920" height="70" rx="12" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-    <text x="540" y="895" class="small5" style="fill:#106BEF;font-weight:900">工程确定性</text>
-    <text x="720" y="895" class="small5">生成过程可以探索，放行依据必须可复现、可审查、可回滚。</text>
+    <rect x="440" y="850" width="1040" height="82" rx="12" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+    <text x="486" y="878" class="body5" style="font-size:28px;fill:#106BEF;font-weight:900">工程确定性</text>
+    <text x="700" y="878" class="body5" style="font-size:28px;fill:undefined;font-weight:760">生成过程可以探索，放行依据必须可复现、可审查、可回滚。</text>
     
     <rect x="330" y="946" width="1260" height="82" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
-    <path d="M412 968 v38" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="460" y="964" class="body5" style="font-size:32px">AI 把“能不能写出来”的问题，推向“谁负责、凭什么放行”。</text>
+    <path d="M412 967 v40" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <text x="460" y="968" class="body5" style="font-size:31px">AI 把“能不能写出来”的问题，推向“谁负责、凭什么放行”。</text>
   
   
 </svg>
