@@ -54,31 +54,25 @@
       .micro5 { font-size: 19px; font-weight: 760; fill: #5F6670; }
     </style>
     <text x="42" y="46" class="brand5">BitFun</text>
-    <text x="1840" y="50" class="small5" text-anchor="end">05 / 14</text>
+    <text x="1840" y="50" class="small5" text-anchor="end">14 / 14</text>
 
 
+    <text x="96" y="150" class="small5" style="fill:#106BEF;font-weight:900">THANKS / Q&amp;A</text>
+    <text x="96" y="246" class="h15" style="font-size:90px">谢谢</text>
+    <path d="M96 386 h150" stroke="#106BEF" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="276" cy="386" r="6" fill="#FF5A1F"/>
+    <rect x="170" y="500" width="1580" height="340" rx="22" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="240" y="568" class="label5" style="font-size:33px">可以继续讨论的两个问题</text>
+    <text x="240" y="640" class="body5" style="font-size:30px">1. AI 扩大个人产出后，团队该用什么指标判断真实收益？</text>
+    <text x="240" y="716" class="body5" style="font-size:30px">2. 执行过程允许概率性时，哪些证据必须保持确定性？</text>
+    <text x="240" y="790" class="body5" style="font-size:28px;fill:#5F6670">开发者技能方向：架构判断、上下文组织、证据设计、工程治理。</text>
+    <rect x="1090" y="238" width="470" height="178" rx="18" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+    <text x="1144" y="286" class="num5" style="font-size:56px;fill:#106BEF">Q&amp;A</text>
+    <g transform="translate(1424 292) scale(1.34375)"><path d="M12 18 h40 q8 0 8 8 v18 q0 8 -8 8 H32 l-12 9 v-9 h-8 q-8 0 -8-8 V26 q0-8 8-8 Z" stroke="#106BEF" stroke-width="2.2325581395348837" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="24" cy="35" r="2.4" fill="#106BEF"/><circle cx="34" cy="35" r="2.4" fill="#106BEF"/><circle cx="44" cy="35" r="2.4" fill="#106BEF"/></g>
 
-    <text x="96" y="132" class="small5" style="fill:#106BEF;font-weight:900">02 / 速度的背后</text>
-    <text x="96" y="188" class="h15" style="font-size:70px">概率执行，证据放行</text>
-    <text x="100" y="282" class="sub5">关注需求结果的确定性，放宽执行过程的概率性。</text>
-    <path d="M96 356 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <circle cx="230" cy="356" r="5.5" fill="#FF5A1F"/>
-
-    <rect x="146" y="408" width="704" height="366" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    <rect x="1070" y="408" width="704" height="366" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="202" y="466" class="small5" style="fill:#106BEF;font-weight:900">开发者信任</text>
-    <text x="202" y="528" class="num5" style="font-size:48px">同样模型，不同 Harness</text>
-    <text x="202" y="604" class="small5" style="font-size:27px;fill:#5F6670;font-weight:680">只读计划 / 沙箱执行 / 危险命令拦截</text><text x="202" y="644" class="small5" style="font-size:27px;fill:#5F6670;font-weight:680">失败回注上下文 / trace 可回放</text><text x="202" y="684" class="small5" style="font-size:27px;fill:#5F6670;font-weight:680">让概率输出变得可观察、可停下、可追责</text>
-    <text x="1126" y="466" class="small5" style="fill:#FF5A1F;font-weight:900">产品可靠性</text>
-    <text x="1126" y="528" class="num5" style="font-size:48px">不是相信结果，而是验证结果</text>
-    <text x="1126" y="604" class="small5" style="font-size:27px;fill:#5F6670;font-weight:680">测试 / Eval / Canary / 监控 / 人工审批</text><text x="1126" y="644" class="small5" style="font-size:27px;fill:#5F6670;font-weight:680">把“看起来能跑”转成“可以放行”</text><text x="1126" y="684" class="small5" style="font-size:27px;fill:#5F6670;font-weight:680">让最终结果具备确定性证据</text>
-    <path d="M878 590 H1038" stroke="#106BEF" stroke-width="6" fill="none" marker-end="url(#arrowBlue)"/>
-    <rect x="604" y="824" width="712" height="72" rx="14" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-    <text x="960" y="842" class="num5" text-anchor="middle" style="font-size:34px;fill:#106BEF">概率执行 + 确定证据 = 高置信交付</text>
-
-    <rect x="280" y="936" width="1360" height="78" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
-    <path d="M356 956 v38" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="992" y="958" class="body5" text-anchor="middle" style="font-size:30px">新范式不是消灭概率性，而是把概率性产物纳入证据、权限和回滚边界。</text>
+    <rect x="510" y="908" width="900" height="78" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <path d="M586 928 v38" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <text x="992" y="930" class="body5" text-anchor="middle" style="font-size:30px">AI 编程、工程治理、开发者角色</text>
 
 
 </svg>

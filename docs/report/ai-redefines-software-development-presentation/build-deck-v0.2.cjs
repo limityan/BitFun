@@ -95,13 +95,13 @@ const slides = [
   },
   {
     section: "01 / SOFTWARE CHANGE",
-    title: "可验证、可治理、可协作",
-    subtitle: "软件工程对象从代码扩展到上下文、工具、证据、权限、角色与工件。",
+    title: "从人 + 人，到人 + 人 + Agent + Agent",
+    subtitle: "协作从同步沟通扩展到异步任务、角色化 Agent、证据化放行。",
     time: "约 1.5 分钟",
-    focus: "把第三页改为推导结论：目标方向直接写可验证、可治理、可协作。",
-    question: "可验证、可治理、可协作分别要靠什么工程机制实现？",
+    focus: "用协作拓扑替换抽象结论：同步 pair、异步委派、角色化 Agent、人工放行。",
+    question: "当 Agent 也能开分支、跑测试、提交 PR 时，团队协作到底变了什么？",
     script:
-      "从 BitFun 这个案例往上抽象，AI 重新定义软件开发，不是因为模型能写多少函数，而是工程对象变大了。过去我们主要管理代码、分支、测试和发布；现在还要管理上下文如何装载、工具权限如何收口、模型输出如何被证据接住、人与 AI 的职责如何切开、中间产物如何被审计。可验证意味着 Finish 不能只是模型说完成，而要绑定测试、日志、trace、复现步骤和用户确认。可治理意味着权限、风险、回滚、合规要在执行链路里硬约束。可协作意味着协作对象从人与人，扩展到人与人加 AI：AI 生成计划、实现、证据和评审建议，人负责目标、取舍、责任和最终放行。",
+      "从 BitFun 这个案例往上抽象，AI 重新定义软件开发，不只是因为模型能写函数，而是团队协作拓扑变了。第一阶段是人加 AI 的同步 pair coding，AI 在 IDE 里帮你补全、解释和修改。第二阶段是异步委派，比如 GitHub Copilot cloud agent 或 Codex cloud：你把 issue 或任务交给 Agent，它在独立环境里研究、建分支、跑测试、准备 PR。第三阶段是角色化 Agent：实现、测试、评审、安全、文档不一定由同一个 Agent 完成，而是通过 subagents、hooks、trace 和工作流编排形成分工。第四阶段仍然是人类放行：人不需要监督每一步 prompt，而是看目标是否达成、证据包是否足够、风险是否可接受、是否可以合并或发布。所以协作对象从人和人，扩展成了人、Agent、工具和证据共同工作的系统。",
     transition: "接下来讨论速度：为什么 AI 让探索更快，但不保证交付自然变稳。",
     render: slideCoverV02,
   },
@@ -114,14 +114,26 @@ const slides = [
     question: "同样的模型，为什么有的 Agent 可信，有的 Agent 不可信？",
     script:
       "AI 介入之后，研发节奏会从排期驱动部分转向想法驱动：先快速探索，再用证据决定是否继续。但这里的核心不是“模型每次都确定正确”，恰恰相反，模型生成天然带有概率性。新的软件工程范式更像是：允许执行过程多路径探索，但最终放行必须依赖可复现证据。开发者信任来自 Agent 层的保护，比如只读计划、沙箱执行、危险操作拦截、失败回注上下文、trace 可回放；产品可信来自测试、评估集、灰度、监控和人工审批。换句话说，我们不是消灭概率性，而是把概率性关进可观察、可比较、可回滚的工程边界里。",
-    transition: "但是外部数据也提醒我们：速度收益并不是天然指数级增长。",
+    transition: "更尖锐的问题是：如果模型本身、团队使用的模型和多 Agent 链路都在波动，工程系统怎么收敛？",
     render: slideExplorationV02,
+  },
+  {
+    section: "02 / BEHIND SPEED",
+    title: "用可控系统收敛不可控过程",
+    subtitle: "模型和执行过程会波动；工程系统应管理交付对象与放行证据，而不是监控每次操作。",
+    time: "约 1.2 分钟",
+    focus: "补充模型波动、概率串联衰减、Agent Team 错误放大，以及阶段性纠错系统。",
+    question: "如果每一步都有 99% 正确率，十步之后系统还可信吗？",
+    script:
+      "这里可以把问题说得更硬一点：AI 的不确定性不只来自某一次回答。团队里不同人可能使用不同模型，同一个模型不同版本能力会变化，甚至在 temperature 很低时同一评审任务也可能出现不一致。再往上，如果一个 Agent Team 中每一步都把前一步的自然语言结论当事实输入，错误就会像串联系统一样累乘：0.99 的十次方大约只有 0.90；更糟的是，很多错误不是独立随机错误，而是会被后续步骤继承并放大。但治理对象要切清楚：模型、提示词、工具调用这些是后台 telemetry，用于复现、审计和失败排查，不应该变成人类日常评审的主要对象。人类应该判断的是交付对象：需求意图是否明确，代码变更是否完整，测试和运行证据是否足够，风险和回滚是否可接受。阶段门禁就是放在阶段转换处的自动控制点，比如从计划到实现、从实现到评审、从评审到合并。它检查的是交付对象和证据包，而不是每一步操作日志：接口契约、影响范围、构建测试、静态检查、风险标签、owner 和回滚路径。Artifact 也要收窄成可长期管理的关键工程产物，包括需求/任务、设计决策、代码 diff、测试证据、评审结论、发布与回滚记录。系统把复杂执行过程压缩成摘要、差异、来源、不一致提示和风险解释，帮助人做判断；只有在高风险、证据冲突或事故复盘时，才需要下钻到模型和执行轨迹。",
+    transition: "有了这层纠偏系统，再看外部数据，会更容易理解为什么速度收益不是天然指数级增长。",
+    render: slideReliabilityV02,
   },
   {
     section: "02 / BEHIND SPEED",
     title: "速度收益不是指数曲线",
     subtitle: "AI 提升局部产出，但验证、评审、修复与集成会重新分配收益。",
-    time: "约 1.4 分钟",
+    time: "约 1.2 分钟",
     focus: "补外部信息：DORA、METR、Harness 作为市场和研究佐证。",
     question: "为什么开发者感觉更快，团队整体却未必同等加速？",
     script:
@@ -133,7 +145,7 @@ const slides = [
     section: "02 / BEHIND SPEED",
     title: "速度放大之后，质量责任被重新定义",
     subtitle: "代码很多，但评审、测试、追溯和长期维护不一定同步跟上。",
-    time: "约 1.2 分钟",
+    time: "约 1.0 分钟",
     focus: "优化第六页：放大中部内容，解释从能跑到可放行的距离。",
     question: "AI 生成的代码能跑之后，距离可合并、可发布、可长期维护还差什么？",
     script:
@@ -145,7 +157,7 @@ const slides = [
     section: "03 / QUALITY GOVERNANCE",
     title: "工程质量：从门禁到智能护栏",
     subtitle: "开源重公共责任，大厂重复杂交付；共同核心是责任链和证据链。",
-    time: "约 1.5 分钟",
+    time: "约 1.4 分钟",
     focus: "合并原第七/第八页的重复信息，突出责任链、证据链与小批量反制不稳定。",
     question: "AI 让提交变多以后，维护者和大厂平台到底该看什么？",
     script:
@@ -167,13 +179,13 @@ const slides = [
   },
   {
     section: "03 / QUALITY GOVERNANCE",
-    title: "BitFun 的价值：把开发过程组织成工件流",
-    subtitle: "计划、证据、评审、自迭代不只是功能，而是 Agent 工作的规范工件。",
+    title: "BitFun 的价值：把开发过程组织成团队工作流",
+    subtitle: "从 Issue 到 PR，不是聊天产物堆叠，而是交付对象、证据包和阶段门禁。",
     time: "约 1.4 分钟",
-    focus: "重做第九页：四个框图错开，扩展 Planning/Evidence/Review/Self-iteration 的工程含义。",
-    question: "一次失败只是修一个 bug，还是沉淀成下一版工程系统？",
+    focus: "把第九页落到可执行方法：Spec/Issue -> Agent Worktree -> Evidence Packet -> Independent Review -> Gate/Merge。",
+    question: "如果多个 Agent 同时参与，团队靠什么判断一个变更可以继续前进？",
     script:
-      "回到 BitFun，它不是要证明某个模型更强，而是展示一个智能协作系统的雏形。计划不只是聊天里的 TODO，而应该形成项目可管理的 Spec 或任务工件；证据不只是“我看过代码”，而是日志、复现步骤、测试结果、trace 和差异说明；评审不是实现者自审，而是问题发现、仲裁、修复、验证分离，并把中间产物规范化；自迭代也分层：个人级别是把失败经验变成下一次提示和检查清单，项目级别则是把稳定流程沉淀为 Rules、Skill、模板和质量门禁。这样 AI 不是随意写代码，而是在工件流里工作。",
+      "回到 BitFun，它不是要证明某个模型更强，而是展示一个团队工作流的雏形。更可落地的做法是把一次 AI 开发压成五个稳定环节：第一，任务从 Issue 或 Spec 进入，明确目标、非目标和风险边界；第二，Agent 在隔离工作区执行，避免把探索过程直接污染主分支；第三，执行结束必须生成证据包，包括 diff 摘要、测试结果、日志、trace、未决风险和回滚路径；第四，评审要角色分离，发现问题、仲裁问题、修复问题、验证修复尽量不要由同一个角色闭环；第五，阶段门禁决定能否进入 PR、合并或发布。这里的关键不是记录每一步操作，而是把复杂过程压缩成团队能读、能审、能追责的交付对象和证据。",
     transition: "最后，我们把视角切回开发者：人在这样的系统里到底做什么。",
     render: slideBitfunV02,
   },
@@ -192,12 +204,12 @@ const slides = [
   {
     section: "04 / DEVELOPER ROLE",
     title: "三个未来判断",
-    subtitle: "AI 软件工程的竞争，会从模型能力走向可靠性工程与组织学习速度。",
-    time: "约 1.1 分钟",
-    focus: "新增前瞻页，补创新性和未来预言。",
+    subtitle: "最后只带走三件事：指标、角色、协议都会被重写。",
+    time: "约 0.9 分钟",
+    focus: "压缩前瞻页，作为收束而不是新增概念。",
     question: "未来两三年，软件工程里最先被重写的指标和方法是什么？",
     script:
-      "我用三条判断收束。第一，代码行数会越来越不重要，团队会转向净收益指标：从需求到可验证结果的时间、review 负担、返工率、故障恢复和知识沉淀。第二，架构与规则会更重要，不是因为 AI 不会写代码，而是因为越强的生成能力越需要清晰边界、模块契约、权限模型和可观测性来约束不确定性。第三，TDD、DFX、Code Review 会从人的流程习惯，逐步变成 Agent 可执行的工程协议：测试不只是用例，还是证据接口；评审不只是意见，还是可追踪 Artifact；规范不只是文档，还是工具可以检查的控制面。谁能把这些协议做好，谁就能把 AI 从 demo 推向可靠交付。",
+      "最后用三条判断收束，不再展开新概念。第一，指标会从代码行数、commit 数转向净收益：需求到证据的时间、评审负担、返工率、故障恢复和知识沉淀。第二，角色会从单一开发者扩展成任务 owner、Agent 编排者、证据审查者和系统治理者，人的价值更多在目标、边界、取舍和责任。第三，工程协议会越来越重要：TDD、DFX、Code Review 不只是人的流程习惯，而会变成 Agent 可读取、可执行、可产证据的协议。未来优秀的软件人才，不只是会用 AI 写代码，而是能把 AI 放进可靠工程系统里工作。",
     transition: "最后进入 Q&A。",
     render: slidePredictionV02,
   },
@@ -1776,6 +1788,28 @@ function v02Panel(x, y, w, h, icon, titleValue, lines, color = L.blue, kicker = 
   `;
 }
 
+function collabCardV02(x, y, n, titleValue, kicker, lines, color, icon) {
+  return `
+    <rect x="${x}" y="${y}" width="340" height="236" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="${x + 34}" y="${y + 36}" class="num5" style="font-size:42px;fill:${color}">${esc(n)}</text>
+    <text x="${x + 118}" y="${y + 26}" class="label5" style="font-size:31px">${esc(titleValue)}</text>
+    <text x="${x + 118}" y="${y + 70}" class="small5" style="font-size:20px;fill:${color};font-weight:900">${esc(kicker)}</text>
+    ${v5Icon(icon, x + 34, y + 104, 62, color)}
+    ${v02Lines(lines, x + 118, y + 126, 22, L.muted, 32, 540)}
+  `;
+}
+
+function workflowStepV02(x, y, n, titleValue, kicker, lines, color, icon) {
+  return `
+    <rect x="${x}" y="${y}" width="300" height="276" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="${x + 28}" y="${y + 36}" class="num5" style="font-size:39px;fill:${color}">${esc(n)}</text>
+    <text x="${x + 28}" y="${y + 86}" class="label5" style="font-size:28px">${esc(titleValue)}</text>
+    <text x="${x + 28}" y="${y + 128}" class="small5" style="font-size:21px;fill:${color};font-weight:900">${esc(kicker)}</text>
+    ${v5Icon(icon, x + 206, y + 34, 62, color)}
+    ${v02Lines(lines, x + 28, y + 174, 22, L.muted, 31, 420)}
+  `;
+}
+
 function v02SignalCard(x, y, w, h, n, titleValue, lines, color = L.blue) {
   return `
     <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="16" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
@@ -1813,9 +1847,9 @@ function slideAgendaV02(slide, index) {
   const body = `
     ${v5Header("目录", "报告目录", "", 72)}
     ${agendaItem5(150, 370, "01", "软件工程变革", "从 BitFun 案例推导智能协作系统。", "03-04", L.blue)}
-    ${agendaItem5(1010, 448, "02", "速度的背后", "概率执行、证据放行、收益重新分配。", "05-07", L.blue)}
-    ${agendaItem5(150, 606, "03", "工程质量与治理", "责任链、证据链、DFX / TDD 新形态。", "08-10", L.orange)}
-    ${agendaItem5(1010, 684, "04", "开发者角色", "人在新工程系统中的关键位置。", "11-13", L.orange)}
+    ${agendaItem5(1010, 448, "02", "速度的背后", "概率执行、阶段纠错、收益重新分配。", "05-08", L.blue)}
+    ${agendaItem5(150, 606, "03", "工程质量与治理", "责任链、证据链、DFX / TDD 新形态。", "09-11", L.orange)}
+    ${agendaItem5(1010, 684, "04", "开发者角色", "人在新工程系统中的关键位置。", "12-14", L.orange)}
     <path d="M318 850 C558 800 758 875 960 844 S1350 824 1604 870" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
     <text x="960" y="914" class="muted5" text-anchor="middle" style="font-size:25px">案例入口 → 速度重估 → 质量治理 → 人的定位</text>
   `;
@@ -1847,23 +1881,17 @@ function slideShockV02(slide, index) {
 
 function slideCoverV02(slide, index) {
   const body = `
-    ${v5Header("01 / 推导主线", "可验证、可治理、可协作", "软件工程对象从代码扩展到上下文、工具、证据、权限、角色与工件。", 70)}
-    <circle cx="960" cy="588" r="210" fill="${L.paper}" stroke="${L.line2}" stroke-width="3" filter="url(#paperShadow)"/>
-    <path d="M960 378 A210 210 0 0 1 1170 588" stroke="${L.blue}" stroke-width="9" fill="none" marker-end="url(#arrowBlue)"/>
-    <path d="M1170 588 A210 210 0 0 1 960 798" stroke="${L.orange}" stroke-width="9" fill="none" marker-end="url(#arrowGray)"/>
-    <path d="M960 798 A210 210 0 0 1 750 588" stroke="${L.blue}" stroke-width="9" fill="none"/>
-    <path d="M750 588 A210 210 0 0 1 960 378" stroke="${L.orange}" stroke-width="9" fill="none"/>
-    <text x="960" y="492" class="num5" text-anchor="middle" style="font-size:46px;fill:${L.blue}">可验证</text>
-    <text x="960" y="578" class="num5" text-anchor="middle" style="font-size:46px;fill:${L.ink}">可治理</text>
-    <text x="960" y="664" class="num5" text-anchor="middle" style="font-size:46px;fill:${L.orange}">可协作</text>
-    ${v02Panel(118, 420, 470, 126, "file", "上下文工程", ["Agent 站在正确事实之上。"], L.blue)}
-    ${v02Panel(1332, 420, 470, 126, "terminal", "工具与权限", ["概率执行进入可控边界。"], L.blue)}
-    ${v02Panel(118, 664, 470, 126, "check", "证据系统", ["测试、日志、trace、复现。"], L.orange)}
-    ${v02Panel(1332, 664, 470, 126, "team", "角色与工件", ["人-人协作扩展到人-AI协作。"], L.orange)}
-    <rect x="590" y="822" width="740" height="56" rx="28" fill="${L.paper}" stroke="${L.line2}" stroke-width="2"/>
-    <circle cx="632" cy="850" r="6" fill="${L.blue}"/>
-    <text x="960" y="834" class="small5" text-anchor="middle" style="font-size:25px;fill:${L.ink};font-weight:900">Artifact：计划 / 设计 / 证据 / 评审 / 复盘</text>
-    ${v02Takeaway("AI 时代的工程能力，是让产出进入可验证、可治理、可协作的系统。", 1420)}
+    ${v5Header("01 / 协作拓扑", "从人 + 人，到人 + 人 + Agent + Agent", "协作从同步沟通扩展到异步任务、角色化 Agent、证据化放行。", 64)}
+    <path d="M460 578 H554 M834 578 H928 M1208 578 H1302" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
+    <path d="M292 700 C520 806 742 800 960 720 S1368 642 1618 742" stroke="${L.orange}" stroke-width="4" fill="none" marker-end="url(#arrowGray)" opacity="0.78"/>
+    ${collabCardV02(104, 416, "01", "同步 Pair", "IDE / Chat", ["人负责问题判断", "AI 辅助补全与解释"], L.blue, "chat")}
+    ${collabCardV02(478, 416, "02", "异步委派", "GitHub / Codex Cloud", ["独立环境建分支", "研究、修改、跑测试"], L.orange, "terminal")}
+    ${collabCardV02(852, 416, "03", "角色化 Agent", "Subagents / Hooks", ["实现、测试、评审分离", "权限和生命周期受控"], L.blue, "team")}
+    ${collabCardV02(1226, 416, "04", "人类放行", "PR / CI / Gate", ["看证据包和风险", "决定合并或发布"], L.orange, "check")}
+    <rect x="300" y="764" width="1320" height="92" rx="16" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    <text x="960" y="790" class="label5" text-anchor="middle" style="font-size:29px">协作重心变化</text>
+    <text x="960" y="834" class="small5" text-anchor="middle" style="font-size:24px;fill:${L.ink};font-weight:850">从“谁写代码”转向“谁定义目标、谁产证据、谁做最终责任判断”。</text>
+    ${v02Takeaway("AI 时代的团队协作，不是 Agent 直接替人合并代码，而是 Agent 产出可审查的交付对象和证据包。", 1520)}
   `;
   return svgBaseV5(slide, index, body);
 }
@@ -1885,6 +1913,47 @@ function slideExplorationV02(slide, index) {
     ${v02Takeaway("新范式不是消灭概率性，而是把概率性产物纳入证据、权限和回滚边界。", 1360)}
   `;
   return svgBaseV5(slide, index, body);
+}
+
+function slideReliabilityV02(slide, index) {
+  const body = `
+    ${v5Header("02 / 阶段纠错", "用可控系统收敛不可控过程", "过程可以记录在后台；人类判断聚焦交付对象、证据包和风险。", 62)}
+    <rect x="108" y="388" width="512" height="322" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="164" y="448" class="small5" style="fill:${L.blue};font-weight:900">过程可变层</text>
+    <text x="164" y="510" class="num5" style="font-size:44px">过程不等于交付</text>
+    ${v02Lines(["模型 / 提示词 / 工具调用会变化", "后台记录用于复现与审计", "日常评审不逐步追操作"], 164, 584, 24, L.muted, 34, 680)}
+
+    <rect x="704" y="388" width="512" height="322" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="960" y="448" class="small5" text-anchor="middle" style="fill:${L.orange};font-weight:900">长链路风险</text>
+    <text x="960" y="506" class="num5" text-anchor="middle" style="font-size:54px;fill:${L.orange}">0.99^10 ≈ 0.90</text>
+    <text x="960" y="572" class="small5" text-anchor="middle" style="font-size:27px;fill:${L.ink};font-weight:850">每步可靠，不等于系统可靠</text>
+    <text x="960" y="622" class="small5" text-anchor="middle" style="font-size:23px;fill:${L.muted};font-weight:720">未校验交接会让错误</text>
+    <text x="960" y="656" class="small5" text-anchor="middle" style="font-size:23px;fill:${L.muted};font-weight:720">被继承、放大、合理化。</text>
+
+    <rect x="1300" y="388" width="512" height="322" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="1356" y="448" class="small5" style="fill:${L.blue};font-weight:900">工程收敛层</text>
+    <text x="1356" y="510" class="num5" style="font-size:44px">收敛到交付对象</text>
+    ${v02Lines(["完整代码与清晰变更", "测试、运行、评审证据", "风险与回滚路径可判断"], 1356, 584, 24, L.muted, 34, 680)}
+
+    <path d="M632 532 H674" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
+    <path d="M1242 532 H1286" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
+    <rect x="218" y="756" width="1484" height="112" rx="16" fill="${L.paper}" stroke="${L.line2}" stroke-width="2"/>
+    ${reliabilityGate(278, 792, "01", "交付对象基线", "需求、接口、代码、测试")}
+    ${reliabilityGate(622, 792, "02", "阶段门禁", "完整性、契约、测试、风险")}
+    ${reliabilityGate(966, 792, "03", "判断辅助", "摘要、差异、来源、不一致")}
+    ${reliabilityGate(1310, 792, "04", "Artifact 边界", "只管关键产物，不盯每步操作")}
+    ${v02Takeaway("人不需要监督每一步操作；系统把过程压缩成可判断的交付对象和证据包。", 1380)}
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function reliabilityGate(x, y, n, titleValue, desc) {
+  return `
+    <circle cx="${x}" cy="${y + 18}" r="19" fill="${L.blue}" opacity="0.12"/>
+    <text x="${x}" y="${y + 6}" class="small5" text-anchor="middle" style="font-size:20px;fill:${L.blue};font-weight:900">${esc(n)}</text>
+    <text x="${x + 36}" y="${y - 2}" class="label5" style="font-size:27px">${esc(titleValue)}</text>
+    <text x="${x + 36}" y="${y + 40}" class="small5" style="font-size:22px;fill:${L.muted};font-weight:720">${esc(desc)}</text>
+  `;
 }
 
 function slideExternalSignalsV02(slide, index) {
@@ -1965,20 +2034,17 @@ function slideFutureQualityV02(slide, index) {
 
 function slideBitfunV02(slide, index) {
   const body = `
-    ${v5Header("03 / BitFun 缩影", "把开发过程组织成工件流", "计划、证据、评审、自迭代不只是功能，而是 Agent 工作的规范工件。", 64)}
-    <circle cx="960" cy="620" r="178" fill="${L.paper}" stroke="${L.line2}" stroke-width="3" filter="url(#paperShadow)"/>
-    <text x="960" y="556" class="num5" text-anchor="middle" style="font-size:42px;fill:${L.blue}">Artifact</text>
-    <text x="960" y="618" class="num5" text-anchor="middle" style="font-size:42px;fill:${L.ink}">Flow</text>
-    <text x="960" y="686" class="small5" text-anchor="middle" style="font-size:24px">从聊天产物到工程资产</text>
-    <path d="M610 532 C650 430 714 396 802 386" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
-    <path d="M1128 422 C1256 430 1330 474 1378 528" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
-    <path d="M1468 658 C1376 780 1238 836 1136 852" stroke="${L.orange}" stroke-width="5" fill="none" marker-end="url(#arrowGray)"/>
-    <path d="M776 852 C620 818 532 732 502 660" stroke="${L.orange}" stroke-width="5" fill="none" marker-end="url(#arrowGray)"/>
-    ${v02Panel(176, 520, 460, 140, "file", "计划", ["Spec / Task / 项目管理", "探索沉淀为可协作目标。"], L.blue)}
-    ${v02Panel(730, 356, 460, 140, "check", "证据", ["日志 / 复现 / 测试 / trace", "证明变更不只靠模型自信。"], L.blue)}
-    ${v02Panel(1284, 520, 460, 140, "team", "评审", ["角色分离与中间产物治理", "发现 / 仲裁 / 修复 / 验证。"], L.orange)}
-    ${v02Panel(730, 776, 460, 140, "loop", "自迭代", ["个人级：提示与检查", "项目级：规则、模板、技能和门禁"], L.orange)}
-    ${v02Takeaway("BitFun 的价值不是某个功能，而是把 AI 开发从聊天结果推进到可治理的工件流。", 1400)}
+    ${v5Header("03 / BitFun 缩影", "把开发过程组织成团队工作流", "从 Issue 到 PR，不是聊天产物堆叠，而是交付对象、证据包和阶段门禁。", 62)}
+    <path d="M316 575 H424 M642 575 H750 M968 575 H1076 M1294 575 H1402" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
+    ${workflowStepV02(98, 438, "01", "Issue / Spec", "目标与边界", ["目标、非目标、风险", "验收标准先写清"], L.blue, "file")}
+    ${workflowStepV02(424, 438, "02", "Agent Worktree", "隔离执行", ["独立环境探索", "避免污染主分支"], L.orange, "terminal")}
+    ${workflowStepV02(750, 438, "03", "Evidence Packet", "证据包", ["diff 摘要、测试、日志", "trace、风险、回滚路径"], L.blue, "check")}
+    ${workflowStepV02(1076, 438, "04", "Independent Review", "独立评审", ["发现 / 仲裁分离", "修复后重新验证"], L.orange, "team")}
+    ${workflowStepV02(1402, 438, "05", "Gate / Merge", "阶段放行", ["PR、合并、发布", "责任归属可追踪"], L.blue, "shield")}
+    <rect x="240" y="760" width="1440" height="104" rx="16" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    <text x="960" y="794" class="label5" text-anchor="middle" style="font-size:28px">方法不是“多加审批”，而是让每个小变更都带着证据前进</text>
+    <text x="960" y="838" class="small5" text-anchor="middle" style="font-size:22px;fill:${L.muted};font-weight:780">人看稳定 Artifact 和风险摘要；后台 trace 只在高风险、冲突证据或复盘时下钻。</text>
+    ${v02Takeaway("BitFun 的价值不是某个功能，而是把 AI 开发从聊天结果推进到团队可治理的交付流。", 1460)}
   `;
   return svgBaseV5(slide, index, body);
 }
@@ -2020,11 +2086,11 @@ function roleColumnV02(x, y, n, titleValue, humanText, aiText, color) {
 
 function slidePredictionV02(slide, index) {
   const body = `
-    ${v5Header("04 / 前瞻判断", "三个未来判断", "AI 软件工程的竞争，会从模型能力走向可靠性工程与组织学习速度。", 66)}
+    ${v5Header("04 / 前瞻判断", "三个未来判断", "最后只带走三件事：指标、角色、协议都会被重写。", 66)}
     <path d="M430 740 C620 820 820 790 960 730 S1290 662 1490 760" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
-    ${predictionCardV02(120, 430, "01", "指标重写", ["从 LOC、commit 数，转向净收益：", "需求到证据的时间、返工率、", "评审负担与线上风险。"], L.blue)}
-    ${predictionCardV02(700, 372, "02", "架构与规则", ["越强的生成能力越需要边界：", "模块契约、权限模型、可观测性、", "回滚策略会成为主战场。"], L.orange)}
-    ${predictionCardV02(1280, 430, "03", "工程协议", ["TDD / DFX / Review 会变成", "Agent 可读取、可执行、", "可产证据的工程协议。"], L.blue)}
+    ${predictionCardV02(120, 430, "01", "指标重写", ["从代码量转向净收益：", "交付时间、返工率、评审负担、", "线上风险与知识沉淀。"], L.blue)}
+    ${predictionCardV02(700, 372, "02", "角色分化", ["开发者会更像 owner：", "定义目标、组织上下文、", "审查证据与承担责任。"], L.orange)}
+    ${predictionCardV02(1280, 430, "03", "工程协议", ["TDD / DFX / Review", "会变成 Agent 可读取、", "可执行、可产证据的协议。"], L.blue)}
     <rect x="402" y="812" width="1116" height="92" rx="16" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
     <text x="960" y="840" class="body5" text-anchor="middle" style="font-size:31px">未来的核心能力：把 AI 从 demo 推向可验证、可治理、可协作的交付系统。</text>
     ${v02Takeaway("谁能把工程协议做成系统能力，谁就更接近 AI 时代的可靠交付。", 1180)}
@@ -2073,7 +2139,7 @@ function roleStep5(x, y, n, titleValue, desc, color) {
 async function renderImages() {
   const paths = [];
   for (let i = 0; i < slides.length; i += 1) {
-    const svg = slides[i].render(slides[i], i);
+    const svg = slides[i].render(slides[i], i).replace(/[ \t]+$/gm, "");
     const svgPath = path.join(slidesDir, `slide-${String(i + 1).padStart(2, "0")}.svg`);
     const pngPath = path.join(slidesDir, `slide-${String(i + 1).padStart(2, "0")}.png`);
     fs.writeFileSync(svgPath, svg, "utf8");
@@ -2157,6 +2223,26 @@ function writeNotes() {
   linesOut.push("- METR 2026 update（https://metr.org/blog/2026-02-24-uplift-update/）：METR 提醒多 Agent 并行和开发者不愿脱离 AI 等因素会让 AI 生产率测量本身变得更难，适合引出“指标重写”。");
   linesOut.push("- Harness State of Engineering Excellence 2026（https://www.harness.io/press-and-news/ai-has-outpaced-how-engineering-organizations-measure-developer-productivity）：81% 受访者认为采用 AI coding tools 后 code review 时间增加，约 31% 开发者时间进入 review、修 bug、工具切换等隐形工作。");
   linesOut.push("- Harness DevOps Modernization 2026（https://www.harness.io/state-of-modernization-2026）：频繁使用 AI coding 的团队同时报告部署问题、回滚/热修复、MTTR、合规和性能压力等下游挑战，适合支撑“速度要与风险一起衡量”。");
+  linesOut.push("- Measuring Determinism in Large Language Models for Software Code Review（https://arxiv.org/abs/2502.20747）：即使 temperature 降到 0、清空上下文并重复同一提示，LLM 代码评审结果仍存在不同程度的不一致，适合支撑“模型层也需要工程收敛”。");
+  linesOut.push("- Google Research / DeepMind / Academia, Towards a Science of Scaling Agent Systems（https://research.google/blog/towards-a-science-of-scaling-agent-systems-when-and-why-agent-systems-work/）：多 Agent 在可并行任务上可能收益明显，但在顺序任务上退化；独立多 Agent 的错误放大可达 17.2x，集中式校验能显著收敛错误传播。");
+  linesOut.push("- Towards a Science of AI Agent Reliability（https://arxiv.org/abs/2602.16666）：Princeton 等研究者提出不要只看单一成功率，而要从一致性、鲁棒性、可预测性和安全性刻画 Agent 可靠性。");
+  linesOut.push("- ICSE 2026 NIER: Towards Verifiably Safe Tool Use for LLM Agents（https://conf.researchr.org/details/icse-2026/icse-2026-nier/41/Towards-Verifiably-Safe-Tool-Use-for-LLM-Agents）：提出从 STPA 出发识别 Agent 工作流风险，并把能力、保密性、信任等级等标签 formalize 到可执行规格中。");
+  linesOut.push("- IBM Research / ICSE 2026: AgentFixer（https://research.ibm.com/publications/agentfixer-from-failure-detection-to-fix-recommendations-in-agentic-systems）：用 15 类失败检测工具和根因分析模块诊断 agentic 系统可靠性问题，说明验证系统本身也可演进为 agentic 的纠错流程。");
+  linesOut.push("- SWE-CI（https://arxiv.org/abs/2603.03823）与 SWE-Chain（https://arxiv.org/abs/2605.14415）：把编码 Agent 评估从静态一次性修复推进到 CI 循环、长期维护和连续版本升级，支撑“长期可维护性才是最终验证”。");
+  linesOut.push("- GitHub Copilot cloud agent（https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent）：把 coding agent 放进 GitHub Actions 驱动的临时环境，让其研究、计划、改代码、跑测试并进入 PR 工作流，适合支撑“异步委派 + 团队透明协作”。");
+  linesOut.push("- OpenAI Codex cloud（https://developers.openai.com/codex/cloud）：Codex 可在独立云环境中后台并行处理任务，并从 GitHub issue 或 PR 触发工作，适合支撑“多任务、多 Agent、PR 化交付”。");
+  linesOut.push("- Claude Code subagents / hooks（https://code.claude.com/docs/en/sub-agents, https://code.claude.com/docs/en/hooks）：通过角色化 subagent、独立上下文、工具权限和生命周期 hooks，把协作从一个会话扩展到可控的 Agent 编排。");
+  linesOut.push("- LangChain Deep Agents harness engineering（https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering）：在模型固定的情况下，通过 trace、自验证和 harness 调整提升 Terminal Bench 2.0 表现，说明改进点常在模型外部工程系统。");
+  linesOut.push("- Collaborator or Assistant?（https://arxiv.org/abs/2605.08017）：分析 29,585 个 PR 生命周期，提出 Collaborator-Assistant 光谱；agent 可获得 operational agency，但 merge governance 仍主要由人类承担。");
+  linesOut.push("- SWE-PRBench（https://arxiv.org/abs/2603.26130）：350 个 PR 的 AI code review benchmark 显示，前沿模型只能发现部分人类标注问题，支持“AI 评审是证据输入，不是最终裁决”。");
+  linesOut.push("- AgentTrace（https://arxiv.org/abs/2602.10133）：提出 structured logging 框架，捕获 operational、cognitive、contextual 三类 trace，用于安全、问责、风险分析和信任校准。");
+  linesOut.push("- OpenAI, A Practical Guide to Building Agents（https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf）：强调模型、工具、指令和 guardrails 是 Agent 基础构件，并建议以 evals 建立性能基线、按任务选择模型。");
+  linesOut.push("- AgentOps: Enabling Observability of LLM Agents（https://arxiv.org/abs/2411.05285）：从 DevOps 视角提出 AgentOps taxonomy，强调要追踪 Agent 全生命周期中的 artifacts 和 associated data，支撑监控、日志、分析和安全。");
+  linesOut.push("- Fine-Grained Appropriate Reliance（https://arxiv.org/abs/2501.10909）：多步透明决策工作流在复杂任务中能帮助用户在中间步骤层面校准对 AI 的依赖，适合支撑“人看阶段性证据，而不是只看最终答案”。");
+  linesOut.push("- Fostering Appropriate Reliance on LLMs（https://arxiv.org/abs/2502.08554）：CHI 2025 研究发现，解释会同时增加对正确和错误回答的依赖；提供来源或暴露解释中的不一致更能降低对错误回答的过度依赖，适合支撑“判断辅助要突出来源、差异和不一致”。");
+  linesOut.push("- Designing meaningful human oversight in AI（https://link.springer.com/article/10.1007/s43681-026-01147-7）：提出 AI 负责执行性 agency，人类负责验证、 steering 和 substitution 的 evaluative agency，强调人类监督不能沦为 rubber stamp。");
+  linesOut.push("- SAA: visualization-based software analytics（https://www.sciencedirect.com/science/article/pii/S0164121225002584）：通过软件 Artifact traceability graph 和交互式可视化辅助软件过程分析与决策，适合支撑“Artifact 关系图 + 人类可读视图”。");
+  linesOut.push("- Cloudsmith 2026 Artifact Management Report 报道（https://www.itpro.com/software/development/developers-are-slacking-on-ai-generated-code-safety-heres-why-it-could-come-back-to-haunt-them）：AI 生成代码使用快速增长，但只有少数组织用传统制品同等级别的安全策略和 provenance tracking 管理代码、依赖和发布产物，提示 Artifact 治理正在成为工程风险点。");
   linesOut.push("");
   linesOut.push("## 分页讲稿");
   linesOut.push("");
@@ -2216,7 +2302,7 @@ node .\\docs\\report\\ai-redefines-software-development-presentation\\build-deck
 node .\\docs\\report\\ai-redefines-software-development-presentation\\build-deck-v0.2.cjs
 \`\`\`
 
-V0.2 主线：BitFun 的高速 AI 开发经验 -> 代码量膨胀后的真实问题 -> 概率执行与确定性证据 -> 外部调研中的生产率悖论 -> 质量责任、DFX、TDD 与 Artifact 治理 -> 开发者在新工程系统中的关键位置。
+V0.2 主线：BitFun 的高速 AI 开发经验 -> 代码量膨胀后的真实问题 -> 人 + 人 + Agent + Agent 的协作拓扑 -> 概率执行与确定性证据 -> 外部调研中的生产率悖论 -> 质量责任、DFX、TDD 与团队交付流 -> 开发者在新工程系统中的关键位置。
 `;
   fs.writeFileSync(readmePath, text, "utf8");
 }

@@ -1,6 +1,6 @@
 # AI 如何重新定义软件开发：分页演讲稿
 
-建议时长：15 分钟。建议页数：13 页。PPT 每页采用整页图片式设计，适合直接投屏演讲。
+建议时长：15 分钟。建议页数：14 页。PPT 每页采用整页图片式设计，适合直接投屏演讲。
 
 ## 报告简介
 
@@ -14,6 +14,26 @@
 - METR 2026 update（https://metr.org/blog/2026-02-24-uplift-update/）：METR 提醒多 Agent 并行和开发者不愿脱离 AI 等因素会让 AI 生产率测量本身变得更难，适合引出“指标重写”。
 - Harness State of Engineering Excellence 2026（https://www.harness.io/press-and-news/ai-has-outpaced-how-engineering-organizations-measure-developer-productivity）：81% 受访者认为采用 AI coding tools 后 code review 时间增加，约 31% 开发者时间进入 review、修 bug、工具切换等隐形工作。
 - Harness DevOps Modernization 2026（https://www.harness.io/state-of-modernization-2026）：频繁使用 AI coding 的团队同时报告部署问题、回滚/热修复、MTTR、合规和性能压力等下游挑战，适合支撑“速度要与风险一起衡量”。
+- Measuring Determinism in Large Language Models for Software Code Review（https://arxiv.org/abs/2502.20747）：即使 temperature 降到 0、清空上下文并重复同一提示，LLM 代码评审结果仍存在不同程度的不一致，适合支撑“模型层也需要工程收敛”。
+- Google Research / DeepMind / Academia, Towards a Science of Scaling Agent Systems（https://research.google/blog/towards-a-science-of-scaling-agent-systems-when-and-why-agent-systems-work/）：多 Agent 在可并行任务上可能收益明显，但在顺序任务上退化；独立多 Agent 的错误放大可达 17.2x，集中式校验能显著收敛错误传播。
+- Towards a Science of AI Agent Reliability（https://arxiv.org/abs/2602.16666）：Princeton 等研究者提出不要只看单一成功率，而要从一致性、鲁棒性、可预测性和安全性刻画 Agent 可靠性。
+- ICSE 2026 NIER: Towards Verifiably Safe Tool Use for LLM Agents（https://conf.researchr.org/details/icse-2026/icse-2026-nier/41/Towards-Verifiably-Safe-Tool-Use-for-LLM-Agents）：提出从 STPA 出发识别 Agent 工作流风险，并把能力、保密性、信任等级等标签 formalize 到可执行规格中。
+- IBM Research / ICSE 2026: AgentFixer（https://research.ibm.com/publications/agentfixer-from-failure-detection-to-fix-recommendations-in-agentic-systems）：用 15 类失败检测工具和根因分析模块诊断 agentic 系统可靠性问题，说明验证系统本身也可演进为 agentic 的纠错流程。
+- SWE-CI（https://arxiv.org/abs/2603.03823）与 SWE-Chain（https://arxiv.org/abs/2605.14415）：把编码 Agent 评估从静态一次性修复推进到 CI 循环、长期维护和连续版本升级，支撑“长期可维护性才是最终验证”。
+- GitHub Copilot cloud agent（https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent）：把 coding agent 放进 GitHub Actions 驱动的临时环境，让其研究、计划、改代码、跑测试并进入 PR 工作流，适合支撑“异步委派 + 团队透明协作”。
+- OpenAI Codex cloud（https://developers.openai.com/codex/cloud）：Codex 可在独立云环境中后台并行处理任务，并从 GitHub issue 或 PR 触发工作，适合支撑“多任务、多 Agent、PR 化交付”。
+- Claude Code subagents / hooks（https://code.claude.com/docs/en/sub-agents, https://code.claude.com/docs/en/hooks）：通过角色化 subagent、独立上下文、工具权限和生命周期 hooks，把协作从一个会话扩展到可控的 Agent 编排。
+- LangChain Deep Agents harness engineering（https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering）：在模型固定的情况下，通过 trace、自验证和 harness 调整提升 Terminal Bench 2.0 表现，说明改进点常在模型外部工程系统。
+- Collaborator or Assistant?（https://arxiv.org/abs/2605.08017）：分析 29,585 个 PR 生命周期，提出 Collaborator-Assistant 光谱；agent 可获得 operational agency，但 merge governance 仍主要由人类承担。
+- SWE-PRBench（https://arxiv.org/abs/2603.26130）：350 个 PR 的 AI code review benchmark 显示，前沿模型只能发现部分人类标注问题，支持“AI 评审是证据输入，不是最终裁决”。
+- AgentTrace（https://arxiv.org/abs/2602.10133）：提出 structured logging 框架，捕获 operational、cognitive、contextual 三类 trace，用于安全、问责、风险分析和信任校准。
+- OpenAI, A Practical Guide to Building Agents（https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf）：强调模型、工具、指令和 guardrails 是 Agent 基础构件，并建议以 evals 建立性能基线、按任务选择模型。
+- AgentOps: Enabling Observability of LLM Agents（https://arxiv.org/abs/2411.05285）：从 DevOps 视角提出 AgentOps taxonomy，强调要追踪 Agent 全生命周期中的 artifacts 和 associated data，支撑监控、日志、分析和安全。
+- Fine-Grained Appropriate Reliance（https://arxiv.org/abs/2501.10909）：多步透明决策工作流在复杂任务中能帮助用户在中间步骤层面校准对 AI 的依赖，适合支撑“人看阶段性证据，而不是只看最终答案”。
+- Fostering Appropriate Reliance on LLMs（https://arxiv.org/abs/2502.08554）：CHI 2025 研究发现，解释会同时增加对正确和错误回答的依赖；提供来源或暴露解释中的不一致更能降低对错误回答的过度依赖，适合支撑“判断辅助要突出来源、差异和不一致”。
+- Designing meaningful human oversight in AI（https://link.springer.com/article/10.1007/s43681-026-01147-7）：提出 AI 负责执行性 agency，人类负责验证、 steering 和 substitution 的 evaluative agency，强调人类监督不能沦为 rubber stamp。
+- SAA: visualization-based software analytics（https://www.sciencedirect.com/science/article/pii/S0164121225002584）：通过软件 Artifact traceability graph 和交互式可视化辅助软件过程分析与决策，适合支撑“Artifact 关系图 + 人类可读视图”。
+- Cloudsmith 2026 Artifact Management Report 报道（https://www.itpro.com/software/development/developers-are-slacking-on-ai-generated-code-safety-heres-why-it-could-come-back-to-haunt-them）：AI 生成代码使用快速增长，但只有少数组织用传统制品同等级别的安全策略和 provenance tracking 管理代码、依赖和发布产物，提示 Artifact 治理正在成为工程风险点。
 
 ## 分页讲稿
 
@@ -71,19 +91,19 @@
 
 由这个案例往上推，就能看到 AI 时代软件工程对象正在发生扩张。
 
-### 第 4 页：可验证、可治理、可协作
+### 第 4 页：从人 + 人，到人 + 人 + Agent + Agent
 
 - 建议时长：约 1.5 分钟
-- 页内重点：把第三页改为推导结论：目标方向直接写可验证、可治理、可协作。
-- 互动提问：可验证、可治理、可协作分别要靠什么工程机制实现？
+- 页内重点：用协作拓扑替换抽象结论：同步 pair、异步委派、角色化 Agent、人工放行。
+- 互动提问：当 Agent 也能开分支、跑测试、提交 PR 时，团队协作到底变了什么？
 
 屏幕信息：
 
-本页以“01 / SOFTWARE CHANGE”为视觉段落，围绕标题“可验证、可治理、可协作”展开。
+本页以“01 / SOFTWARE CHANGE”为视觉段落，围绕标题“从人 + 人，到人 + 人 + Agent + Agent”展开。
 
 讲稿：
 
-从 BitFun 这个案例往上抽象，AI 重新定义软件开发，不是因为模型能写多少函数，而是工程对象变大了。过去我们主要管理代码、分支、测试和发布；现在还要管理上下文如何装载、工具权限如何收口、模型输出如何被证据接住、人与 AI 的职责如何切开、中间产物如何被审计。可验证意味着 Finish 不能只是模型说完成，而要绑定测试、日志、trace、复现步骤和用户确认。可治理意味着权限、风险、回滚、合规要在执行链路里硬约束。可协作意味着协作对象从人与人，扩展到人与人加 AI：AI 生成计划、实现、证据和评审建议，人负责目标、取舍、责任和最终放行。
+从 BitFun 这个案例往上抽象，AI 重新定义软件开发，不只是因为模型能写函数，而是团队协作拓扑变了。第一阶段是人加 AI 的同步 pair coding，AI 在 IDE 里帮你补全、解释和修改。第二阶段是异步委派，比如 GitHub Copilot cloud agent 或 Codex cloud：你把 issue 或任务交给 Agent，它在独立环境里研究、建分支、跑测试、准备 PR。第三阶段是角色化 Agent：实现、测试、评审、安全、文档不一定由同一个 Agent 完成，而是通过 subagents、hooks、trace 和工作流编排形成分工。第四阶段仍然是人类放行：人不需要监督每一步 prompt，而是看目标是否达成、证据包是否足够、风险是否可接受、是否可以合并或发布。所以协作对象从人和人，扩展成了人、Agent、工具和证据共同工作的系统。
 
 转场：
 
@@ -105,11 +125,29 @@ AI 介入之后，研发节奏会从排期驱动部分转向想法驱动：先�
 
 转场：
 
-但是外部数据也提醒我们：速度收益并不是天然指数级增长。
+更尖锐的问题是：如果模型本身、团队使用的模型和多 Agent 链路都在波动，工程系统怎么收敛？
 
-### 第 6 页：速度收益不是指数曲线
+### 第 6 页：用可控系统收敛不可控过程
 
-- 建议时长：约 1.4 分钟
+- 建议时长：约 1.2 分钟
+- 页内重点：补充模型波动、概率串联衰减、Agent Team 错误放大，以及阶段性纠错系统。
+- 互动提问：如果每一步都有 99% 正确率，十步之后系统还可信吗？
+
+屏幕信息：
+
+本页以“02 / BEHIND SPEED”为视觉段落，围绕标题“用可控系统收敛不可控过程”展开。
+
+讲稿：
+
+这里可以把问题说得更硬一点：AI 的不确定性不只来自某一次回答。团队里不同人可能使用不同模型，同一个模型不同版本能力会变化，甚至在 temperature 很低时同一评审任务也可能出现不一致。再往上，如果一个 Agent Team 中每一步都把前一步的自然语言结论当事实输入，错误就会像串联系统一样累乘：0.99 的十次方大约只有 0.90；更糟的是，很多错误不是独立随机错误，而是会被后续步骤继承并放大。但治理对象要切清楚：模型、提示词、工具调用这些是后台 telemetry，用于复现、审计和失败排查，不应该变成人类日常评审的主要对象。人类应该判断的是交付对象：需求意图是否明确，代码变更是否完整，测试和运行证据是否足够，风险和回滚是否可接受。阶段门禁就是放在阶段转换处的自动控制点，比如从计划到实现、从实现到评审、从评审到合并。它检查的是交付对象和证据包，而不是每一步操作日志：接口契约、影响范围、构建测试、静态检查、风险标签、owner 和回滚路径。Artifact 也要收窄成可长期管理的关键工程产物，包括需求/任务、设计决策、代码 diff、测试证据、评审结论、发布与回滚记录。系统把复杂执行过程压缩成摘要、差异、来源、不一致提示和风险解释，帮助人做判断；只有在高风险、证据冲突或事故复盘时，才需要下钻到模型和执行轨迹。
+
+转场：
+
+有了这层纠偏系统，再看外部数据，会更容易理解为什么速度收益不是天然指数级增长。
+
+### 第 7 页：速度收益不是指数曲线
+
+- 建议时长：约 1.2 分钟
 - 页内重点：补外部信息：DORA、METR、Harness 作为市场和研究佐证。
 - 互动提问：为什么开发者感觉更快，团队整体却未必同等加速？
 
@@ -125,9 +163,9 @@ AI 介入之后，研发节奏会从排期驱动部分转向想法驱动：先�
 
 所以第一个真正被重新定义的东西，是质量责任。
 
-### 第 7 页：速度放大之后，质量责任被重新定义
+### 第 8 页：速度放大之后，质量责任被重新定义
 
-- 建议时长：约 1.2 分钟
+- 建议时长：约 1.0 分钟
 - 页内重点：优化第六页：放大中部内容，解释从能跑到可放行的距离。
 - 互动提问：AI 生成的代码能跑之后，距离可合并、可发布、可长期维护还差什么？
 
@@ -143,9 +181,9 @@ AI 介入之后，研发节奏会从排期驱动部分转向想法驱动：先�
 
 质量责任落地以后，工程治理需要从门禁转向更细的智能护栏。
 
-### 第 8 页：工程质量：从门禁到智能护栏
+### 第 9 页：工程质量：从门禁到智能护栏
 
-- 建议时长：约 1.5 分钟
+- 建议时长：约 1.4 分钟
 - 页内重点：合并原第七/第八页的重复信息，突出责任链、证据链与小批量反制不稳定。
 - 互动提问：AI 让提交变多以后，维护者和大厂平台到底该看什么？
 
@@ -161,7 +199,7 @@ AI 介入之后，研发节奏会从排期驱动部分转向想法驱动：先�
 
 再往前看，DFX、TDD、架构守护都会出现 AI 时代的新形态。
 
-### 第 9 页：下一代工程方法：让 DFX 与 TDD 变成 Agent 协议
+### 第 10 页：下一代工程方法：让 DFX 与 TDD 变成 Agent 协议
 
 - 建议时长：约 1.3 分钟
 - 页内重点：回应 DFX/TDD 新形态：非特定工程的 AI 下解决方案、细化军规、用例形态升级。
@@ -179,25 +217,25 @@ AI 介入之后，研发节奏会从排期驱动部分转向想法驱动：先�
 
 把这些方法落到 BitFun，就能看到一个 Agent 工程系统的雏形。
 
-### 第 10 页：BitFun 的价值：把开发过程组织成工件流
+### 第 11 页：BitFun 的价值：把开发过程组织成团队工作流
 
 - 建议时长：约 1.4 分钟
-- 页内重点：重做第九页：四个框图错开，扩展 Planning/Evidence/Review/Self-iteration 的工程含义。
-- 互动提问：一次失败只是修一个 bug，还是沉淀成下一版工程系统？
+- 页内重点：把第九页落到可执行方法：Spec/Issue -> Agent Worktree -> Evidence Packet -> Independent Review -> Gate/Merge。
+- 互动提问：如果多个 Agent 同时参与，团队靠什么判断一个变更可以继续前进？
 
 屏幕信息：
 
-本页以“03 / QUALITY GOVERNANCE”为视觉段落，围绕标题“BitFun 的价值：把开发过程组织成工件流”展开。
+本页以“03 / QUALITY GOVERNANCE”为视觉段落，围绕标题“BitFun 的价值：把开发过程组织成团队工作流”展开。
 
 讲稿：
 
-回到 BitFun，它不是要证明某个模型更强，而是展示一个智能协作系统的雏形。计划不只是聊天里的 TODO，而应该形成项目可管理的 Spec 或任务工件；证据不只是“我看过代码”，而是日志、复现步骤、测试结果、trace 和差异说明；评审不是实现者自审，而是问题发现、仲裁、修复、验证分离，并把中间产物规范化；自迭代也分层：个人级别是把失败经验变成下一次提示和检查清单，项目级别则是把稳定流程沉淀为 Rules、Skill、模板和质量门禁。这样 AI 不是随意写代码，而是在工件流里工作。
+回到 BitFun，它不是要证明某个模型更强，而是展示一个团队工作流的雏形。更可落地的做法是把一次 AI 开发压成五个稳定环节：第一，任务从 Issue 或 Spec 进入，明确目标、非目标和风险边界；第二，Agent 在隔离工作区执行，避免把探索过程直接污染主分支；第三，执行结束必须生成证据包，包括 diff 摘要、测试结果、日志、trace、未决风险和回滚路径；第四，评审要角色分离，发现问题、仲裁问题、修复问题、验证修复尽量不要由同一个角色闭环；第五，阶段门禁决定能否进入 PR、合并或发布。这里的关键不是记录每一步操作，而是把复杂过程压缩成团队能读、能审、能追责的交付对象和证据。
 
 转场：
 
 最后，我们把视角切回开发者：人在这样的系统里到底做什么。
 
-### 第 11 页：开发者角色：在新工程系统中找准位置
+### 第 12 页：开发者角色：在新工程系统中找准位置
 
 - 建议时长：约 1.5 分钟
 - 页内重点：重做第十页：收敛为四步，明确人在各阶段和 AI 在各阶段的角色。
@@ -215,10 +253,10 @@ AI 介入之后，研发节奏会从排期驱动部分转向想法驱动：先�
 
 最后用三条未来判断收束：未来几年软件工程会往哪里走。
 
-### 第 12 页：三个未来判断
+### 第 13 页：三个未来判断
 
-- 建议时长：约 1.1 分钟
-- 页内重点：新增前瞻页，补创新性和未来预言。
+- 建议时长：约 0.9 分钟
+- 页内重点：压缩前瞻页，作为收束而不是新增概念。
 - 互动提问：未来两三年，软件工程里最先被重写的指标和方法是什么？
 
 屏幕信息：
@@ -227,13 +265,13 @@ AI 介入之后，研发节奏会从排期驱动部分转向想法驱动：先�
 
 讲稿：
 
-我用三条判断收束。第一，代码行数会越来越不重要，团队会转向净收益指标：从需求到可验证结果的时间、review 负担、返工率、故障恢复和知识沉淀。第二，架构与规则会更重要，不是因为 AI 不会写代码，而是因为越强的生成能力越需要清晰边界、模块契约、权限模型和可观测性来约束不确定性。第三，TDD、DFX、Code Review 会从人的流程习惯，逐步变成 Agent 可执行的工程协议：测试不只是用例，还是证据接口；评审不只是意见，还是可追踪 Artifact；规范不只是文档，还是工具可以检查的控制面。谁能把这些协议做好，谁就能把 AI 从 demo 推向可靠交付。
+最后用三条判断收束，不再展开新概念。第一，指标会从代码行数、commit 数转向净收益：需求到证据的时间、评审负担、返工率、故障恢复和知识沉淀。第二，角色会从单一开发者扩展成任务 owner、Agent 编排者、证据审查者和系统治理者，人的价值更多在目标、边界、取舍和责任。第三，工程协议会越来越重要：TDD、DFX、Code Review 不只是人的流程习惯，而会变成 Agent 可读取、可执行、可产证据的协议。未来优秀的软件人才，不只是会用 AI 写代码，而是能把 AI 放进可靠工程系统里工作。
 
 转场：
 
 最后进入 Q&A。
 
-### 第 13 页：谢谢
+### 第 14 页：谢谢
 
 - 建议时长：Q&A
 - 页内重点：致谢页：去掉上方答疑互动说明，只保留主题和互动问题。

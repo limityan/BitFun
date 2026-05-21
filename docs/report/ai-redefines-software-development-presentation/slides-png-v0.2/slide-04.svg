@@ -15,7 +15,7 @@
     </marker>
   </defs>
   <rect width="1920" height="1080" fill="#FBFAF7"/>
-  
+
     <rect x="1560" y="76" width="168" height="134" rx="12" fill="none" stroke="#D7D7D2" stroke-width="2"/>
     <path d="M1578 118 h42 m-42 28 h112 m-112 28 h88" stroke="#D7D7D2" stroke-width="2" stroke-dasharray="5 8" fill="none"/>
     <path d="M1848 56 h-88 q-28 0 -28 28 v126" stroke="#D7D7D2" stroke-width="2" fill="none"/>
@@ -29,7 +29,7 @@
     <path d="M70 740 h120 v118 h250" stroke="#D7D7D2" stroke-width="2" fill="none"/>
     <path d="M50 510 h116 q26 0 26 26 v52" stroke="#D7D7D2" stroke-width="2" fill="none"/>
     <circle cx="150" cy="857" r="5" fill="#FF5A1F"/>
-    
+
     <g opacity="0.26" transform="translate(1350 820) scale(0.72)">
       <path d="M0 120 L110 60 L220 120 L110 180 Z" fill="none" stroke="#C4C6C1" stroke-width="2"/>
       <path d="M110 60 V180 M0 120 V220 M220 120 V220 M0 220 H320" stroke="#C4C6C1" stroke-width="2" fill="none"/>
@@ -37,9 +37,9 @@
       <path d="M360 96 h90 v124 h-90 Z M382 122 h46 M382 154 h46 M382 186 h46" stroke="#C4C6C1" stroke-width="2" fill="none"/>
       <path d="M88 144 h42 v76 h-42 Z M150 126 h48 v94 h-48 Z" stroke="#C4C6C1" stroke-width="2" fill="none"/>
     </g>
-  
-  
-  
+
+
+
     <style>
       text { font-family: "Microsoft YaHei", "Noto Sans SC", "PingFang SC", "Segoe UI", Arial, sans-serif; dominant-baseline: hanging; }
       .brand5 { font-size: 42px; font-weight: 900; fill: #050608; }
@@ -54,59 +54,57 @@
       .micro5 { font-size: 19px; font-weight: 760; fill: #5F6670; }
     </style>
     <text x="42" y="46" class="brand5">BitFun</text>
-    <text x="1840" y="50" class="small5" text-anchor="end">04 / 13</text>
-  
-  
-    
-    <text x="96" y="132" class="small5" style="fill:#106BEF;font-weight:900">01 / 推导主线</text>
-    <text x="96" y="188" class="h15" style="font-size:70px">可验证、可治理、可协作</text>
-    <text x="100" y="282" class="sub5">软件工程对象从代码扩展到上下文、工具、证据、权限、角色与工件。</text>
+    <text x="1840" y="50" class="small5" text-anchor="end">04 / 14</text>
+
+
+
+    <text x="96" y="132" class="small5" style="fill:#106BEF;font-weight:900">01 / 协作拓扑</text>
+    <text x="96" y="188" class="h15" style="font-size:64px">从人 + 人，到人 + 人 + Agent + Agent</text>
+    <text x="100" y="282" class="sub5">协作从同步沟通扩展到异步任务、角色化 Agent、证据化放行。</text>
     <path d="M96 356 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
     <circle cx="230" cy="356" r="5.5" fill="#FF5A1F"/>
-  
-    <circle cx="960" cy="588" r="210" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="3" filter="url(#paperShadow)"/>
-    <path d="M960 378 A210 210 0 0 1 1170 588" stroke="#106BEF" stroke-width="9" fill="none" marker-end="url(#arrowBlue)"/>
-    <path d="M1170 588 A210 210 0 0 1 960 798" stroke="#FF5A1F" stroke-width="9" fill="none" marker-end="url(#arrowGray)"/>
-    <path d="M960 798 A210 210 0 0 1 750 588" stroke="#106BEF" stroke-width="9" fill="none"/>
-    <path d="M750 588 A210 210 0 0 1 960 378" stroke="#FF5A1F" stroke-width="9" fill="none"/>
-    <text x="960" y="492" class="num5" text-anchor="middle" style="font-size:46px;fill:#106BEF">可验证</text>
-    <text x="960" y="578" class="num5" text-anchor="middle" style="font-size:46px;fill:#050608">可治理</text>
-    <text x="960" y="664" class="num5" text-anchor="middle" style="font-size:46px;fill:#FF5A1F">可协作</text>
-    
-    <rect x="118" y="420" width="470" height="126" rx="16" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    
-    <g transform="translate(152 446) scale(0.90625)"><path d="M18 8 h22 l10 10 v38 H18 Z M40 8 v12 h12 M26 32 h20 M26 42 h18" stroke="#106BEF" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
-    <text x="230" y="454" class="label5" style="font-size:30px">上下文工程</text>
-    <text x="230" y="502" class="small5" style="font-size:23px;fill:#5F6670;font-weight:640">Agent 站在正确事实之上。</text>
-  
-    
-    <rect x="1332" y="420" width="470" height="126" rx="16" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    
-    <g transform="translate(1366 446) scale(0.90625)"><path d="M18 18 L34 32 L18 46" stroke="#106BEF" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M38 48 h16" stroke="#106BEF" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
-    <text x="1444" y="454" class="label5" style="font-size:30px">工具与权限</text>
-    <text x="1444" y="502" class="small5" style="font-size:23px;fill:#5F6670;font-weight:640">概率执行进入可控边界。</text>
-  
-    
-    <rect x="118" y="664" width="470" height="126" rx="16" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    
-    <g transform="translate(152 690) scale(0.90625)"><rect x="12" y="10" width="40" height="44" rx="4" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M22 32 l8 8 l14 -18" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
-    <text x="230" y="698" class="label5" style="font-size:30px">证据系统</text>
-    <text x="230" y="746" class="small5" style="font-size:23px;fill:#5F6670;font-weight:640">测试、日志、trace、复现。</text>
-  
-    
-    <rect x="1332" y="664" width="470" height="126" rx="16" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    
-    <g transform="translate(1366 690) scale(0.90625)"><circle cx="32" cy="22" r="8" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="18" cy="30" r="6" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="46" cy="30" r="6" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M14 50 q18 -16 36 0 M4 54 q14 -12 28 -5 M32 49 q14 -7 28 5" stroke="#FF5A1F" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
-    <text x="1444" y="698" class="label5" style="font-size:30px">角色与工件</text>
-    <text x="1444" y="746" class="small5" style="font-size:23px;fill:#5F6670;font-weight:640">人-人协作扩展到人-AI协作。</text>
-  
-    <rect x="590" y="822" width="740" height="56" rx="28" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
-    <circle cx="632" cy="850" r="6" fill="#106BEF"/>
-    <text x="960" y="834" class="small5" text-anchor="middle" style="font-size:25px;fill:#050608;font-weight:900">Artifact：计划 / 设计 / 证据 / 评审 / 复盘</text>
-    
-    <rect x="250" y="936" width="1420" height="78" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
-    <path d="M326 956 v38" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="992" y="958" class="body5" text-anchor="middle" style="font-size:30px">AI 时代的工程能力，是让产出进入可验证、可治理、可协作的系统。</text>
-  
-  
+
+    <path d="M460 578 H554 M834 578 H928 M1208 578 H1302" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
+    <path d="M292 700 C520 806 742 800 960 720 S1368 642 1618 742" stroke="#FF5A1F" stroke-width="4" fill="none" marker-end="url(#arrowGray)" opacity="0.78"/>
+
+    <rect x="104" y="416" width="340" height="236" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="138" y="452" class="num5" style="font-size:42px;fill:#106BEF">01</text>
+    <text x="222" y="442" class="label5" style="font-size:31px">同步 Pair</text>
+    <text x="222" y="486" class="small5" style="font-size:20px;fill:#106BEF;font-weight:900">IDE / Chat</text>
+    <g transform="translate(138 520) scale(0.96875)"><path d="M12 18 h40 q8 0 8 8 v18 q0 8 -8 8 H32 l-12 9 v-9 h-8 q-8 0 -8-8 V26 q0-8 8-8 Z" stroke="#106BEF" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="24" cy="35" r="2.4" fill="#106BEF"/><circle cx="34" cy="35" r="2.4" fill="#106BEF"/><circle cx="44" cy="35" r="2.4" fill="#106BEF"/></g>
+    <text x="222" y="542" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">人负责问题判断</text><text x="222" y="574" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">AI 辅助补全与解释</text>
+
+
+    <rect x="478" y="416" width="340" height="236" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="512" y="452" class="num5" style="font-size:42px;fill:#FF5A1F">02</text>
+    <text x="596" y="442" class="label5" style="font-size:31px">异步委派</text>
+    <text x="596" y="486" class="small5" style="font-size:20px;fill:#FF5A1F;font-weight:900">GitHub / Codex Cloud</text>
+    <g transform="translate(512 520) scale(0.96875)"><path d="M18 18 L34 32 L18 46" stroke="#FF5A1F" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M38 48 h16" stroke="#FF5A1F" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    <text x="596" y="542" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">独立环境建分支</text><text x="596" y="574" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">研究、修改、跑测试</text>
+
+
+    <rect x="852" y="416" width="340" height="236" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="886" y="452" class="num5" style="font-size:42px;fill:#106BEF">03</text>
+    <text x="970" y="442" class="label5" style="font-size:31px">角色化 Agent</text>
+    <text x="970" y="486" class="small5" style="font-size:20px;fill:#106BEF;font-weight:900">Subagents / Hooks</text>
+    <g transform="translate(886 520) scale(0.96875)"><circle cx="32" cy="22" r="8" stroke="#106BEF" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="18" cy="30" r="6" stroke="#106BEF" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="46" cy="30" r="6" stroke="#106BEF" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M14 50 q18 -16 36 0 M4 54 q14 -12 28 -5 M32 49 q14 -7 28 5" stroke="#106BEF" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    <text x="970" y="542" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">实现、测试、评审分离</text><text x="970" y="574" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">权限和生命周期受控</text>
+
+
+    <rect x="1226" y="416" width="340" height="236" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="1260" y="452" class="num5" style="font-size:42px;fill:#FF5A1F">04</text>
+    <text x="1344" y="442" class="label5" style="font-size:31px">人类放行</text>
+    <text x="1344" y="486" class="small5" style="font-size:20px;fill:#FF5A1F;font-weight:900">PR / CI / Gate</text>
+    <g transform="translate(1260 520) scale(0.96875)"><rect x="12" y="10" width="40" height="44" rx="4" stroke="#FF5A1F" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M22 32 l8 8 l14 -18" stroke="#FF5A1F" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    <text x="1344" y="542" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">看证据包和风险</text><text x="1344" y="574" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">决定合并或发布</text>
+
+    <rect x="300" y="764" width="1320" height="92" rx="16" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+    <text x="960" y="790" class="label5" text-anchor="middle" style="font-size:29px">协作重心变化</text>
+    <text x="960" y="834" class="small5" text-anchor="middle" style="font-size:24px;fill:#050608;font-weight:850">从“谁写代码”转向“谁定义目标、谁产证据、谁做最终责任判断”。</text>
+
+    <rect x="200" y="936" width="1520" height="78" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <path d="M276 956 v38" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <text x="992" y="958" class="body5" text-anchor="middle" style="font-size:30px">AI 时代的团队协作，不是 Agent 直接替人合并代码，而是 Agent 产出可审查的交付对象和证据包。</text>
+
+
 </svg>
