@@ -1,6 +1,6 @@
 # AI 如何重新定义软件开发：演讲材料
 
-本目录保留原版演讲材料，并新增 V0.2 版本。V0.2 继续使用整页图片式 PPT，重点增强案例引导、外部调研依据、工程治理和开发者角色映射。
+本目录保留原版演讲材料、V0.2 版本，并新增 V0.3 版本。V0.3 继续使用整页图片式 PPT，重点收敛页面信息密度，减少观点被拆散到多个独立框体中的情况，并修复第 3 页底部文字压框问题。
 
 ## 原版材料
 
@@ -31,3 +31,19 @@ node .\docs\report\ai-redefines-software-development-presentation\build-deck-v0.
 ```
 
 V0.2 主线：BitFun 的高速 AI 开发经验 -> 代码量膨胀后的真实问题 -> 产出放大后的协作对象变化 -> 概率过程与证据放行 -> 外部调研中的生产率悖论 -> 质量责任、DFX、TDD 与团队交付流 -> 开发者在新工程系统中的关键位置。
+
+## V0.3 材料
+
+- `ai-redefines-software-development-v0.3.pptx`：V0.3 演讲用 PPTX，13 页。
+- `speaker-notes-v0.3.md`：V0.3 分页讲稿，按约 15 分钟节奏扩展。
+- `slides-png-v0.3/`：V0.3 逐页 SVG 与 PNG。
+- `preview-contact-sheet-v0.3.png`：V0.3 缩略总览。
+- `build-deck-v0.3.cjs`：V0.3 可复现生成脚本。
+
+重新生成 V0.3：
+
+```powershell
+node .\docs\report\ai-redefines-software-development-presentation\build-deck-v0.3.cjs
+```
+
+V0.3 主线：BitFun 的高速 AI 开发经验 -> 代码量膨胀后的真实问题 -> 产出放大后的协作对象变化 -> 概率过程与证据放行 -> 外部调研中的生产率悖论 -> 质量责任、DFX、TDD 与团队交付流 -> 开发者在新工程系统中的关键位置。
