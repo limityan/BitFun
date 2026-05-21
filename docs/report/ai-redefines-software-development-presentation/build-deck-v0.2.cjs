@@ -1799,14 +1799,22 @@ function collabCardV02(x, y, n, titleValue, kicker, lines, color, icon) {
   `;
 }
 
+function shiftChipV02(x, y, titleValue, desc) {
+  return `
+    <rect x="${x}" y="${y}" width="210" height="78" rx="14" fill="${L.paper}" stroke="${L.line2}" stroke-width="2"/>
+    <text x="${x + 105}" y="${y + 18}" class="label5" text-anchor="middle" style="font-size:26px;fill:${L.blue}">${esc(titleValue)}</text>
+    <text x="${x + 105}" y="${y + 52}" class="small5" text-anchor="middle" style="font-size:21px;fill:${L.ink};font-weight:830">${esc(desc)}</text>
+  `;
+}
+
 function workflowStepV02(x, y, n, titleValue, kicker, lines, color, icon) {
   return `
-    <rect x="${x}" y="${y}" width="300" height="276" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="${x + 28}" y="${y + 36}" class="num5" style="font-size:39px;fill:${color}">${esc(n)}</text>
-    <text x="${x + 28}" y="${y + 86}" class="label5" style="font-size:28px">${esc(titleValue)}</text>
-    <text x="${x + 28}" y="${y + 128}" class="small5" style="font-size:21px;fill:${color};font-weight:900">${esc(kicker)}</text>
-    ${v5Icon(icon, x + 206, y + 34, 62, color)}
-    ${v02Lines(lines, x + 28, y + 174, 22, L.muted, 31, 420)}
+    <rect x="${x}" y="${y}" width="500" height="194" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="${x + 30}" y="${y + 34}" class="num5" style="font-size:39px;fill:${color}">${esc(n)}</text>
+    <text x="${x + 112}" y="${y + 31}" class="label5" style="font-size:29px">${esc(titleValue)}</text>
+    <text x="${x + 112}" y="${y + 75}" class="small5" style="font-size:21px;fill:${color};font-weight:900">${esc(kicker)}</text>
+    ${v5Icon(icon, x + 394, y + 38, 58, color)}
+    ${v02Lines(lines, x + 112, y + 116, 22, L.muted, 31, 620)}
   `;
 }
 
@@ -1883,14 +1891,17 @@ function slideCoverV02(slide, index) {
   const body = `
     ${v5Header("01 / 协作拓扑", "从人 + 人，到人 + 人 + Agent + Agent", "协作从同步沟通扩展到异步任务、角色化 Agent、证据化放行。", 64)}
     <path d="M460 578 H554 M834 578 H928 M1208 578 H1302" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
-    <path d="M292 700 C520 806 742 800 960 720 S1368 642 1618 742" stroke="${L.orange}" stroke-width="4" fill="none" marker-end="url(#arrowGray)" opacity="0.78"/>
     ${collabCardV02(104, 416, "01", "同步 Pair", "IDE / Chat", ["人负责问题判断", "AI 辅助补全与解释"], L.blue, "chat")}
     ${collabCardV02(478, 416, "02", "异步委派", "GitHub / Codex Cloud", ["独立环境建分支", "研究、修改、跑测试"], L.orange, "terminal")}
     ${collabCardV02(852, 416, "03", "角色化 Agent", "Subagents / Hooks", ["实现、测试、评审分离", "权限和生命周期受控"], L.blue, "team")}
     ${collabCardV02(1226, 416, "04", "人类放行", "PR / CI / Gate", ["看证据包和风险", "决定合并或发布"], L.orange, "check")}
-    <rect x="300" y="764" width="1320" height="92" rx="16" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
-    <text x="960" y="790" class="label5" text-anchor="middle" style="font-size:29px">协作重心变化</text>
-    <text x="960" y="834" class="small5" text-anchor="middle" style="font-size:24px;fill:${L.ink};font-weight:850">从“谁写代码”转向“谁定义目标、谁产证据、谁做最终责任判断”。</text>
+    <rect x="248" y="704" width="1424" height="154" rx="16" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    <path d="M292 728 v104" stroke="${L.blue}" stroke-width="7" stroke-linecap="round"/>
+    <text x="328" y="730" class="label5" style="font-size:29px">协作重心变化</text>
+    <text x="328" y="774" class="small5" style="font-size:22px;fill:${L.muted};font-weight:760">从“谁写代码”转向三个可判断对象：</text>
+    ${shiftChipV02(680, 736, "目标", "谁定义边界")}
+    ${shiftChipV02(952, 736, "证据", "谁产出证明")}
+    ${shiftChipV02(1224, 736, "责任", "谁最终放行")}
     ${v02Takeaway("AI 时代的团队协作，不是 Agent 直接替人合并代码，而是 Agent 产出可审查的交付对象和证据包。", 1520)}
   `;
   return svgBaseV5(slide, index, body);
@@ -2035,15 +2046,16 @@ function slideFutureQualityV02(slide, index) {
 function slideBitfunV02(slide, index) {
   const body = `
     ${v5Header("03 / BitFun 缩影", "把开发过程组织成团队工作流", "从 Issue 到 PR，不是聊天产物堆叠，而是交付对象、证据包和阶段门禁。", 62)}
-    <path d="M316 575 H424 M642 575 H750 M968 575 H1076 M1294 575 H1402" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
-    ${workflowStepV02(98, 438, "01", "Issue / Spec", "目标与边界", ["目标、非目标、风险", "验收标准先写清"], L.blue, "file")}
-    ${workflowStepV02(424, 438, "02", "Agent Worktree", "隔离执行", ["独立环境探索", "避免污染主分支"], L.orange, "terminal")}
-    ${workflowStepV02(750, 438, "03", "Evidence Packet", "证据包", ["diff 摘要、测试、日志", "trace、风险、回滚路径"], L.blue, "check")}
-    ${workflowStepV02(1076, 438, "04", "Independent Review", "独立评审", ["发现 / 仲裁分离", "修复后重新验证"], L.orange, "team")}
-    ${workflowStepV02(1402, 438, "05", "Gate / Merge", "阶段放行", ["PR、合并、发布", "责任归属可追踪"], L.blue, "shield")}
-    <rect x="240" y="760" width="1440" height="104" rx="16" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
-    <text x="960" y="794" class="label5" text-anchor="middle" style="font-size:28px">方法不是“多加审批”，而是让每个小变更都带着证据前进</text>
-    <text x="960" y="838" class="small5" text-anchor="middle" style="font-size:22px;fill:${L.muted};font-weight:780">人看稳定 Artifact 和风险摘要；后台 trace 只在高风险、冲突证据或复盘时下钻。</text>
+    <path d="M600 490 H690 M1190 490 H1280" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
+    <path d="M1534 592 C1468 628 1372 642 1260 646" stroke="${L.orange}" stroke-width="5" fill="none" marker-end="url(#arrowGray)" opacity="0.86"/>
+    <path d="M904 746 H1004" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
+    ${workflowStepV02(100, 390, "01", "Issue / Spec", "目标与边界", ["目标、非目标、风险", "验收标准先写清"], L.blue, "file")}
+    ${workflowStepV02(690, 390, "02", "Agent Worktree", "隔离执行", ["独立环境探索", "避免污染主分支"], L.orange, "terminal")}
+    ${workflowStepV02(1280, 390, "03", "Evidence Packet", "证据包", ["diff 摘要、测试、日志", "trace、风险、回滚路径"], L.blue, "check")}
+    ${workflowStepV02(400, 642, "04", "Independent Review", "独立评审", ["发现 / 仲裁分离", "修复后重新验证"], L.orange, "team")}
+    ${workflowStepV02(1004, 642, "05", "Gate / Merge", "阶段放行", ["PR、合并、发布", "责任归属可追踪"], L.blue, "shield")}
+    <rect x="350" y="854" width="1220" height="50" rx="14" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    <text x="960" y="866" class="small5" text-anchor="middle" style="font-size:22px;fill:${L.ink};font-weight:900">每个小变更都带着稳定 Artifact、风险摘要和可复核证据前进。</text>
     ${v02Takeaway("BitFun 的价值不是某个功能，而是把 AI 开发从聊天结果推进到团队可治理的交付流。", 1460)}
   `;
   return svgBaseV5(slide, index, body);
