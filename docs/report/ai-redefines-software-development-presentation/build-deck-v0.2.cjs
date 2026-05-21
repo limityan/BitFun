@@ -1878,25 +1878,28 @@ function slideShockV02(slide, index) {
 function slideCoverV02(slide, index) {
   const body = `
     ${v5Header("01 / 主线展开", "产出放大后，协作对象变了", "从“谁写代码”走向“谁定义目标、谁产出证据、谁承担责任”。", 64)}
-    <rect x="140" y="318" width="1640" height="54" rx="10" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
-    <text x="960" y="330" class="small5" text-anchor="middle" style="font-size:25px;fill:${L.ink};font-weight:860">BitFun 经验不是终点：代码生产放大以后，团队要管理新的交付对象</text>
-    <path d="M532 578 H558" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
-    <path d="M930 578 H956" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
-    <path d="M1328 578 H1354" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
-    ${collabCardV02(180, 424, "01", "同步 Pair", "IDE / Chat", ["人判断问题", "AI 辅助修改"], L.blue, "chat")}
-    ${collabCardV02(578, 424, "02", "异步委派", "Cloud Agent", ["独立工作区", "研究、修改、测试"], L.orange, "terminal")}
-    ${collabCardV02(976, 424, "03", "角色化 Agent", "Subagents / Hooks", ["实现、测试、评审分离", "权限与生命周期受控"], L.blue, "team")}
-    ${collabCardV02(1374, 424, "04", "人类放行", "PR / CI / Gate", ["看证据包和风险", "决定合并或发布"], L.orange, "check")}
-    <rect x="248" y="704" width="1424" height="154" rx="16" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
-    <path d="M292 728 v104" stroke="${L.blue}" stroke-width="7" stroke-linecap="round"/>
-    <text x="328" y="730" class="label5" style="font-size:29px">协作重心变化</text>
-    <text x="328" y="774" class="small5" style="font-size:22px;fill:${L.muted};font-weight:760">从“谁写代码”转向三个可判断对象：</text>
-    ${shiftChipV02(680, 736, "目标", "谁定义边界")}
-    ${shiftChipV02(952, 736, "证据", "谁产出证明")}
-    ${shiftChipV02(1224, 736, "责任", "谁最终放行")}
+    <rect x="120" y="384" width="1680" height="438" rx="24" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="174" y="426" class="small5" style="font-size:24px;fill:${L.blue};font-weight:900">BitFun 经验不是终点：代码生产放大以后，团队要管理新的交付对象</text>
+    <path d="M526 468 V776 M946 468 V776 M1366 468 V776" stroke="${L.line2}" stroke-width="2" stroke-dasharray="9 12"/>
+    ${collabLaneV02(172, 506, "01", "同步 Pair", "IDE / Chat", "人定义问题边界", "AI 辅助修改与解释", L.blue, "chat")}
+    ${collabLaneV02(592, 506, "02", "异步委派", "Cloud Agent", "Agent 独立工作区", "产出可审查 diff", L.orange, "terminal")}
+    ${collabLaneV02(1012, 506, "03", "角色化 Agent", "Subagents / Hooks", "实现 / 测试 / 评审分工", "权限与生命周期受控", L.blue, "team")}
+    ${collabLaneV02(1432, 506, "04", "人类放行", "PR / CI / Gate", "人看证据包和风险", "承担合并或发布责任", L.orange, "check")}
+    <text x="960" y="754" class="small5" text-anchor="middle" style="font-size:25px;fill:${L.ink};font-weight:880">协作对象从“代码”扩展为任务、Agent、工具执行和证据包。</text>
     ${v02Takeaway("AI 时代的团队协作，不是 Agent 直接替人合并代码，而是 Agent 产出可审查的交付对象和证据包。", 1520)}
   `;
   return svgBaseV5(slide, index, body);
+}
+
+function collabLaneV02(x, y, n, titleValue, kicker, humanText, evidenceText, color, icon) {
+  return `
+    <text x="${x}" y="${y}" class="num5" style="font-size:42px;fill:${color}">${esc(n)}</text>
+    <text x="${x + 88}" y="${y + 4}" class="label5" style="font-size:31px">${esc(titleValue)}</text>
+    <text x="${x + 88}" y="${y + 50}" class="small5" style="font-size:20px;fill:${color};font-weight:900">${esc(kicker)}</text>
+    ${v5Icon(icon, x + 6, y + 126, 64, color)}
+    <text x="${x + 88}" y="${y + 124}" class="small5" style="font-size:24px;fill:${L.ink};font-weight:860">${esc(humanText)}</text>
+    <text x="${x + 88}" y="${y + 164}" class="small5" style="font-size:24px;fill:${L.muted};font-weight:720">${esc(evidenceText)}</text>
+  `;
 }
 
 function slideExplorationV02(slide, index) {
@@ -1921,13 +1924,13 @@ function slideExplorationV02(slide, index) {
 function slideReliabilityV02(slide, index) {
   const body = `
     ${v5Header("02 / 关键机制", "概率过程，证据放行", "允许 Agent 多路径探索，但把放行收敛到可复现证据和阶段门禁。", 66)}
-    <rect x="96" y="372" width="510" height="328" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <rect x="96" y="372" width="510" height="416" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
     <text x="146" y="430" class="small5" style="fill:${L.blue};font-weight:900">01 / 概率探索层</text>
     <text x="146" y="492" class="num5" style="font-size:42px">允许过程多路径</text>
-    ${v02Lines(["沙箱执行 / 权限控制", "危险操作拦截 / 失败回注", "trace 用于复现，不让人逐步盯操作"], 146, 568, 23, L.muted, 34, 680)}
+    ${v02Lines(["沙箱执行 / 权限控制", "危险操作拦截 / 失败回注", "trace 用于复现，不让人逐步盯操作", "过程可变，但必须可停下、可追溯"], 146, 568, 23, L.muted, 34, 680)}
 
     <path d="M628 536 H690" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
-    <rect x="708" y="344" width="504" height="384" rx="22" fill="${L.paper}" stroke="${L.blue}" stroke-width="3" filter="url(#paperShadow)"/>
+    <rect x="708" y="344" width="504" height="456" rx="22" fill="${L.paper}" stroke="${L.blue}" stroke-width="3" filter="url(#paperShadow)"/>
     <text x="960" y="408" class="small5" text-anchor="middle" style="fill:${L.blue};font-weight:900">02 / 证据包</text>
     <text x="960" y="458" class="num5" text-anchor="middle" style="font-size:42px;fill:${L.ink}">把过程压缩成</text>
     <text x="960" y="514" class="num5" text-anchor="middle" style="font-size:42px;fill:${L.ink}">人能判断的对象</text>
@@ -1936,18 +1939,13 @@ function slideReliabilityV02(slide, index) {
     <rect x="806" y="636" width="308" height="52" rx="26" fill="#FFF6EE" stroke="${L.orange}" stroke-width="2"/>
     <text x="960" y="644" class="num5" text-anchor="middle" style="font-size:31px;fill:${L.orange}">0.99^10 ≈ 0.90</text>
     <text x="960" y="704" class="small5" text-anchor="middle" style="font-size:21px;fill:${L.muted};font-weight:720">长链路需要阶段性纠偏</text>
+    <text x="960" y="744" class="small5" text-anchor="middle" style="font-size:22px;fill:${L.ink};font-weight:850">证据服务判断，而不是替代判断</text>
 
     <path d="M1234 536 H1294" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
-    <rect x="1314" y="372" width="510" height="328" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <rect x="1314" y="372" width="510" height="416" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
     <text x="1364" y="430" class="small5" style="fill:${L.orange};font-weight:900">03 / 阶段门禁</text>
     <text x="1364" y="492" class="num5" style="font-size:42px">只在转换点放行</text>
-    ${v02Lines(["计划 → 实现：目标和边界", "实现 → 评审：契约、测试、owner", "评审 → 合并：风险、回滚、责任"], 1364, 568, 23, L.muted, 34, 680)}
-
-    <rect x="214" y="768" width="1492" height="104" rx="16" fill="${L.paper}" stroke="${L.line2}" stroke-width="2"/>
-    ${reliabilityGate(282, 806, "A", "交付对象", "需求、接口、代码、测试")}
-    ${reliabilityGate(626, 806, "B", "放行证据", "构建、运行、评审、风险")}
-    ${reliabilityGate(970, 806, "C", "判断辅助", "摘要、来源、差异、不一致")}
-    ${reliabilityGate(1314, 806, "D", "责任边界", "owner、审批、回滚路径")}
+    ${v02Lines(["计划 → 实现：目标和边界", "实现 → 评审：契约、测试、owner", "评审 → 合并：风险、回滚、责任", "只看关键交付物，不追踪每步操作"], 1364, 568, 23, L.muted, 34, 680)}
     ${v02Takeaway("新的工程确定性：过程可以概率探索，结果必须以证据、门禁和责任确定放行。", 1380)}
   `;
   return svgBaseV5(slide, index, body);
