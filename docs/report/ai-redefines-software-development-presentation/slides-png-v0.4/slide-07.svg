@@ -16,9 +16,7 @@
   </defs>
   <rect width="1920" height="1080" fill="#FBFAF7"/>
 
-    <rect x="1560" y="76" width="168" height="134" rx="12" fill="none" stroke="#D7D7D2" stroke-width="2"/>
-    <path d="M1578 118 h42 m-42 28 h112 m-112 28 h88" stroke="#D7D7D2" stroke-width="2" stroke-dasharray="5 8" fill="none"/>
-    <path d="M1848 56 h-88 q-28 0 -28 28 v126" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M1816 92 h-70 q-28 0 -28 28 v78" stroke="#D7D7D2" stroke-width="2" fill="none" opacity="0.34"/>
     <path d="M1782 890 v-190 q0 -32 32 -32 h50" stroke="#D7D7D2" stroke-width="2" fill="none"/>
     <path d="M1650 820 h112 q30 0 30 -30 v-80" stroke="#D7D7D2" stroke-width="2" fill="none"/>
     <circle cx="1800" cy="708" r="7" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
@@ -38,6 +36,15 @@
       <path d="M88 144 h42 v76 h-42 Z M150 126 h48 v94 h-48 Z" stroke="#C4C6C1" stroke-width="2" fill="none"/>
     </g>
 
+
+
+    <g transform="rotate(-2 1508 104)">
+      <text x="1268" y="58"
+        style="font-family:'Arial Black','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:88px;font-weight:900;letter-spacing:1.4px;fill:#106BEF;fill-opacity:0.15;stroke:#106BEF;stroke-width:1.4;stroke-opacity:0.2;paint-order:stroke">02</text>
+      <text x="1370" y="92"
+        style="font-family:'Microsoft YaHei','Noto Sans SC','Segoe UI',sans-serif;font-size:38px;font-weight:900;letter-spacing:1.6px;fill:#106BEF;stroke:#FFFFFF;stroke-width:2.4;paint-order:stroke;fill-opacity:0.48">速度的背后</text>
+      <path d="M1368 150 C1488 118 1628 174 1768 134" stroke="#106BEF" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.24"/>
+    </g>
 
 
     <style>

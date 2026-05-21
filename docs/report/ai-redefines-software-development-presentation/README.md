@@ -1,6 +1,6 @@
 # AI 如何重新定义软件开发：演讲材料
 
-本目录保留原版演讲材料、V0.2 版本，并新增 V0.3 版本。V0.3 继续使用整页图片式 PPT，重点收敛页面信息密度，减少观点被拆散到多个独立框体中的情况，并修复第 3 页底部文字压框问题。
+本目录保留原版演讲材料、V0.2、V0.3 版本，并新增 V0.4 版本。V0.4 继续使用整页图片式 PPT，在具体内容页右上角加入浅色章节水印，帮助听众把每一页放回目录中的四个大模块。
 
 ## 原版材料
 
@@ -46,4 +46,20 @@ V0.2 主线：BitFun 的高速 AI 开发经验 -> 代码量膨胀后的真实问
 node .\docs\report\ai-redefines-software-development-presentation\build-deck-v0.3.cjs
 ```
 
-V0.3 主线：BitFun 的高速 AI 开发经验 -> 代码量膨胀后的真实问题 -> 产出放大后的协作对象变化 -> 概率过程与证据放行 -> 外部调研中的生产率悖论 -> 质量责任、DFX、TDD 与团队交付流 -> 开发者在新工程系统中的关键位置。
+V0.3 主线：BitFun 的高速 AI 开发经验 -> 代码量膨胀后的真实问题 -> 产出放大后的协作对象变化 -> 概率过程与证据放行 -> 外部调研中的生产率悖论 -> 速度代价处理框架 -> 质量治理、DFX、TDD 与团队交付流 -> 开发者在新工程系统中的关键位置。
+
+## V0.4 材料
+
+- `ai-redefines-software-development-v0.4.pptx`：V0.4 演讲用 PPTX，13 页。
+- `speaker-notes-v0.4.md`：V0.4 分页讲稿，沿用 15 分钟节奏。
+- `slides-png-v0.4/`：V0.4 逐页 SVG 与 PNG。
+- `preview-contact-sheet-v0.4.png`：V0.4 缩略总览。
+- `build-deck-v0.4.cjs`：V0.4 可复现生成脚本。
+
+重新生成 V0.4：
+
+```powershell
+node .\docs\report\ai-redefines-software-development-presentation\build-deck-v0.4.cjs
+```
+
+V0.4 主线：沿用 V0.3 内容结构，并在第 3-12 页加入低干扰章节水印：01 软件工程变革、02 速度的背后、03 工程质量与治理、04 开发者角色。

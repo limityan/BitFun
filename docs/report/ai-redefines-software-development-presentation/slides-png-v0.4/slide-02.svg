@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <pattern id="lightDots" width="34" height="34" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1.7" fill="#C4C6C1" opacity="0.55"/>
+    </pattern>
+    <filter id="paperShadow" x="-18%" y="-18%" width="136%" height="150%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#4B5563" flood-opacity="0.13"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#106BEF" stroke-width="2"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#A5A9AE" stroke-width="2"/>
+    </marker>
+  </defs>
+  <rect width="1920" height="1080" fill="#FBFAF7"/>
+
+    <path d="M1816 92 h-70 q-28 0 -28 28 v78" stroke="#D7D7D2" stroke-width="2" fill="none" opacity="0.34"/>
+    <path d="M1782 890 v-190 q0 -32 32 -32 h50" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M1650 820 h112 q30 0 30 -30 v-80" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <circle cx="1800" cy="708" r="7" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <circle cx="1762" cy="820" r="7" fill="#106BEF"/>
+    <circle cx="1848" cy="622" r="6" fill="#FF5A1F"/>
+    <rect x="1378" y="720" width="180" height="120" fill="url(#lightDots)" opacity="0.48"/>
+    <rect x="152" y="318" width="128" height="96" fill="url(#lightDots)" opacity="0.42"/>
+    <path d="M70 740 h120 v118 h250" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M50 510 h116 q26 0 26 26 v52" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <circle cx="150" cy="857" r="5" fill="#FF5A1F"/>
+
+    <g opacity="0.26" transform="translate(1350 820) scale(0.72)">
+      <path d="M0 120 L110 60 L220 120 L110 180 Z" fill="none" stroke="#C4C6C1" stroke-width="2"/>
+      <path d="M110 60 V180 M0 120 V220 M220 120 V220 M0 220 H320" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M260 50 h70 v170 h-70 Z M280 80 h30 M280 116 h30 M280 152 h30" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M360 96 h90 v124 h-90 Z M382 122 h46 M382 154 h46 M382 186 h46" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M88 144 h42 v76 h-42 Z M150 126 h48 v94 h-48 Z" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+    </g>
+
+
+
+
+    <style>
+      text { font-family: "Microsoft YaHei", "Noto Sans SC", "PingFang SC", "Segoe UI", Arial, sans-serif; dominant-baseline: hanging; }
+      .brand5 { font-size: 42px; font-weight: 900; fill: #050608; }
+      .num5 { font-family: "Arial", "Microsoft YaHei", sans-serif; font-weight: 900; fill: #050608; }
+      .h15 { font-size: 68px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .h25 { font-size: 58px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .sub5 { font-size: 31px; font-weight: 560; fill: #5F6670; }
+      .body5 { font-size: 30px; font-weight: 700; fill: #050608; }
+      .muted5 { font-size: 24px; font-weight: 560; fill: #5F6670; }
+      .label5 { font-size: 29px; font-weight: 900; fill: #050608; }
+      .small5 { font-size: 23px; font-weight: 760; fill: #5F6670; }
+      .micro5 { font-size: 19px; font-weight: 760; fill: #5F6670; }
+    </style>
+    <text x="42" y="46" class="brand5">BitFun</text>
+    <text x="1840" y="50" class="small5" text-anchor="end">02 / 13</text>
+
+
+
+    <text x="96" y="132" class="small5" style="fill:#106BEF;font-weight:900">目录</text>
+    <text x="96" y="188" class="h15" style="font-size:72px">报告目录</text>
+
+    <path d="M96 310 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="226" cy="310" r="5.5" fill="#FF5A1F"/>
+
+
+    <rect x="150" y="370" width="760" height="118" rx="16" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="186" y="398" class="num5" style="font-size:42px;fill:#106BEF">01</text>
+    <text x="268" y="396" class="label5">软件工程变革</text>
+    <text x="268" y="436" class="small5">从 BitFun 案例推导智能协作系统。</text>
+    <text x="874" y="406" class="small5" text-anchor="end" style="fill:#106BEF;font-weight:900">03-04</text>
+
+
+    <rect x="1010" y="448" width="760" height="118" rx="16" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="1046" y="476" class="num5" style="font-size:42px;fill:#106BEF">02</text>
+    <text x="1128" y="474" class="label5">速度的背后</text>
+    <text x="1128" y="514" class="small5">概率执行、证据放行、收益重估。</text>
+    <text x="1734" y="484" class="small5" text-anchor="end" style="fill:#106BEF;font-weight:900">05-07</text>
+
+
+    <rect x="150" y="606" width="760" height="118" rx="16" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="186" y="634" class="num5" style="font-size:42px;fill:#FF5A1F">03</text>
+    <text x="268" y="632" class="label5">工程质量与治理</text>
+    <text x="268" y="672" class="small5">责任链、证据链、DFX / TDD 新形态。</text>
+    <text x="874" y="642" class="small5" text-anchor="end" style="fill:#FF5A1F;font-weight:900">08-10</text>
+
+
+    <rect x="1010" y="684" width="760" height="118" rx="16" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="1046" y="712" class="num5" style="font-size:42px;fill:#FF5A1F">04</text>
+    <text x="1128" y="710" class="label5">开发者角色</text>
+    <text x="1128" y="750" class="small5">人在新工程系统中的关键位置。</text>
+    <text x="1734" y="720" class="small5" text-anchor="end" style="fill:#FF5A1F;font-weight:900">11-13</text>
+
+    <path d="M318 850 C558 800 758 875 960 844 S1350 824 1604 870" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
+    <text x="960" y="914" class="muted5" text-anchor="middle" style="font-size:25px">案例入口 → 速度重估 → 质量治理 → 人的定位</text>
+
+</svg>

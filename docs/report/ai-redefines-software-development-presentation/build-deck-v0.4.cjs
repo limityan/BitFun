@@ -4,11 +4,11 @@ const sharp = require("sharp");
 const pptxgen = require("pptxgenjs");
 
 const outDir = __dirname;
-const slidesDir = path.join(outDir, "slides-png-v0.3");
-const pptxPath = path.join(outDir, process.env.PPTX_FILE || "ai-redefines-software-development-v0.3.pptx");
-const notesPath = path.join(outDir, "speaker-notes-v0.3.md");
+const slidesDir = path.join(outDir, "slides-png-v0.4");
+const pptxPath = path.join(outDir, process.env.PPTX_FILE || "ai-redefines-software-development-v0.4.pptx");
+const notesPath = path.join(outDir, "speaker-notes-v0.4.md");
 const readmePath = path.join(outDir, "README.md");
-const contactSheetPath = path.join(outDir, "preview-contact-sheet-v0.3.png");
+const contactSheetPath = path.join(outDir, "preview-contact-sheet-v0.4.png");
 
 fs.mkdirSync(slidesDir, { recursive: true });
 
@@ -1379,16 +1379,39 @@ function svgBaseV5(slide, index, body) {
   </defs>
   <rect width="${W}" height="${H}" fill="${L.bg}"/>
   ${lightCircuit()}
+  ${sectionWatermark(index)}
   ${v5Chrome(slide, index)}
   ${body}
 </svg>`;
 }
 
+function sectionWatermark(index) {
+  const item = sectionWatermarkInfo(index);
+  if (!item) return "";
+  const color = item.n === "03" || item.n === "04" ? L.orange : L.blue;
+  return `
+    <g transform="rotate(-2 1508 104)">
+      <text x="1268" y="58"
+        style="font-family:'Arial Black','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:88px;font-weight:900;letter-spacing:1.4px;fill:${color};fill-opacity:0.15;stroke:${color};stroke-width:1.4;stroke-opacity:0.2;paint-order:stroke">${esc(item.n)}</text>
+      <text x="1370" y="92"
+        style="font-family:'Microsoft YaHei','Noto Sans SC','Segoe UI',sans-serif;font-size:38px;font-weight:900;letter-spacing:1.6px;fill:${color};stroke:${L.paper};stroke-width:2.4;paint-order:stroke;fill-opacity:0.48">${esc(item.title)}</text>
+      <path d="M1368 150 C1488 118 1628 174 1768 134" stroke="${color}" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.24"/>
+    </g>
+  `;
+}
+
+function sectionWatermarkInfo(index) {
+  const page = index + 1;
+  if (page >= 3 && page <= 4) return { n: "01", title: "软件工程变革" };
+  if (page >= 5 && page <= 7) return { n: "02", title: "速度的背后" };
+  if (page >= 8 && page <= 10) return { n: "03", title: "工程质量与治理" };
+  if (page >= 11 && page <= 12) return { n: "04", title: "开发者角色" };
+  return null;
+}
+
 function lightCircuit() {
   return `
-    <rect x="1560" y="76" width="168" height="134" rx="12" fill="none" stroke="${L.line}" stroke-width="2"/>
-    <path d="M1578 118 h42 m-42 28 h112 m-112 28 h88" stroke="${L.line}" stroke-width="2" stroke-dasharray="5 8" fill="none"/>
-    <path d="M1848 56 h-88 q-28 0 -28 28 v126" stroke="${L.line}" stroke-width="2" fill="none"/>
+    <path d="M1816 92 h-70 q-28 0 -28 28 v78" stroke="${L.line}" stroke-width="2" fill="none" opacity="0.34"/>
     <path d="M1782 890 v-190 q0 -32 32 -32 h50" stroke="${L.line}" stroke-width="2" fill="none"/>
     <path d="M1650 820 h112 q30 0 30 -30 v-80" stroke="${L.line}" stroke-width="2" fill="none"/>
     <circle cx="1800" cy="708" r="7" fill="${L.paper}" stroke="${L.line2}" stroke-width="2"/>
@@ -1466,18 +1489,18 @@ function v5Icon(type, x, y, size = 62, color = L.blue) {
   const s = size / 64;
   const common = `stroke="${color}" stroke-width="${3 / s}" stroke-linecap="round" stroke-linejoin="round" fill="none"`;
   const wrap = (inner) => `<g transform="translate(${x} ${y}) scale(${s})">${inner}</g>`;
-  if (type === "code") return wrap(`<path d="M24 20 L10 32 L24 44" ${common}/><path d="M40 20 L54 32 L40 44" ${common}/><path d="M36 14 L28 50" ${common}/>`); 
+  if (type === "code") return wrap(`<path d="M24 20 L10 32 L24 44" ${common}/><path d="M40 20 L54 32 L40 44" ${common}/><path d="M36 14 L28 50" ${common}/>`);
   if (type === "chat") return wrap(`<path d="M12 18 h40 q8 0 8 8 v18 q0 8 -8 8 H32 l-12 9 v-9 h-8 q-8 0 -8-8 V26 q0-8 8-8 Z" ${common}/><circle cx="24" cy="35" r="2.4" fill="${color}"/><circle cx="34" cy="35" r="2.4" fill="${color}"/><circle cx="44" cy="35" r="2.4" fill="${color}"/>`);
-  if (type === "stack") return wrap(`<rect x="16" y="16" width="24" height="24" rx="3" ${common}/><rect x="24" y="24" width="24" height="24" rx="3" ${common}/><rect x="8" y="8" width="24" height="24" rx="3" ${common}/>`); 
-  if (type === "terminal") return wrap(`<path d="M18 18 L34 32 L18 46" ${common}/><path d="M38 48 h16" ${common}/>`); 
-  if (type === "check") return wrap(`<rect x="12" y="10" width="40" height="44" rx="4" ${common}/><path d="M22 32 l8 8 l14 -18" ${common}/>`); 
-  if (type === "team") return wrap(`<circle cx="32" cy="22" r="8" ${common}/><circle cx="18" cy="30" r="6" ${common}/><circle cx="46" cy="30" r="6" ${common}/><path d="M14 50 q18 -16 36 0 M4 54 q14 -12 28 -5 M32 49 q14 -7 28 5" ${common}/>`); 
-  if (type === "file") return wrap(`<path d="M18 8 h22 l10 10 v38 H18 Z M40 8 v12 h12 M26 32 h20 M26 42 h18" ${common}/>`); 
-  if (type === "cube") return wrap(`<path d="M32 6 L54 18 V44 L32 58 L10 44 V18 Z M10 18 L32 32 L54 18 M32 32 V58" ${common}/><path d="M20 13 l22 14 M44 12 L22 27" ${common} opacity="0.55"/>`); 
-  if (type === "grid") return wrap(`<rect x="10" y="10" width="18" height="18" ${common}/><rect x="36" y="10" width="18" height="18" ${common}/><rect x="10" y="36" width="18" height="18" ${common}/><path d="M41 36 l14 9 l-14 9 l-14 -9 Z" ${common}/>`); 
+  if (type === "stack") return wrap(`<rect x="16" y="16" width="24" height="24" rx="3" ${common}/><rect x="24" y="24" width="24" height="24" rx="3" ${common}/><rect x="8" y="8" width="24" height="24" rx="3" ${common}/>`);
+  if (type === "terminal") return wrap(`<path d="M18 18 L34 32 L18 46" ${common}/><path d="M38 48 h16" ${common}/>`);
+  if (type === "check") return wrap(`<rect x="12" y="10" width="40" height="44" rx="4" ${common}/><path d="M22 32 l8 8 l14 -18" ${common}/>`);
+  if (type === "team") return wrap(`<circle cx="32" cy="22" r="8" ${common}/><circle cx="18" cy="30" r="6" ${common}/><circle cx="46" cy="30" r="6" ${common}/><path d="M14 50 q18 -16 36 0 M4 54 q14 -12 28 -5 M32 49 q14 -7 28 5" ${common}/>`);
+  if (type === "file") return wrap(`<path d="M18 8 h22 l10 10 v38 H18 Z M40 8 v12 h12 M26 32 h20 M26 42 h18" ${common}/>`);
+  if (type === "cube") return wrap(`<path d="M32 6 L54 18 V44 L32 58 L10 44 V18 Z M10 18 L32 32 L54 18 M32 32 V58" ${common}/><path d="M20 13 l22 14 M44 12 L22 27" ${common} opacity="0.55"/>`);
+  if (type === "grid") return wrap(`<rect x="10" y="10" width="18" height="18" ${common}/><rect x="36" y="10" width="18" height="18" ${common}/><rect x="10" y="36" width="18" height="18" ${common}/><path d="M41 36 l14 9 l-14 9 l-14 -9 Z" ${common}/>`);
   if (type === "server") return wrap(`<rect x="12" y="10" width="40" height="13" rx="4" ${common}/><rect x="12" y="29" width="40" height="13" rx="4" ${common}/><rect x="12" y="48" width="40" height="13" rx="4" ${common}/><circle cx="22" cy="16.5" r="1.8" fill="${color}"/><circle cx="22" cy="35.5" r="1.8" fill="${color}"/><circle cx="22" cy="54.5" r="1.8" fill="${color}"/>`);
-  if (type === "loop") return wrap(`<path d="M48 18 A22 22 0 0 0 14 24 M14 24 h12 M14 24 v-12 M16 46 A22 22 0 0 0 50 40 M50 40 H38 M50 40 v12" ${common}/><path d="M24 34 l7 7 l13 -17" ${common}/>`); 
-  if (type === "shield") return wrap(`<path d="M32 6 L52 14 V30 q0 18 -20 28 Q12 48 12 30 V14 Z M22 32 l7 7 l15 -18" ${common}/>`); 
+  if (type === "loop") return wrap(`<path d="M48 18 A22 22 0 0 0 14 24 M14 24 h12 M14 24 v-12 M16 46 A22 22 0 0 0 50 40 M50 40 H38 M50 40 v12" ${common}/><path d="M24 34 l7 7 l13 -17" ${common}/>`);
+  if (type === "shield") return wrap(`<path d="M32 6 L52 14 V30 q0 18 -20 28 Q12 48 12 30 V14 Z M22 32 l7 7 l15 -18" ${common}/>`);
   return wrap(`<circle cx="32" cy="32" r="22" ${common}/><path d="M20 32 h24 M32 20 v24" ${common}/>`);
 }
 
@@ -2293,7 +2316,7 @@ function writeNotes() {
 function writeReadme() {
   const text = `# AI 如何重新定义软件开发：演讲材料
 
-本目录保留原版演讲材料、V0.2 版本，并新增 V0.3 版本。V0.3 继续使用整页图片式 PPT，重点收敛页面信息密度，减少观点被拆散到多个独立框体中的情况，并将第 7 页重做为速度代价处理框架。
+本目录保留原版演讲材料、V0.2、V0.3 版本，并新增 V0.4 版本。V0.4 继续使用整页图片式 PPT，在具体内容页右上角加入浅色章节水印，帮助听众把每一页放回目录中的四个大模块。
 
 ## 原版材料
 
@@ -2340,6 +2363,22 @@ node .\\docs\\report\\ai-redefines-software-development-presentation\\build-deck
 \`\`\`
 
 V0.3 主线：BitFun 的高速 AI 开发经验 -> 代码量膨胀后的真实问题 -> 产出放大后的协作对象变化 -> 概率过程与证据放行 -> 外部调研中的生产率悖论 -> 速度代价处理框架 -> 质量治理、DFX、TDD 与团队交付流 -> 开发者在新工程系统中的关键位置。
+
+## V0.4 材料
+
+- \`ai-redefines-software-development-v0.4.pptx\`：V0.4 演讲用 PPTX，${slides.length} 页。
+- \`speaker-notes-v0.4.md\`：V0.4 分页讲稿，沿用 15 分钟节奏。
+- \`slides-png-v0.4/\`：V0.4 逐页 SVG 与 PNG。
+- \`preview-contact-sheet-v0.4.png\`：V0.4 缩略总览。
+- \`build-deck-v0.4.cjs\`：V0.4 可复现生成脚本。
+
+重新生成 V0.4：
+
+\`\`\`powershell
+node .\\docs\\report\\ai-redefines-software-development-presentation\\build-deck-v0.4.cjs
+\`\`\`
+
+V0.4 主线：沿用 V0.3 内容结构，并在第 3-12 页加入低干扰章节水印：01 软件工程变革、02 速度的背后、03 工程质量与治理、04 开发者角色。
 `;
   fs.writeFileSync(readmePath, text, "utf8");
 }
