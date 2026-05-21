@@ -54,81 +54,41 @@
       .micro5 { font-size: 19px; font-weight: 760; fill: #5F6670; }
     </style>
     <text x="42" y="46" class="brand5">BitFun</text>
-    <text x="1840" y="50" class="small5" text-anchor="end">12 / 14</text>
+    <text x="1840" y="50" class="small5" text-anchor="end">12 / 13</text>
 
 
 
-    <text x="96" y="132" class="small5" style="fill:#106BEF;font-weight:900">04 / 开发者角色</text>
-    <text x="96" y="188" class="h15" style="font-size:64px">在新工程系统中找准位置</text>
-    <text x="100" y="282" class="sub5">人承担目标、边界、证据和责任；AI 承担生成、检索、运行和反馈。</text>
+    <text x="96" y="132" class="small5" style="fill:#106BEF;font-weight:900">04 / 前瞻判断</text>
+    <text x="96" y="188" class="h15" style="font-size:66px">三个未来判断</text>
+    <text x="100" y="282" class="sub5">最后只带走三件事：指标、角色、协议都会被重写。</text>
     <path d="M96 356 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
     <circle cx="230" cy="356" r="5.5" fill="#FF5A1F"/>
 
-    <rect x="120" y="408" width="404" height="402" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    <rect x="562" y="452" width="404" height="402" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    <rect x="1004" y="408" width="404" height="402" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    <rect x="1416" y="452" width="404" height="402" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <path d="M430 740 C620 820 820 790 960 730 S1290 662 1490 760" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
 
-    <text x="156" y="442" class="num5" style="font-size:44px;fill:#106BEF">01</text>
-    <text x="156" y="508" class="label5" style="font-size:32px">定义问题</text>
-    <path d="M156 572 H440" stroke="#C4C6C1" stroke-width="3"/>
-    <rect x="156" y="610" width="66" height="34" rx="17" fill="#106BEF" opacity="0.12"/>
-    <text x="189" y="617" class="small5" text-anchor="middle" style="font-size:21px;fill:#106BEF;font-weight:900">人</text>
-    <text x="238" y="615" class="small5" style="font-size:24px;fill:#050608;font-weight:820">价值、边界、风险</text>
-    <path d="M156 674 H480" stroke="#C4C6C1" stroke-width="2"/>
-    <rect x="156" y="708" width="66" height="34" rx="17" fill="#FF5A1F" opacity="0.13"/>
-    <text x="189" y="715" class="small5" text-anchor="middle" style="font-size:21px;fill:#FF5A1F;font-weight:900">AI</text>
-    <text x="238" y="713" class="small5" style="font-size:24px;fill:#050608;font-weight:820">信息整理、备选方案</text>
-    <circle cx="454" cy="484" r="28" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-    <g transform="translate(436 466) scale(0.5625)"><path d="M12 18 h40 q8 0 8 8 v18 q0 8 -8 8 H32 l-12 9 v-9 h-8 q-8 0 -8-8 V26 q0-8 8-8 Z" stroke="#106BEF" stroke-width="5.333333333333333" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="24" cy="35" r="2.4" fill="#106BEF"/><circle cx="34" cy="35" r="2.4" fill="#106BEF"/><circle cx="44" cy="35" r="2.4" fill="#106BEF"/></g>
+    <rect x="120" y="430" width="520" height="250" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="158" y="464" class="num5" style="font-size:44px;fill:#106BEF">01</text>
+    <text x="158" y="530" class="label5" style="font-size:32px">指标重写</text>
+    <text x="158" y="584" class="small5" style="font-size:24px;fill:#5F6670;font-weight:650">从代码量转向净收益：</text><text x="158" y="618" class="small5" style="font-size:24px;fill:#5F6670;font-weight:650">交付时间、返工率、评审负担、</text><text x="158" y="652" class="small5" style="font-size:24px;fill:#5F6670;font-weight:650">线上风险与知识沉淀。</text>
 
 
-    <text x="598" y="486" class="num5" style="font-size:44px;fill:#106BEF">02</text>
-    <text x="598" y="552" class="label5" style="font-size:32px">组织上下文</text>
-    <path d="M598 616 H882" stroke="#C4C6C1" stroke-width="3"/>
-    <rect x="598" y="654" width="66" height="34" rx="17" fill="#106BEF" opacity="0.12"/>
-    <text x="631" y="661" class="small5" text-anchor="middle" style="font-size:21px;fill:#106BEF;font-weight:900">人</text>
-    <text x="680" y="659" class="small5" style="font-size:24px;fill:#050608;font-weight:820">架构取舍、事实源</text>
-    <path d="M598 718 H922" stroke="#C4C6C1" stroke-width="2"/>
-    <rect x="598" y="752" width="66" height="34" rx="17" fill="#FF5A1F" opacity="0.13"/>
-    <text x="631" y="759" class="small5" text-anchor="middle" style="font-size:21px;fill:#FF5A1F;font-weight:900">AI</text>
-    <text x="680" y="757" class="small5" style="font-size:24px;fill:#050608;font-weight:820">检索、摘要、计划草案</text>
-    <circle cx="896" cy="528" r="28" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-    <g transform="translate(878 510) scale(0.5625)"><path d="M18 8 h22 l10 10 v38 H18 Z M40 8 v12 h12 M26 32 h20 M26 42 h18" stroke="#106BEF" stroke-width="5.333333333333333" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    <rect x="700" y="372" width="520" height="250" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="738" y="406" class="num5" style="font-size:44px;fill:#FF5A1F">02</text>
+    <text x="738" y="472" class="label5" style="font-size:32px">角色分化</text>
+    <text x="738" y="526" class="small5" style="font-size:24px;fill:#5F6670;font-weight:650">开发者会更像 owner：</text><text x="738" y="560" class="small5" style="font-size:24px;fill:#5F6670;font-weight:650">定义目标、组织上下文、</text><text x="738" y="594" class="small5" style="font-size:24px;fill:#5F6670;font-weight:650">审查证据与承担责任。</text>
 
 
-    <text x="1040" y="442" class="num5" style="font-size:44px;fill:#FF5A1F">03</text>
-    <text x="1040" y="508" class="label5" style="font-size:32px">编排执行</text>
-    <path d="M1040 572 H1324" stroke="#C4C6C1" stroke-width="3"/>
-    <rect x="1040" y="610" width="66" height="34" rx="17" fill="#106BEF" opacity="0.12"/>
-    <text x="1073" y="617" class="small5" text-anchor="middle" style="font-size:21px;fill:#106BEF;font-weight:900">人</text>
-    <text x="1122" y="615" class="small5" style="font-size:24px;fill:#050608;font-weight:820">权限、节奏、验证矩阵</text>
-    <path d="M1040 674 H1364" stroke="#C4C6C1" stroke-width="2"/>
-    <rect x="1040" y="708" width="66" height="34" rx="17" fill="#FF5A1F" opacity="0.13"/>
-    <text x="1073" y="715" class="small5" text-anchor="middle" style="font-size:21px;fill:#FF5A1F;font-weight:900">AI</text>
-    <text x="1122" y="713" class="small5" style="font-size:24px;fill:#050608;font-weight:820">生成、运行、反馈</text>
-    <circle cx="1338" cy="484" r="28" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-    <g transform="translate(1320 466) scale(0.5625)"><path d="M18 18 L34 32 L18 46" stroke="#FF5A1F" stroke-width="5.333333333333333" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M38 48 h16" stroke="#FF5A1F" stroke-width="5.333333333333333" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    <rect x="1280" y="430" width="520" height="250" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="1318" y="464" class="num5" style="font-size:44px;fill:#106BEF">03</text>
+    <text x="1318" y="530" class="label5" style="font-size:32px">工程协议</text>
+    <text x="1318" y="584" class="small5" style="font-size:24px;fill:#5F6670;font-weight:650">TDD / DFX / Review</text><text x="1318" y="618" class="small5" style="font-size:24px;fill:#5F6670;font-weight:650">会变成 Agent 可读取、</text><text x="1318" y="652" class="small5" style="font-size:24px;fill:#5F6670;font-weight:650">可执行、可产证据的协议。</text>
 
+    <rect x="402" y="812" width="1116" height="92" rx="16" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+    <text x="960" y="840" class="body5" text-anchor="middle" style="font-size:31px">未来的核心能力：把 AI 从 demo 推向可验证、可治理、可协作的交付系统。</text>
 
-    <text x="1452" y="486" class="num5" style="font-size:44px;fill:#FF5A1F">04</text>
-    <text x="1452" y="552" class="label5" style="font-size:32px">证据放行</text>
-    <path d="M1452 616 H1736" stroke="#C4C6C1" stroke-width="3"/>
-    <rect x="1452" y="654" width="66" height="34" rx="17" fill="#106BEF" opacity="0.12"/>
-    <text x="1485" y="661" class="small5" text-anchor="middle" style="font-size:21px;fill:#106BEF;font-weight:900">人</text>
-    <text x="1534" y="659" class="small5" style="font-size:24px;fill:#050608;font-weight:820">责任、解释、复盘</text>
-    <path d="M1452 718 H1776" stroke="#C4C6C1" stroke-width="2"/>
-    <rect x="1452" y="752" width="66" height="34" rx="17" fill="#FF5A1F" opacity="0.13"/>
-    <text x="1485" y="759" class="small5" text-anchor="middle" style="font-size:21px;fill:#FF5A1F;font-weight:900">AI</text>
-    <text x="1534" y="757" class="small5" style="font-size:24px;fill:#050608;font-weight:820">trace、diff、测试</text>
-    <circle cx="1750" cy="528" r="28" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-    <g transform="translate(1732 510) scale(0.5625)"><rect x="12" y="10" width="40" height="44" rx="4" stroke="#FF5A1F" stroke-width="5.333333333333333" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M22 32 l8 8 l14 -18" stroke="#FF5A1F" stroke-width="5.333333333333333" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
-
-    <path d="M510 604 H548 M952 648 H990 M1394 604 H1402" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
-
-    <rect x="260" y="936" width="1400" height="78" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
-    <path d="M336 956 v38" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="992" y="958" class="body5" text-anchor="middle" style="font-size:30px">关键不是“谁替代谁”，而是人在目标、边界、证据、责任上站稳。</text>
+    <rect x="370" y="936" width="1180" height="78" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <path d="M446 956 v38" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <text x="992" y="958" class="body5" text-anchor="middle" style="font-size:30px">谁能把工程协议做成系统能力，谁就更接近 AI 时代的可靠交付。</text>
 
 
 </svg>

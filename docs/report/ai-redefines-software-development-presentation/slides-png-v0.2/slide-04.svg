@@ -54,50 +54,52 @@
       .micro5 { font-size: 19px; font-weight: 760; fill: #5F6670; }
     </style>
     <text x="42" y="46" class="brand5">BitFun</text>
-    <text x="1840" y="50" class="small5" text-anchor="end">04 / 14</text>
+    <text x="1840" y="50" class="small5" text-anchor="end">04 / 13</text>
 
 
 
-    <text x="96" y="132" class="small5" style="fill:#106BEF;font-weight:900">01 / 协作拓扑</text>
-    <text x="96" y="188" class="h15" style="font-size:64px">从人 + 人，到人 + 人 + Agent + Agent</text>
-    <text x="100" y="282" class="sub5">协作从同步沟通扩展到异步任务、角色化 Agent、证据化放行。</text>
+    <text x="96" y="132" class="small5" style="fill:#106BEF;font-weight:900">01 / 主线展开</text>
+    <text x="96" y="188" class="h15" style="font-size:64px">产出放大后，协作对象变了</text>
+    <text x="100" y="282" class="sub5">从“谁写代码”走向“谁定义目标、谁产出证据、谁承担责任”。</text>
     <path d="M96 356 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
     <circle cx="230" cy="356" r="5.5" fill="#FF5A1F"/>
 
+    <rect x="140" y="318" width="1640" height="54" rx="10" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+    <text x="960" y="330" class="small5" text-anchor="middle" style="font-size:25px;fill:#050608;font-weight:860">BitFun 经验不是终点：代码生产放大以后，团队要管理新的交付对象</text>
     <path d="M532 578 H558" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
     <path d="M930 578 H956" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
     <path d="M1328 578 H1354" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
 
-    <rect x="180" y="416" width="340" height="236" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="214" y="452" class="num5" style="font-size:42px;fill:#106BEF">01</text>
-    <text x="298" y="442" class="label5" style="font-size:31px">同步 Pair</text>
-    <text x="298" y="486" class="small5" style="font-size:20px;fill:#106BEF;font-weight:900">IDE / Chat</text>
-    <g transform="translate(214 520) scale(0.96875)"><path d="M12 18 h40 q8 0 8 8 v18 q0 8 -8 8 H32 l-12 9 v-9 h-8 q-8 0 -8-8 V26 q0-8 8-8 Z" stroke="#106BEF" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="24" cy="35" r="2.4" fill="#106BEF"/><circle cx="34" cy="35" r="2.4" fill="#106BEF"/><circle cx="44" cy="35" r="2.4" fill="#106BEF"/></g>
-    <text x="298" y="542" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">人负责问题判断</text><text x="298" y="574" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">AI 辅助补全与解释</text>
+    <rect x="180" y="424" width="340" height="236" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="214" y="460" class="num5" style="font-size:42px;fill:#106BEF">01</text>
+    <text x="298" y="450" class="label5" style="font-size:31px">同步 Pair</text>
+    <text x="298" y="494" class="small5" style="font-size:20px;fill:#106BEF;font-weight:900">IDE / Chat</text>
+    <g transform="translate(214 528) scale(0.96875)"><path d="M12 18 h40 q8 0 8 8 v18 q0 8 -8 8 H32 l-12 9 v-9 h-8 q-8 0 -8-8 V26 q0-8 8-8 Z" stroke="#106BEF" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="24" cy="35" r="2.4" fill="#106BEF"/><circle cx="34" cy="35" r="2.4" fill="#106BEF"/><circle cx="44" cy="35" r="2.4" fill="#106BEF"/></g>
+    <text x="298" y="550" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">人判断问题</text><text x="298" y="582" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">AI 辅助修改</text>
 
 
-    <rect x="578" y="416" width="340" height="236" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="612" y="452" class="num5" style="font-size:42px;fill:#FF5A1F">02</text>
-    <text x="696" y="442" class="label5" style="font-size:31px">异步委派</text>
-    <text x="696" y="486" class="small5" style="font-size:20px;fill:#FF5A1F;font-weight:900">GitHub / Codex Cloud</text>
-    <g transform="translate(612 520) scale(0.96875)"><path d="M18 18 L34 32 L18 46" stroke="#FF5A1F" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M38 48 h16" stroke="#FF5A1F" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
-    <text x="696" y="542" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">独立环境建分支</text><text x="696" y="574" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">研究、修改、跑测试</text>
+    <rect x="578" y="424" width="340" height="236" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="612" y="460" class="num5" style="font-size:42px;fill:#FF5A1F">02</text>
+    <text x="696" y="450" class="label5" style="font-size:31px">异步委派</text>
+    <text x="696" y="494" class="small5" style="font-size:20px;fill:#FF5A1F;font-weight:900">Cloud Agent</text>
+    <g transform="translate(612 528) scale(0.96875)"><path d="M18 18 L34 32 L18 46" stroke="#FF5A1F" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M38 48 h16" stroke="#FF5A1F" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    <text x="696" y="550" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">独立工作区</text><text x="696" y="582" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">研究、修改、测试</text>
 
 
-    <rect x="976" y="416" width="340" height="236" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="1010" y="452" class="num5" style="font-size:42px;fill:#106BEF">03</text>
-    <text x="1094" y="442" class="label5" style="font-size:31px">角色化 Agent</text>
-    <text x="1094" y="486" class="small5" style="font-size:20px;fill:#106BEF;font-weight:900">Subagents / Hooks</text>
-    <g transform="translate(1010 520) scale(0.96875)"><circle cx="32" cy="22" r="8" stroke="#106BEF" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="18" cy="30" r="6" stroke="#106BEF" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="46" cy="30" r="6" stroke="#106BEF" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M14 50 q18 -16 36 0 M4 54 q14 -12 28 -5 M32 49 q14 -7 28 5" stroke="#106BEF" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
-    <text x="1094" y="542" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">实现、测试、评审分离</text><text x="1094" y="574" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">权限和生命周期受控</text>
+    <rect x="976" y="424" width="340" height="236" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="1010" y="460" class="num5" style="font-size:42px;fill:#106BEF">03</text>
+    <text x="1094" y="450" class="label5" style="font-size:31px">角色化 Agent</text>
+    <text x="1094" y="494" class="small5" style="font-size:20px;fill:#106BEF;font-weight:900">Subagents / Hooks</text>
+    <g transform="translate(1010 528) scale(0.96875)"><circle cx="32" cy="22" r="8" stroke="#106BEF" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="18" cy="30" r="6" stroke="#106BEF" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="46" cy="30" r="6" stroke="#106BEF" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M14 50 q18 -16 36 0 M4 54 q14 -12 28 -5 M32 49 q14 -7 28 5" stroke="#106BEF" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    <text x="1094" y="550" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">实现、测试、评审分离</text><text x="1094" y="582" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">权限与生命周期受控</text>
 
 
-    <rect x="1374" y="416" width="340" height="236" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="1408" y="452" class="num5" style="font-size:42px;fill:#FF5A1F">04</text>
-    <text x="1492" y="442" class="label5" style="font-size:31px">人类放行</text>
-    <text x="1492" y="486" class="small5" style="font-size:20px;fill:#FF5A1F;font-weight:900">PR / CI / Gate</text>
-    <g transform="translate(1408 520) scale(0.96875)"><rect x="12" y="10" width="40" height="44" rx="4" stroke="#FF5A1F" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M22 32 l8 8 l14 -18" stroke="#FF5A1F" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
-    <text x="1492" y="542" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">看证据包和风险</text><text x="1492" y="574" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">决定合并或发布</text>
+    <rect x="1374" y="424" width="340" height="236" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="1408" y="460" class="num5" style="font-size:42px;fill:#FF5A1F">04</text>
+    <text x="1492" y="450" class="label5" style="font-size:31px">人类放行</text>
+    <text x="1492" y="494" class="small5" style="font-size:20px;fill:#FF5A1F;font-weight:900">PR / CI / Gate</text>
+    <g transform="translate(1408 528) scale(0.96875)"><rect x="12" y="10" width="40" height="44" rx="4" stroke="#FF5A1F" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M22 32 l8 8 l14 -18" stroke="#FF5A1F" stroke-width="3.096774193548387" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    <text x="1492" y="550" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">看证据包和风险</text><text x="1492" y="582" class="small5" style="font-size:22px;fill:#5F6670;font-weight:540">决定合并或发布</text>
 
     <rect x="248" y="704" width="1424" height="154" rx="16" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
     <path d="M292 728 v104" stroke="#106BEF" stroke-width="7" stroke-linecap="round"/>

@@ -54,7 +54,7 @@
       .micro5 { font-size: 19px; font-weight: 760; fill: #5F6670; }
     </style>
     <text x="42" y="46" class="brand5">BitFun</text>
-    <text x="1840" y="50" class="small5" text-anchor="end">01 / 14</text>
+    <text x="1840" y="50" class="small5" text-anchor="end">01 / 13</text>
 
 
     <text x="96" y="154" class="small5" style="fill:#106BEF;font-weight:900">BitFun / AI 软件工程报告</text>
