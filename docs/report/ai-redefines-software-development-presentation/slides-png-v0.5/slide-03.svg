@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <pattern id="lightDots" width="34" height="34" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1.7" fill="#C4C6C1" opacity="0.55"/>
+    </pattern>
+    <filter id="paperShadow" x="-18%" y="-18%" width="136%" height="150%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#4B5563" flood-opacity="0.13"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#106BEF" stroke-width="2"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#A5A9AE" stroke-width="2"/>
+    </marker>
+  </defs>
+  <rect width="1920" height="1080" fill="#FBFAF7"/>
+
+    <path d="M1816 92 h-70 q-28 0 -28 28 v78" stroke="#D7D7D2" stroke-width="2" fill="none" opacity="0.34"/>
+    <path d="M1782 890 v-190 q0 -32 32 -32 h50" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M1650 820 h112 q30 0 30 -30 v-80" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <circle cx="1800" cy="708" r="7" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <circle cx="1762" cy="820" r="7" fill="#106BEF"/>
+    <circle cx="1848" cy="622" r="6" fill="#FF5A1F"/>
+    <rect x="1378" y="720" width="180" height="120" fill="url(#lightDots)" opacity="0.48"/>
+    <rect x="152" y="318" width="128" height="96" fill="url(#lightDots)" opacity="0.42"/>
+    <path d="M70 740 h120 v118 h250" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M50 510 h116 q26 0 26 26 v52" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <circle cx="150" cy="857" r="5" fill="#FF5A1F"/>
+
+    <g opacity="0.26" transform="translate(1350 820) scale(0.72)">
+      <path d="M0 120 L110 60 L220 120 L110 180 Z" fill="none" stroke="#C4C6C1" stroke-width="2"/>
+      <path d="M110 60 V180 M0 120 V220 M220 120 V220 M0 220 H320" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M260 50 h70 v170 h-70 Z M280 80 h30 M280 116 h30 M280 152 h30" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M360 96 h90 v124 h-90 Z M382 122 h46 M382 154 h46 M382 186 h46" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M88 144 h42 v76 h-42 Z M150 126 h48 v94 h-48 Z" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+    </g>
+
+
+
+    <g transform="rotate(-2 1508 104)">
+      <text x="1268" y="58"
+        style="font-family:'Arial Black','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:88px;font-weight:900;letter-spacing:1.4px;fill:#106BEF;fill-opacity:0.15;stroke:#106BEF;stroke-width:1.4;stroke-opacity:0.2;paint-order:stroke">01</text>
+      <text x="1370" y="92"
+        style="font-family:'Microsoft YaHei','Noto Sans SC','Segoe UI',sans-serif;font-size:38px;font-weight:900;letter-spacing:1.6px;fill:#106BEF;stroke:#FFFFFF;stroke-width:2.4;paint-order:stroke;fill-opacity:0.48">软件工程变革</text>
+      <path d="M1368 150 C1488 118 1628 174 1768 134" stroke="#106BEF" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.24"/>
+    </g>
+
+
+    <style>
+      text { font-family: "Microsoft YaHei", "Noto Sans SC", "PingFang SC", "Segoe UI", Arial, sans-serif; dominant-baseline: hanging; }
+      .brand5 { font-size: 42px; font-weight: 900; fill: #050608; }
+      .num5 { font-family: "Arial", "Microsoft YaHei", sans-serif; font-weight: 900; fill: #050608; }
+      .h15 { font-size: 68px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .h25 { font-size: 58px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .sub5 { font-size: 31px; font-weight: 560; fill: #5F6670; }
+      .body5 { font-size: 30px; font-weight: 700; fill: #050608; }
+      .muted5 { font-size: 24px; font-weight: 560; fill: #5F6670; }
+      .label5 { font-size: 29px; font-weight: 900; fill: #050608; }
+      .small5 { font-size: 23px; font-weight: 760; fill: #5F6670; }
+      .micro5 { font-size: 19px; font-weight: 760; fill: #5F6670; }
+    </style>
+    <text x="42" y="46" class="brand5">BitFun</text>
+    <text x="1840" y="50" class="small5" text-anchor="end">03 / 14</text>
+
+
+
+    <text x="96" y="132" class="small5" style="fill:#106BEF;font-weight:900">01 / 案例入口</text>
+    <text x="96" y="188" class="h15" style="font-size:60px">单月 10W+ 行代码之后，问题真的变少了吗？</text>
+    <text x="100" y="282" class="sub5">AI 放大的不是代码量本身，而是速度、风险和组织方式的重新分配。</text>
+    <path d="M96 356 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="230" cy="356" r="5.5" fill="#FF5A1F"/>
+
+    <rect x="116" y="380" width="590" height="454" rx="20" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="166" y="448" class="small5" style="fill:#106BEF;font-weight:900">BitFun 开发经验</text>
+    <text x="166" y="526" class="num5" style="font-size:68px;fill:#106BEF">单月 10W+ 行代码</text>
+    <path d="M172 626 H646" stroke="#C4C6C1" stroke-width="3"/>
+    <text x="166" y="666" class="body5" style="font-size:31px">不是炫耀数字，而是压力测试</text>
+    <text x="166" y="710" class="small5" style="font-size:23px">代码生产被放大后，验证、评审、协作、维护</text>
+    <text x="166" y="744" class="small5" style="font-size:23px">是否也同步扩容？</text>
+    <text x="166" y="798" class="small5" style="font-size:22px;fill:#5F6670;font-weight:720">统计口径：作者提交历史，非代码质量结论。</text>
+    <path d="M730 594 H810" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
+
+    <rect x="830" y="356" width="888" height="286" rx="18" fill="#111827" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <rect x="830" y="356" width="888" height="46" rx="18" fill="#1F2937"/>
+    <circle cx="864" cy="379" r="7" fill="#EF4444"/>
+    <circle cx="888" cy="379" r="7" fill="#F59E0B"/>
+    <circle cx="912" cy="379" r="7" fill="#22C55E"/>
+    <text x="946" y="370" class="small5" style="font-size:20px;fill:#D1D5DB;font-weight:900">GCWing/BitFun · git history snapshot</text>
+    <text x="866" y="430" class="micro5" style="font-size:21px;fill:#93C5FD">https://github.com/GCWing/BitFun</text>
+    <text x="866" y="470" class="small5" style="font-size:22px;fill:#E5E7EB;font-weight:850">range: 2026-04-22 ~ 2026-05-22   ref: gcwing-http/main @ 5ae1d354</text>
+    <text x="866" y="510" class="small5" style="font-size:22px;fill:#E5E7EB;font-weight:850">author: limityan &lt;limit_yan@sina.com&gt;</text>
+    <text x="866" y="570" class="num5" style="font-size:46px;fill:#60A5FA">241</text>
+    <text x="970" y="570" class="small5" style="font-size:22px;fill:#D1D5DB">commits</text>
+    <text x="1130" y="570" class="num5" style="font-size:46px;fill:#34D399">+185,533</text>
+    <text x="1378" y="570" class="small5" style="font-size:22px;fill:#D1D5DB">insertions</text>
+    <text x="866" y="614" class="small5" style="font-size:22px;fill:#FCA5A5">-46,479 deletions</text>
+    <text x="1130" y="614" class="small5" style="font-size:22px;fill:#D1D5DB">churn: 232,012 lines</text>
+
+    <rect x="830" y="668" width="888" height="154" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="878" y="710" class="small5" style="fill:#FF5A1F;font-weight:900">快在哪里：不是“写得多”，而是反馈路径变短</text>
+
+
+    <rect x="890" y="754" width="150" height="58" rx="14" fill="#FBFAF7" stroke="#106BEF" stroke-width="2"/>
+    <text x="965" y="772" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">想法 / Issue</text>
+
+    <rect x="1086" y="754" width="150" height="58" rx="14" fill="#FBFAF7" stroke="#106BEF" stroke-width="2"/>
+    <text x="1161" y="772" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">隔离工作区</text>
+
+    <rect x="1320" y="754" width="150" height="58" rx="14" fill="#FBFAF7" stroke="#FF5A1F" stroke-width="2"/>
+    <text x="1395" y="772" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">可运行原型 / PR</text>
+
+    <rect x="1550" y="754" width="150" height="58" rx="14" fill="#FBFAF7" stroke="#FF5A1F" stroke-width="2"/>
+    <text x="1625" y="772" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">证据压力</text>
+
+    <path d="M1046 783 H1078" stroke="#106BEF" stroke-width="4" marker-end="url(#arrowBlue)"/>
+    <path d="M1242 783 H1312" stroke="#106BEF" stroke-width="4" marker-end="url(#arrowBlue)"/>
+    <path d="M1476 783 H1542" stroke="#FF5A1F" stroke-width="4" marker-end="url(#arrowGray)"/>
+
+    <rect x="232" y="846" width="1456" height="104" rx="14" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+    <path d="M274 874 v50" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <text x="318" y="868" class="body5" style="font-size:29px">问题从“能不能写出来”，转移到“凭什么可以合并、发布、长期维护”。</text>
+    <text x="318" y="914" class="small5" style="font-size:24px;fill:#050608;font-weight:850">真正要观察的是交付节奏、验证成本和团队协作是否一起改善。</text>
+
+</svg>
