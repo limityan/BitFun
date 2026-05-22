@@ -135,7 +135,7 @@
 
     <rect x="300" y="954" width="1320" height="64" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
     <path d="M370 971 v30" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="986" y="970" class="body5" text-anchor="middle" style="font-size:27px">关键不是“谁替代谁”，而是人在目标、边界、证据、责任上站稳。</text>
+    <text x="986" y="986" class="body5" text-anchor="middle" dominant-baseline="middle" style="font-size:27px">关键不是“谁替代谁”，而是人在目标、边界、证据、责任上站稳。</text>
 
 
 </svg>

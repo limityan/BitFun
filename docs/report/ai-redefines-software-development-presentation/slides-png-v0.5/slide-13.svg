@@ -71,7 +71,7 @@
 
     <rect x="510" y="908" width="900" height="64" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
     <path d="M580 925 v30" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="986" y="924" class="body5" text-anchor="middle" style="font-size:27px">AI 编程、工程治理、开发者角色</text>
+    <text x="986" y="940" class="body5" text-anchor="middle" dominant-baseline="middle" style="font-size:27px">AI 编程、工程治理、开发者角色</text>
 
 
 </svg>

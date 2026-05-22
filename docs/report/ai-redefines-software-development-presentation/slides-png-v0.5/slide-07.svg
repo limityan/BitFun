@@ -92,13 +92,11 @@
     <text x="1380" y="448" class="label5" style="font-size:30px">Harness：隐形工作增加</text>
     <text x="1380" y="496" class="small5" style="font-size:23px;fill:#5F6670;font-weight:640">81% 认为 review 时间增加；</text><text x="1380" y="528" class="small5" style="font-size:23px;fill:#5F6670;font-weight:640">约 31% 时间进入 review、修 bug、工具切换；</text><text x="1380" y="560" class="small5" style="font-size:23px;fill:#5F6670;font-weight:640">传统指标难以捕获这些工作。</text>
 
-    <rect x="220" y="730" width="1480" height="110" rx="16" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-    <text x="960" y="754" class="label5" text-anchor="middle">关键转向</text>
-    <text x="960" y="804" class="small5" text-anchor="middle" style="font-size:25px">从“AI 写了多少代码”转向“从需求到可验证结果的净时间、返工率、评审压力和线上风险”。</text>
+    <path d="M300 720 C560 790 820 760 960 714 S1360 672 1620 744" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.32"/>
 
-    <rect x="260" y="954" width="1400" height="64" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
-    <path d="M330 971 v30" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="986" y="970" class="body5" text-anchor="middle" style="font-size:27px">速度指标要和质量、协作、风险一起看，否则局部提速会在下游变成隐形成本。</text>
+    <rect x="250" y="954" width="1420" height="64" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <path d="M320 971 v30" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <text x="986" y="986" class="body5" text-anchor="middle" dominant-baseline="middle" style="font-size:27px">速度指标要看净时间、返工率、评审压力和线上风险，而不是只看代码量。</text>
 
 
 </svg>

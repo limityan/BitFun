@@ -85,13 +85,11 @@
     <text x="960" y="478" class="num5" text-anchor="middle" style="font-size:36px;fill:#106BEF">责任链</text>
     <text x="960" y="548" class="num5" text-anchor="middle" style="font-size:36px;fill:#050608">证据链</text>
     <text x="960" y="618" class="num5" text-anchor="middle" style="font-size:36px;fill:#FF5A1F">Artifact 链</text>
-    <rect x="382" y="770" width="1156" height="86" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="442" y="792" class="small5" style="font-size:24px;fill:#106BEF;font-weight:900">工程协议化</text>
-    <text x="662" y="790" class="body5" style="font-size:27px">DFX / TDD / Review 从流程习惯变成 Agent 可执行、工具可检查、人可复核的契约。</text>
+    <path d="M360 780 C590 832 778 810 960 760 S1340 704 1580 788" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.30"/>
 
     <rect x="220" y="954" width="1480" height="64" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
     <path d="M290 971 v30" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="986" y="970" class="body5" text-anchor="middle" style="font-size:27px">质量治理不是多一道审批，而是每个小变更都带着责任、证据和稳定工件前进。</text>
+    <text x="986" y="986" class="body5" text-anchor="middle" dominant-baseline="middle" style="font-size:27px">质量治理不是多一道审批，而是把责任、证据和工程约束变成可复核工件。</text>
 
 
 </svg>

@@ -71,55 +71,55 @@
     <path d="M96 356 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
     <circle cx="230" cy="356" r="5.5" fill="#FF5A1F"/>
 
-    <rect x="116" y="390" width="548" height="392" rx="20" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="160" y="438" class="small5" style="font-size:22px;fill:#106BEF;font-weight:900">BitFun 开发经验</text>
-    <text x="160" y="508" class="num5" style="font-size:58px;fill:#106BEF">单月 10W+ 行代码</text>
-    <path d="M166 594 H612" stroke="#C4C6C1" stroke-width="3"/>
-    <text x="160" y="636" class="body5" style="font-size:28px">不是炫耀数字，而是压力测试</text>
-    <text x="160" y="684" class="small5" style="font-size:22px">验证、评审、协作、维护是否同步扩容？</text>
-    <text x="160" y="734" class="small5" style="font-size:20px;fill:#5F6670;font-weight:720">统计口径：作者提交历史，非代码质量结论。</text>
-    <path d="M692 572 H760" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
+    <rect x="116" y="398" width="522" height="360" rx="20" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="174" y="446" class="small5" style="font-size:22px;fill:#106BEF;font-weight:900">BitFun 开发经验</text>
+    <text x="174" y="514" class="num5" style="font-size:52px;fill:#106BEF">单月 10W+ 行代码</text>
+    <path d="M174 592 H586" stroke="#C4C6C1" stroke-width="3"/>
+    <text x="174" y="636" class="body5" style="font-size:27px">不是炫耀数字，而是压力测试</text>
+    <text x="174" y="684" class="small5" style="font-size:21px">验证、评审、协作、维护是否同步扩容？</text>
+    <text x="174" y="730" class="small5" style="font-size:19px;fill:#5F6670;font-weight:720">统计口径：作者提交历史，非代码质量结论。</text>
+    <path d="M666 560 H742" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
 
-    <rect x="792" y="350" width="806" height="252" rx="18" fill="#111827" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    <rect x="792" y="350" width="806" height="40" rx="18" fill="#1F2937"/>
-    <circle cx="822" cy="370" r="6" fill="#EF4444"/>
-    <circle cx="844" cy="370" r="6" fill="#F59E0B"/>
-    <circle cx="866" cy="370" r="6" fill="#22C55E"/>
-    <text x="896" y="362" class="small5" style="font-size:18px;fill:#D1D5DB;font-weight:900">GCWing/BitFun · git history snapshot</text>
-    <text x="826" y="412" class="micro5" style="font-size:19px;fill:#93C5FD">https://github.com/GCWing/BitFun</text>
-    <text x="826" y="446" class="small5" style="font-size:19px;fill:#E5E7EB;font-weight:850">range: 2026-04-22 ~ 2026-05-22   ref: gcwing-http/main @ 5ae1d354</text>
-    <text x="826" y="480" class="small5" style="font-size:19px;fill:#E5E7EB;font-weight:850">author: limityan &lt;limit_yan@sina.com&gt;</text>
-    <text x="826" y="534" class="num5" style="font-size:40px;fill:#60A5FA">241</text>
-    <text x="918" y="536" class="small5" style="font-size:19px;fill:#D1D5DB">commits</text>
-    <text x="1052" y="534" class="num5" style="font-size:40px;fill:#34D399">+185,533</text>
-    <text x="1268" y="536" class="small5" style="font-size:19px;fill:#D1D5DB">insertions</text>
-    <text x="826" y="566" class="small5" style="font-size:19px;fill:#FCA5A5">-46,479 deletions</text>
-    <text x="1052" y="566" class="small5" style="font-size:19px;fill:#D1D5DB">churn: 232,012 lines</text>
+    <rect x="784" y="348" width="700" height="224" rx="18" fill="#111827" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <rect x="784" y="348" width="700" height="38" rx="18" fill="#1F2937"/>
+    <circle cx="814" cy="368" r="6" fill="#EF4444"/>
+    <circle cx="836" cy="368" r="6" fill="#F59E0B"/>
+    <circle cx="858" cy="368" r="6" fill="#22C55E"/>
+    <text x="888" y="359" class="small5" style="font-size:17px;fill:#D1D5DB;font-weight:900">GCWing/BitFun · git history snapshot</text>
+    <text x="818" y="404" class="micro5" style="font-size:18px;fill:#93C5FD">https://github.com/GCWing/BitFun</text>
+    <text x="818" y="436" class="small5" style="font-size:18px;fill:#E5E7EB;font-weight:850">range: 2026-04-22 ~ 2026-05-22   ref: gcwing-http/main</text>
+    <text x="818" y="468" class="small5" style="font-size:18px;fill:#E5E7EB;font-weight:850">author: limityan &lt;limit_yan@sina.com&gt;</text>
+    <text x="818" y="518" class="num5" style="font-size:36px;fill:#60A5FA">241</text>
+    <text x="900" y="520" class="small5" style="font-size:18px;fill:#D1D5DB">commits</text>
+    <text x="1026" y="518" class="num5" style="font-size:36px;fill:#34D399">+185,533</text>
+    <text x="1222" y="520" class="small5" style="font-size:18px;fill:#D1D5DB">insertions</text>
+    <text x="818" y="550" class="small5" style="font-size:18px;fill:#FCA5A5">-46,479 deletions</text>
+    <text x="1026" y="550" class="small5" style="font-size:18px;fill:#D1D5DB">churn: 232,012 lines</text>
 
-    <rect x="792" y="612" width="806" height="148" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="836" y="650" class="small5" style="font-size:23px;fill:#FF5A1F;font-weight:900">快在哪里：不是“写得多”，而是反馈路径变短</text>
+    <rect x="760" y="634" width="780" height="128" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="808" y="674" class="small5" style="font-size:23px;fill:#FF5A1F;font-weight:900">快在哪里：不是“写得多”，而是反馈路径变短</text>
 
 
-    <rect x="850" y="696" width="138" height="58" rx="14" fill="#FBFAF7" stroke="#106BEF" stroke-width="2"/>
-    <text x="919" y="714" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">想法 / Issue</text>
+    <rect x="824" y="714" width="132" height="58" rx="14" fill="#FBFAF7" stroke="#106BEF" stroke-width="2"/>
+    <text x="890" y="743" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:18px;fill:#050608;font-weight:900">想法 / Issue</text>
 
-    <rect x="1032" y="696" width="138" height="58" rx="14" fill="#FBFAF7" stroke="#106BEF" stroke-width="2"/>
-    <text x="1101" y="714" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">隔离执行</text>
+    <rect x="998" y="714" width="132" height="58" rx="14" fill="#FBFAF7" stroke="#106BEF" stroke-width="2"/>
+    <text x="1064" y="743" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:18px;fill:#050608;font-weight:900">隔离执行</text>
 
-    <rect x="1246" y="696" width="138" height="58" rx="14" fill="#FBFAF7" stroke="#FF5A1F" stroke-width="2"/>
-    <text x="1315" y="714" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">原型 / PR</text>
+    <rect x="1204" y="714" width="132" height="58" rx="14" fill="#FBFAF7" stroke="#FF5A1F" stroke-width="2"/>
+    <text x="1270" y="743" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:18px;fill:#050608;font-weight:900">原型 / PR</text>
 
-    <rect x="1456" y="696" width="138" height="58" rx="14" fill="#FBFAF7" stroke="#FF5A1F" stroke-width="2"/>
-    <text x="1525" y="714" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">验证与评审</text>
+    <rect x="1410" y="714" width="132" height="58" rx="14" fill="#FBFAF7" stroke="#FF5A1F" stroke-width="2"/>
+    <text x="1476" y="743" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:18px;fill:#050608;font-weight:900">验证与评审</text>
 
-    <path d="M994 725 H1024" stroke="#106BEF" stroke-width="4" marker-end="url(#arrowBlue)"/>
-    <path d="M1176 725 H1238" stroke="#106BEF" stroke-width="4" marker-end="url(#arrowBlue)"/>
-    <path d="M1390 725 H1448" stroke="#FF5A1F" stroke-width="4" marker-end="url(#arrowGray)"/>
+    <path d="M962 743 H990" stroke="#106BEF" stroke-width="4" marker-end="url(#arrowBlue)"/>
+    <path d="M1136 743 H1196" stroke="#106BEF" stroke-width="4" marker-end="url(#arrowBlue)"/>
+    <path d="M1336 743 H1402" stroke="#FF5A1F" stroke-width="4" marker-end="url(#arrowGray)"/>
 
 
     <rect x="270" y="954" width="1380" height="64" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
     <path d="M340 971 v30" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="986" y="970" class="body5" text-anchor="middle" style="font-size:27px">问题从“能不能写出来”，转向“凭什么能合并、发布、长期维护”。</text>
+    <text x="986" y="986" class="body5" text-anchor="middle" dominant-baseline="middle" style="font-size:27px">问题从“能不能写出来”，转向“凭什么能合并、发布、长期维护”。</text>
 
 
 </svg>

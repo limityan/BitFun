@@ -115,12 +115,10 @@
     <g transform="translate(1494 680) scale(0.90625)"><path d="M32 6 L52 14 V30 q0 18 -20 28 Q12 48 12 30 V14 Z M22 32 l7 7 l15 -18" stroke="#106BEF" stroke-width="3.310344827586207" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
     <text x="1212" y="758" class="small5" style="font-size:22px;fill:#5F6670;font-weight:620">PR、合并、发布</text><text x="1212" y="789" class="small5" style="font-size:22px;fill:#5F6670;font-weight:620">责任归属可追踪</text>
 
-    <rect x="350" y="854" width="1220" height="50" rx="14" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-    <text x="960" y="866" class="small5" text-anchor="middle" style="font-size:22px;fill:#050608;font-weight:900">每个小变更都带着稳定 Artifact、风险摘要和可复核证据前进。</text>
 
     <rect x="230" y="954" width="1460" height="64" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
     <path d="M300 971 v30" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="986" y="970" class="body5" text-anchor="middle" style="font-size:27px">BitFun 的价值不是某个功能，而是把 AI 开发从聊天结果推进到团队可治理的交付流。</text>
+    <text x="986" y="986" class="body5" text-anchor="middle" dominant-baseline="middle" style="font-size:27px">BitFun 的价值不是某个功能，而是把 AI 开发从聊天结果推进到团队可治理的交付流。</text>
 
 
 </svg>

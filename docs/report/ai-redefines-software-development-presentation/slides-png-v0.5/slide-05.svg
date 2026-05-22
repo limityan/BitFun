@@ -128,13 +128,11 @@
     <text x="1656" y="742" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">反馈进系统</text>
 
     <path d="M408 586 H438 M756 586 H786 M1104 586 H1134 M1452 586 H1482" stroke="#106BEF" stroke-width="4" fill="none" marker-end="url(#arrowBlue)" opacity="0.75"/>
-    <path d="M250 802 C520 858 830 820 960 768 S1398 690 1650 762" stroke="#FF5A1F" stroke-width="5" fill="none" marker-end="url(#arrowGray)" opacity="0.50"/>
-    <rect x="510" y="834" width="900" height="58" rx="16" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-    <text x="960" y="846" class="body5" text-anchor="middle" style="font-size:26px">核心变化：从“人交接文档”转向“共同维护证据”。</text>
+    <path d="M250 812 C520 860 830 826 960 774 S1398 704 1650 770" stroke="#FF5A1F" stroke-width="5" fill="none" marker-end="url(#arrowGray)" opacity="0.42"/>
 
-    <rect x="250" y="954" width="1420" height="64" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
-    <path d="M320 971 v30" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="986" y="970" class="body5" text-anchor="middle" style="font-size:27px">每一步交付件都要变成 Agent 可执行、人类可判断、平台可验证的证据。</text>
+    <rect x="210" y="954" width="1500" height="64" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <path d="M280 971 v30" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <text x="986" y="986" class="body5" text-anchor="middle" dominant-baseline="middle" style="font-size:27px">核心变化：从“人交接文档”转向 Agent 可执行、人可判断、平台可验证的证据。</text>
 
 
 </svg>
