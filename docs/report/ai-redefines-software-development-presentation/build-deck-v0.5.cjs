@@ -91,7 +91,7 @@ const slides = [
     focus: "目录页：四个大模块不超过四个，标题按用户建议调整。",
     question: "这 15 分钟，哪些问题最值得带走？",
     script:
-      "这场报告分四个模块。第一是软件工程变革，先从 BitFun 的高速 AI 开发经验出发，补一页传统软件工程到人加 Agent 协作的模式变化，再推导到智能协作系统。第二是速度的背后，讨论为什么产出变快并不等于交付线性变快，以及概率性过程如何通过确定性证据获得高置信度。第三是工程质量与治理，结合外部报告和 BitFun 方法论，看质量门禁、DFX、TDD、Artifact 治理会怎样演进。第四是开发者角色，讨论人在这个系统里如何找到关键位置，而不是只停留在“会不会被替代”的问题上。",
+      "这场报告分四个模块。第一是软件工程变革，先从 BitFun 的高速 AI 开发经验出发，再补一页传统软件工程到人加 Agent 协作的模式变化。第二是速度的背后，讨论为什么产出变快并不等于交付线性变快，以及概率性过程如何通过确定性证据获得高置信度。第三是工程质量与治理，把质量、DFX、TDD、Artifact 与团队工作流收敛成两页方法。第四是开发者角色，讨论人在这个系统里如何找到关键位置，并给刚入职场的同学一些更可执行的能力方向。",
     transition: "先从一个最直观的案例入口开始：代码量变大之后，问题到底有没有变少。",
     render: slideAgendaV02,
   },
@@ -169,34 +169,22 @@ const slides = [
   },
   {
     section: "03 / QUALITY GOVERNANCE",
-    title: "工程质量：从门禁到智能护栏",
-    subtitle: "开源重公共责任，大厂重复杂交付；共同核心是责任链和证据链。",
-    time: "约 1.4 分钟",
-    focus: "突出开源与大厂场景中的责任链、证据链与小批量反制不稳定。",
+    title: "工程质量：责任、证据与工程协议",
+    subtitle: "开源重公共责任，大厂重复杂交付；共同核心是把质量要求变成可执行证据。",
+    time: "约 1.5 分钟",
+    focus: "合并质量治理与 DFX/TDD 方法演进，突出责任链、证据链、Artifact 链和工程协议。",
     question: "AI 让提交变多以后，维护者和大厂平台到底该看什么？",
     script:
-      "原先第七页和第八页容易讲成重复的质量术语，这里把它收敛为一个治理问题：开源高质量协作强调公共责任，维护者要提升对陌生贡献或 AI-assisted 变更质量的信任度；大厂复杂交付强调系统连续性，组织要处理 owner、依赖链、合规、发布窗口、线上事故成本，以及贯穿整个系统的确定性工件。两者都不能只靠“多跑测试”。更有效的做法是把变化拆小，把责任、证据和 Artifact 绑定到每个小批次：谁拥有模块，谁确认设计边界，哪些测试和运行指标证明可以前进，失败时如何回滚。",
-    transition: "再往前看，DFX、TDD、架构守护都会出现 AI 时代的新形态。",
+      "这部分把原来三页收敛成两页，避免变成重复的质量术语。开源高质量协作强调公共责任：贡献者要对自己的提交负责，维护者要提升对陌生贡献或 AI-assisted 变更质量的信任度。大厂复杂交付强调系统连续性：组织要处理 owner、依赖链、合规、发布窗口、线上事故成本，以及贯穿整个系统的确定性工件。两者共同的方向，是把质量要求变成可执行证据。DFX、TDD、Code Review 不应该只停留在文档和习惯里，而要进入 Agent 能读取、工具能检查、人能复核的工程协议：性能、安全、可观测、可维护都要能落到检查项、基准、trace、回归用例和发布预算上。",
+    transition: "这些协议真正落地时，会表现为一个可治理的团队工作流。",
     render: slideQualityV02,
   },
   {
     section: "03 / QUALITY GOVERNANCE",
-    title: "下一代工程方法：让 DFX 与 TDD 变成 Agent 协议",
-    subtitle: "未来的护栏不是文档清单，而是可执行、可追踪、可复用的工程契约。",
-    time: "约 1.3 分钟",
-    focus: "回应 DFX/TDD 新形态：非特定工程的 AI 下解决方案、细化军规、用例形态升级。",
-    question: "如果代码军规仍会被幻觉绕过，下一层护栏是什么？",
-    script:
-      "这里可以做一个前瞻判断：AI 时代的 DFX 不会只是 Design for X 的静态清单，而会变成一组可执行的 Agent 协议。比如性能、可观测性、安全、可维护性，不再只写在规范里，而是以检查项、基准、trace、回归用例、发布预算的形式进入 Agent 工作流。TDD 也会扩展：不只是先写单元测试再写实现，而是先定义失败证据、属性约束、运行观测和评估集，再让 Agent 在这些证据边界里修改。代码军规仍会有幻觉，所以规则要更细，但更关键的是规则要可执行：能被工具检查、能被 trace 回放、能被 review 独立仲裁。",
-    transition: "把这些方法落到 BitFun，就能看到一个 Agent 工程系统的雏形。",
-    render: slideFutureQualityV02,
-  },
-  {
-    section: "03 / QUALITY GOVERNANCE",
-    title: "BitFun 的价值：把开发过程组织成团队工作流",
+    title: "把 AI 开发组织成可治理工作流",
     subtitle: "从 Issue 到 PR，不是聊天产物堆叠，而是交付对象、证据包和阶段门禁。",
-    time: "约 1.4 分钟",
-    focus: "把第九页落到可执行方法：Spec/Issue -> Agent Worktree -> Evidence Packet -> Independent Review -> Gate/Merge。",
+    time: "约 1.5 分钟",
+    focus: "把质量治理落到可执行方法：Spec/Issue -> Agent Worktree -> Evidence Packet -> Independent Review -> Gate/Merge。",
     question: "如果多个 Agent 同时参与，团队靠什么判断一个变更可以继续前进？",
     script:
       "回到 BitFun，它不是要证明某个模型更强，而是展示一个团队工作流的雏形。更可落地的做法是把一次 AI 开发压成五个稳定环节：第一，任务从 Issue 或 Spec 进入，明确目标、非目标和风险边界；第二，Agent 在隔离工作区执行，避免把探索过程直接污染主分支；第三，执行结束必须生成证据包，包括 diff 摘要、测试结果、日志、trace、未决风险和回滚路径；第四，评审要角色分离，发现问题、仲裁问题、修复问题、验证修复尽量不要由同一个角色闭环；第五，阶段门禁决定能否进入 PR、合并或发布。这里的关键不是记录每一步操作，而是把复杂过程压缩成团队能读、能审、能追责的交付对象和证据。",
@@ -223,7 +211,7 @@ const slides = [
     focus: "结合最新调研与论文，把开发者角色变化落到新人工程师可执行的能力方向。",
     question: "当 AI 可以帮你更快完成任务，第一年最应该刻意训练什么？",
     script:
-      "最后把问题落到刚入职场的同学。外部信号其实很一致：Stack Overflow 2025 里 84% 开发者使用或计划使用 AI，但 46% 不信任 AI 输出准确性；Anthropic 2026 的受控实验显示，使用 AI 的参与者在刚学新库后的概念测验中低 17%，尤其是调试和理解能力受影响；Sonar 2026 则显示 AI 已经占到相当比例的提交代码，但只有不到一半开发者总是提交前验证。也就是说，新人的问题不是要不要用 AI，而是如何不把成长路径外包给 AI。这里给四个更可执行的方向。第一，保留代码读写与调试基本功：至少能解释核心实现、能复现错误、能定位边界条件。第二，训练证据驱动交付：把测试、CI、日志、trace、review 作为交付的一部分，而不是写完代码后的附属品。第三，学习上下文与 Artifact 组织：会写清楚需求、约束、验收、ADR、风险说明，因为 Agent 的质量高度依赖工程上下文。第四，承担责任边界：AI 可以生成和修复，人仍然要判断该不该做、能不能合、出了问题如何解释。可以把它留成讨论题：新人第一年应该追求更多产出，还是更多可解释的判断？哪些任务适合交给 AI，哪些任务必须自己亲手做一遍？",
+      "最后把问题落到刚入职场的同学。外部信号其实很一致：Stack Overflow 2025 里 84% 开发者使用或计划使用 AI，但 46% 不信任 AI 输出准确性；Anthropic 2026 的受控实验显示，使用 AI 的参与者在刚学新库后的概念测验中低 17%，尤其是调试和理解能力受影响；Sonar 2026 则显示 AI 已经占到相当比例的提交代码，但只有不到一半开发者总是提交前验证。也就是说，新人的问题不是要不要用 AI，而是如何不把成长路径外包给 AI。这里给四个更可执行的方向。第一，保留代码读写与调试基本功：至少能解释核心实现、能复现错误、能定位边界条件。第二，训练证据驱动交付：把测试、CI、日志、trace、review 作为交付的一部分，而不是写完代码后的附属品。第三，理解需求与用户场景：软件工程师不会只承担单纯开发角色，要逐步理解用户路径、产品定位、体验约束和验收标准，才能把 AI 生成结果放进正确问题里。第四，承担责任边界：AI 可以生成和修复，人仍然要判断该不该做、能不能合、出了问题如何解释。可以把它留成讨论题：新人第一年应该追求更多产出，还是更多可解释的判断？哪些任务适合交给 AI，哪些任务必须自己亲手做一遍？",
     transition: "最后进入 Q&A。",
     render: slidePredictionV02,
   },
@@ -1430,8 +1418,8 @@ function sectionWatermarkInfo(index) {
   const page = index + 1;
   if (page >= 3 && page <= 5) return { n: "01", title: "软件工程变革" };
   if (page >= 6 && page <= 8) return { n: "02", title: "速度的背后" };
-  if (page >= 9 && page <= 11) return { n: "03", title: "工程质量与治理" };
-  if (page >= 12 && page <= 13) return { n: "04", title: "开发者角色" };
+  if (page >= 9 && page <= 10) return { n: "03", title: "工程质量与治理" };
+  if (page >= 11 && page <= 12) return { n: "04", title: "开发者角色" };
   return null;
 }
 
@@ -1502,12 +1490,12 @@ function v5Takeaway(textValue, y = 918, width = 1260) {
   `;
 }
 
-function v02Takeaway(textValue, width = 1320, y = 936) {
+function v02Takeaway(textValue, width = 1320, y = 954) {
   const x = (1920 - width) / 2;
   return `
-    <rect x="${x}" y="${y}" width="${width}" height="78" rx="10" fill="${L.paper}" stroke="${L.line2}" stroke-width="2"/>
-    <path d="M${x + 76} ${y + 20} v38" stroke="${L.blue}" stroke-width="8" stroke-linecap="round"/>
-    <text x="${x + width / 2 + 32}" y="${y + 22}" class="body5" text-anchor="middle" style="font-size:30px">${esc(textValue)}</text>
+    <rect x="${x}" y="${y}" width="${width}" height="64" rx="10" fill="${L.paper}" stroke="${L.line2}" stroke-width="2"/>
+    <path d="M${x + 70} ${y + 17} v30" stroke="${L.blue}" stroke-width="8" stroke-linecap="round"/>
+    <text x="${x + width / 2 + 26}" y="${y + 16}" class="body5" text-anchor="middle" style="font-size:27px">${esc(textValue)}</text>
   `;
 }
 
@@ -1879,8 +1867,9 @@ function slideTitleV02(slide, index) {
     ${v5Icon("team", 1530, 286, 78, L.blue)}
     <rect x="1206" y="502" width="356" height="56" rx="28" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
     <text x="1384" y="516" class="small5" text-anchor="middle" style="font-size:22px;fill:${L.ink};font-weight:900">生成能力之后，工程系统如何升级</text>
-    <text x="96" y="620" class="body5">演讲者：${esc(speakerName)}</text>
-    <text x="96" y="678" class="body5" style="font-size:31px;fill:${L.ink};font-weight:820">身份：${esc(speakerOrg)}</text>
+    <text x="96" y="620" class="body5">演讲者：</text>
+    <text x="244" y="620" class="body5">${esc(speakerName)}</text>
+    <text x="244" y="678" class="body5" style="font-size:31px;fill:${L.ink};font-weight:820">${esc(speakerOrg)}</text>
     <text x="96" y="742" class="muted5">2026.05</text>
   `;
   return svgBaseV5(slide, index, body);
@@ -1891,8 +1880,8 @@ function slideAgendaV02(slide, index) {
     ${v5Header("目录", "报告目录", "", 72)}
     ${agendaItem5(150, 370, "01", "软件工程变革", "从 BitFun 案例推导人 + Agent 协作系统。", "03-05", L.blue)}
     ${agendaItem5(1010, 448, "02", "速度的背后", "概率执行、证据放行、收益重估。", "06-08", L.blue)}
-    ${agendaItem5(150, 606, "03", "工程质量与治理", "责任链、证据链、DFX / TDD 新形态。", "09-11", L.orange)}
-    ${agendaItem5(1010, 684, "04", "开发者角色", "人在新工程系统中的关键位置。", "12-14", L.orange)}
+    ${agendaItem5(150, 606, "03", "工程质量与治理", "责任链、证据链、DFX / TDD 新形态。", "09-10", L.orange)}
+    ${agendaItem5(1010, 684, "04", "开发者角色", "人在新工程系统中的关键位置。", "11-13", L.orange)}
     <path d="M318 850 C558 800 758 875 960 844 S1350 824 1604 870" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
     <text x="960" y="914" class="muted5" text-anchor="middle" style="font-size:25px">案例入口 → 速度重估 → 质量治理 → 人的定位</text>
   `;
@@ -1902,54 +1891,50 @@ function slideAgendaV02(slide, index) {
 function slideShockV02(slide, index) {
   const body = `
     ${v5Header("01 / 案例入口", "单月 10W+ 行代码之后，问题真的变少了吗？", "AI 放大的不是代码量本身，而是速度、风险和组织方式的重新分配。", 60)}
-    <rect x="116" y="380" width="590" height="454" rx="20" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="166" y="448" class="small5" style="fill:${L.blue};font-weight:900">BitFun 开发经验</text>
-    <text x="166" y="526" class="num5" style="font-size:68px;fill:${L.blue}">单月 10W+ 行代码</text>
-    <path d="M172 626 H646" stroke="${L.line2}" stroke-width="3"/>
-    <text x="166" y="666" class="body5" style="font-size:31px">不是炫耀数字，而是压力测试</text>
-    <text x="166" y="710" class="small5" style="font-size:23px">代码生产被放大后，验证、评审、协作、维护</text>
-    <text x="166" y="744" class="small5" style="font-size:23px">是否也同步扩容？</text>
-    <text x="166" y="798" class="small5" style="font-size:22px;fill:${L.muted};font-weight:720">统计口径：作者提交历史，非代码质量结论。</text>
-    <path d="M730 594 H810" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
-    ${repoStatsCaptureV05(830, 356)}
-    <rect x="830" y="668" width="888" height="154" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="878" y="710" class="small5" style="fill:${L.orange};font-weight:900">快在哪里：不是“写得多”，而是反馈路径变短</text>
-    ${miniFlowV05(890, 754, "想法 / Issue", "隔离工作区", "可运行原型 / PR", "证据压力")}
-    <rect x="232" y="846" width="1456" height="104" rx="14" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
-    <path d="M274 874 v50" stroke="${L.blue}" stroke-width="8" stroke-linecap="round"/>
-    <text x="318" y="868" class="body5" style="font-size:29px">问题从“能不能写出来”，转移到“凭什么可以合并、发布、长期维护”。</text>
-    <text x="318" y="914" class="small5" style="font-size:24px;fill:${L.ink};font-weight:850">真正要观察的是交付节奏、验证成本和团队协作是否一起改善。</text>
+    <rect x="116" y="390" width="548" height="392" rx="20" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="160" y="438" class="small5" style="font-size:22px;fill:${L.blue};font-weight:900">BitFun 开发经验</text>
+    <text x="160" y="508" class="num5" style="font-size:58px;fill:${L.blue}">单月 10W+ 行代码</text>
+    <path d="M166 594 H612" stroke="${L.line2}" stroke-width="3"/>
+    <text x="160" y="636" class="body5" style="font-size:28px">不是炫耀数字，而是压力测试</text>
+    <text x="160" y="684" class="small5" style="font-size:22px">验证、评审、协作、维护是否同步扩容？</text>
+    <text x="160" y="734" class="small5" style="font-size:20px;fill:${L.muted};font-weight:720">统计口径：作者提交历史，非代码质量结论。</text>
+    <path d="M692 572 H760" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
+    ${repoStatsCaptureV05(792, 350)}
+    <rect x="792" y="612" width="806" height="148" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="836" y="650" class="small5" style="font-size:23px;fill:${L.orange};font-weight:900">快在哪里：不是“写得多”，而是反馈路径变短</text>
+    ${miniFlowV05(850, 696, "想法 / Issue", "隔离执行", "原型 / PR", "验证与评审")}
+    ${v02Takeaway("问题从“能不能写出来”，转向“凭什么能合并、发布、长期维护”。", 1380)}
   `;
   return svgBaseV5(slide, index, body);
 }
 
 function repoStatsCaptureV05(x, y) {
   return `
-    <rect x="${x}" y="${y}" width="888" height="286" rx="18" fill="#111827" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <rect x="${x}" y="${y}" width="888" height="46" rx="18" fill="#1F2937"/>
-    <circle cx="${x + 34}" cy="${y + 23}" r="7" fill="#EF4444"/>
-    <circle cx="${x + 58}" cy="${y + 23}" r="7" fill="#F59E0B"/>
-    <circle cx="${x + 82}" cy="${y + 23}" r="7" fill="#22C55E"/>
-    <text x="${x + 116}" y="${y + 14}" class="small5" style="font-size:20px;fill:#D1D5DB;font-weight:900">${esc(bitfunStats.repo)} · git history snapshot</text>
-    <text x="${x + 36}" y="${y + 74}" class="micro5" style="font-size:21px;fill:#93C5FD">${esc(bitfunStats.url)}</text>
-    <text x="${x + 36}" y="${y + 114}" class="small5" style="font-size:22px;fill:#E5E7EB;font-weight:850">range: ${esc(bitfunStats.range)}   ref: ${esc(bitfunStats.ref)} @ ${esc(bitfunStats.head)}</text>
-    <text x="${x + 36}" y="${y + 154}" class="small5" style="font-size:22px;fill:#E5E7EB;font-weight:850">author: ${esc(bitfunStats.author)}</text>
-    <text x="${x + 36}" y="${y + 214}" class="num5" style="font-size:46px;fill:#60A5FA">${esc(bitfunStats.commits)}</text>
-    <text x="${x + 140}" y="${y + 214}" class="small5" style="font-size:22px;fill:#D1D5DB">commits</text>
-    <text x="${x + 300}" y="${y + 214}" class="num5" style="font-size:46px;fill:#34D399">+${esc(bitfunStats.additions)}</text>
-    <text x="${x + 548}" y="${y + 214}" class="small5" style="font-size:22px;fill:#D1D5DB">insertions</text>
-    <text x="${x + 36}" y="${y + 258}" class="small5" style="font-size:22px;fill:#FCA5A5">-${esc(bitfunStats.deletions)} deletions</text>
-    <text x="${x + 300}" y="${y + 258}" class="small5" style="font-size:22px;fill:#D1D5DB">churn: ${esc(bitfunStats.churn)} lines</text>
+    <rect x="${x}" y="${y}" width="806" height="252" rx="18" fill="#111827" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <rect x="${x}" y="${y}" width="806" height="40" rx="18" fill="#1F2937"/>
+    <circle cx="${x + 30}" cy="${y + 20}" r="6" fill="#EF4444"/>
+    <circle cx="${x + 52}" cy="${y + 20}" r="6" fill="#F59E0B"/>
+    <circle cx="${x + 74}" cy="${y + 20}" r="6" fill="#22C55E"/>
+    <text x="${x + 104}" y="${y + 12}" class="small5" style="font-size:18px;fill:#D1D5DB;font-weight:900">${esc(bitfunStats.repo)} · git history snapshot</text>
+    <text x="${x + 34}" y="${y + 62}" class="micro5" style="font-size:19px;fill:#93C5FD">${esc(bitfunStats.url)}</text>
+    <text x="${x + 34}" y="${y + 96}" class="small5" style="font-size:19px;fill:#E5E7EB;font-weight:850">range: ${esc(bitfunStats.range)}   ref: ${esc(bitfunStats.ref)} @ ${esc(bitfunStats.head)}</text>
+    <text x="${x + 34}" y="${y + 130}" class="small5" style="font-size:19px;fill:#E5E7EB;font-weight:850">author: ${esc(bitfunStats.author)}</text>
+    <text x="${x + 34}" y="${y + 184}" class="num5" style="font-size:40px;fill:#60A5FA">${esc(bitfunStats.commits)}</text>
+    <text x="${x + 126}" y="${y + 186}" class="small5" style="font-size:19px;fill:#D1D5DB">commits</text>
+    <text x="${x + 260}" y="${y + 184}" class="num5" style="font-size:40px;fill:#34D399">+${esc(bitfunStats.additions)}</text>
+    <text x="${x + 476}" y="${y + 186}" class="small5" style="font-size:19px;fill:#D1D5DB">insertions</text>
+    <text x="${x + 34}" y="${y + 216}" class="small5" style="font-size:19px;fill:#FCA5A5">-${esc(bitfunStats.deletions)} deletions</text>
+    <text x="${x + 260}" y="${y + 216}" class="small5" style="font-size:19px;fill:#D1D5DB">churn: ${esc(bitfunStats.churn)} lines</text>
   `;
 }
 
 function miniFlowV05(x, y, a, b, c, d) {
-  const nodeW = 150;
+  const nodeW = 138;
   const items = [
     [x, a, L.blue],
-    [x + 196, b, L.blue],
-    [x + 430, c, L.orange],
-    [x + 660, d, L.orange],
+    [x + 182, b, L.blue],
+    [x + 396, c, L.orange],
+    [x + 606, d, L.orange],
   ];
   const nodes = items.map(([nx, label, color]) => `
     <rect x="${nx}" y="${y}" width="${nodeW}" height="58" rx="14" fill="${L.bg}" stroke="${color}" stroke-width="2"/>
@@ -1957,53 +1942,53 @@ function miniFlowV05(x, y, a, b, c, d) {
   `).join("");
   return `
     ${nodes}
-    <path d="M${x + 156} ${y + 29} H${x + 188}" stroke="${L.blue}" stroke-width="4" marker-end="url(#arrowBlue)"/>
-    <path d="M${x + 352} ${y + 29} H${x + 422}" stroke="${L.blue}" stroke-width="4" marker-end="url(#arrowBlue)"/>
-    <path d="M${x + 586} ${y + 29} H${x + 652}" stroke="${L.orange}" stroke-width="4" marker-end="url(#arrowGray)"/>
+    <path d="M${x + 144} ${y + 29} H${x + 174}" stroke="${L.blue}" stroke-width="4" marker-end="url(#arrowBlue)"/>
+    <path d="M${x + 326} ${y + 29} H${x + 388}" stroke="${L.blue}" stroke-width="4" marker-end="url(#arrowBlue)"/>
+    <path d="M${x + 540} ${y + 29} H${x + 598}" stroke="${L.orange}" stroke-width="4" marker-end="url(#arrowGray)"/>
   `;
 }
 
 function slideCoverV02(slide, index) {
   const body = `
     ${v5Header("01 / 主线展开", "产出放大后，协作对象变了", "从“谁写代码”走向“任务如何被委派、证据如何被放行、责任如何落地”。", 64)}
-    <rect x="120" y="372" width="1680" height="500" rx="24" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="174" y="420" class="small5" style="font-size:24px;fill:${L.blue};font-weight:900">BitFun 经验不是终点：代码生产放大以后，团队要管理新的交付对象和证据对象</text>
-    <rect x="174" y="468" width="700" height="318" rx="18" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
-    ${collabRowV05(214, 516, "01", "任务委派", "人定义目标、边界和验收标准；Agent 在隔离工作区探索。", L.blue, "terminal")}
-    ${collabRowV05(214, 612, "02", "角色分工", "实现、测试、评审、文档可以分给不同角色，但权限和上下文要受控。", L.orange, "team")}
-    ${collabRowV05(214, 708, "03", "证据放行", "人不审每步操作，而是审目标、差异、测试、风险和责任。", L.blue, "check")}
-    <path d="M910 622 H980" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
-    ${evidenceCaptureV05(1010, 442)}
-    <text x="960" y="824" class="small5" text-anchor="middle" style="font-size:25px;fill:${L.ink};font-weight:880">协作对象从“代码”扩展为任务、Agent、工具执行和证据包。</text>
-    ${v02Takeaway("AI 时代的团队协作，不是 Agent 直接替人合并代码，而是让 Agent 产出可审查的交付对象。", 1520)}
+    <text x="142" y="400" class="small5" style="font-size:24px;fill:${L.blue};font-weight:900">BitFun 经验不是终点：代码生产放大以后，团队要管理新的交付对象和证据对象</text>
+    ${collabRowV05(146, 494, "01", "任务委派", "目标、边界和验收标准先写清楚，Agent 在隔离工作区探索。", L.blue, "terminal")}
+    ${collabRowV05(146, 610, "02", "角色分工", "实现、测试、评审、文档可以分离，但权限和上下文要受控。", L.orange, "team")}
+    ${collabRowV05(146, 726, "03", "证据放行", "人不审每步操作，而是审差异、测试、风险和责任。", L.blue, "check")}
+    <path d="M800 560 C838 538 872 540 910 560" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
+    ${evidenceCaptureV05(940, 432)}
+    <rect x="352" y="852" width="1216" height="66" rx="16" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    <text x="960" y="868" class="small5" text-anchor="middle" style="font-size:25px;fill:${L.ink};font-weight:900">协作对象从“代码”扩展为任务、Agent、工具执行和证据包。</text>
+    ${v02Takeaway("AI 时代的团队协作，要让 Agent 产出可审查的交付对象。", 1320)}
   `;
   return svgBaseV5(slide, index, body);
 }
 
 function collabRowV05(x, y, n, titleValue, desc, color, icon) {
   return `
-    ${v5Icon(icon, x, y - 24, 54, color)}
+    <rect x="${x - 16}" y="${y - 44}" width="650" height="92" rx="16" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    ${v5Icon(icon, x + 16, y - 24, 54, color)}
     <text x="${x + 78}" y="${y - 22}" class="num5" style="font-size:30px;fill:${color}">${esc(n)}</text>
     <text x="${x + 132}" y="${y - 24}" class="label5" style="font-size:28px">${esc(titleValue)}</text>
-    <text x="${x + 132}" y="${y + 18}" class="small5" style="font-size:22px;fill:${L.muted};font-weight:720">${esc(desc)}</text>
+    <text x="${x + 132}" y="${y + 18}" class="small5" style="font-size:21px;fill:${L.muted};font-weight:720">${esc(desc)}</text>
   `;
 }
 
 function evidenceCaptureV05(x, y) {
   return `
-    <rect x="${x}" y="${y}" width="710" height="300" rx="18" fill="#111827" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <rect x="${x}" y="${y}" width="710" height="44" rx="18" fill="#1F2937"/>
-    <circle cx="${x + 32}" cy="${y + 22}" r="7" fill="#EF4444"/>
-    <circle cx="${x + 56}" cy="${y + 22}" r="7" fill="#F59E0B"/>
-    <circle cx="${x + 80}" cy="${y + 22}" r="7" fill="#22C55E"/>
-    <text x="${x + 112}" y="${y + 13}" class="small5" style="font-size:20px;fill:#D1D5DB;font-weight:900">Evidence Packet · docs / checks excerpt</text>
-    <text x="${x + 36}" y="${y + 78}" class="micro5" style="font-size:20px;fill:#93C5FD">docs/architecture/deep-review.md</text>
-    <text x="${x + 36}" y="${y + 116}" class="small5" style="font-size:21px;fill:#E5E7EB;font-weight:820">changed paths · diff stats · risk tags · packet ids · hunk hints</text>
-    <text x="${x + 36}" y="${y + 154}" class="micro5" style="font-size:20px;fill:#93C5FD">AGENTS.md / Verification</text>
-    <text x="${x + 36}" y="${y + 192}" class="small5" style="font-size:21px;fill:#E5E7EB;font-weight:820">pnpm lint + type-check + test:run</text>
-    <text x="${x + 36}" y="${y + 228}" class="small5" style="font-size:21px;fill:#E5E7EB;font-weight:820">cargo test -p bitfun-core deep_review</text>
-    <rect x="${x + 36}" y="${y + 250}" width="318" height="30" rx="15" fill="#064E3B"/>
-    <text x="${x + 56}" y="${y + 254}" class="micro5" style="font-size:18px;fill:#BBF7D0;font-weight:900">证据不是口头说明，而是可复核产物</text>
+    <rect x="${x}" y="${y}" width="760" height="292" rx="18" fill="#111827" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <rect x="${x}" y="${y}" width="760" height="42" rx="18" fill="#1F2937"/>
+    <circle cx="${x + 30}" cy="${y + 21}" r="6" fill="#EF4444"/>
+    <circle cx="${x + 52}" cy="${y + 21}" r="6" fill="#F59E0B"/>
+    <circle cx="${x + 74}" cy="${y + 21}" r="6" fill="#22C55E"/>
+    <text x="${x + 104}" y="${y + 12}" class="small5" style="font-size:18px;fill:#D1D5DB;font-weight:900">Evidence Packet · docs / checks excerpt</text>
+    <text x="${x + 34}" y="${y + 72}" class="micro5" style="font-size:19px;fill:#93C5FD">docs/architecture/deep-review.md</text>
+    <text x="${x + 34}" y="${y + 108}" class="small5" style="font-size:19px;fill:#E5E7EB;font-weight:820">changed paths · diff stats · risk tags · packet ids · hunk hints</text>
+    <text x="${x + 34}" y="${y + 146}" class="micro5" style="font-size:19px;fill:#93C5FD">AGENTS.md / Verification</text>
+    <text x="${x + 34}" y="${y + 182}" class="small5" style="font-size:19px;fill:#E5E7EB;font-weight:820">pnpm lint + type-check + test:run</text>
+    <text x="${x + 34}" y="${y + 216}" class="small5" style="font-size:19px;fill:#E5E7EB;font-weight:820">cargo test -p bitfun-core deep_review</text>
+    <rect x="${x + 34}" y="${y + 244}" width="316" height="30" rx="15" fill="#064E3B"/>
+    <text x="${x + 54}" y="${y + 248}" class="micro5" style="font-size:17px;fill:#BBF7D0;font-weight:900">证据不是口头说明，而是可复核产物</text>
   `;
 }
 
@@ -2021,41 +2006,32 @@ function collabLaneV02(x, y, n, titleValue, kicker, humanText, evidenceText, col
 function slideSdlcShiftV05(slide, index) {
   const body = `
     ${v5Header("01 / 模式变化", "从传统 SDLC 到人 + Agent SDLC", "角色没有消失，交付件发生变化：从人交接文档，转向人、Agent、平台共同维护证据。", 58)}
-    <rect x="116" y="366" width="1688" height="214" rx="20" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="164" y="414" class="small5" style="fill:${L.blue};font-weight:900">传统复杂项目：人和人之间交接职责与交付件</text>
-    ${sdlcStepV05(170, 464, "产品", "PRD / 验收", L.blue)}
-    ${sdlcStepV05(470, 464, "设计", "交互 / API", L.blue)}
-    ${sdlcStepV05(770, 464, "开发", "Code / PR", L.blue)}
-    ${sdlcStepV05(1070, 464, "测试", "用例 / 报告", L.blue)}
-    ${sdlcStepV05(1370, 464, "运维", "发布 / 监控", L.blue)}
-    ${sdlcArrowV05(392, 504, L.blue)}
-    ${sdlcArrowV05(692, 504, L.blue)}
-    ${sdlcArrowV05(992, 504, L.blue)}
-    ${sdlcArrowV05(1292, 504, L.blue)}
-
-    <rect x="116" y="632" width="1688" height="244" rx="20" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="164" y="680" class="small5" style="fill:${L.orange};font-weight:900">AI 介入之后：人、Agent、平台共同维护可验证证据</text>
-    ${sdlcStepV05(160, 738, "人定目标", "价值 / 边界 / 验收", L.orange)}
-    ${sdlcStepV05(486, 738, "Agent 执行", "计划 / diff / 测试", L.blue)}
-    ${sdlcStepV05(812, 738, "平台门禁", "权限 / CI / trace", L.blue)}
-    ${sdlcStepV05(1138, 738, "人类放行", "风险 / 责任", L.orange)}
-    ${sdlcStepV05(1464, 738, "运行反馈", "监控 / 复盘", L.orange)}
-    ${sdlcArrowV05(408, 780, L.orange)}
-    ${sdlcArrowV05(734, 780, L.blue)}
-    ${sdlcArrowV05(1060, 780, L.blue)}
-    ${sdlcArrowV05(1386, 780, L.orange)}
-
-    <rect x="342" y="898" width="1236" height="58" rx="14" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
-    <text x="960" y="910" class="small5" text-anchor="middle" style="font-size:25px;fill:${L.ink};font-weight:900">变化的不是“谁写代码”，而是每一步交付件都要变成 Agent 可执行、人类可判断、平台可验证的证据。</text>
+    <text x="126" y="402" class="small5" style="font-size:23px;fill:${L.blue};font-weight:900">同一条生命周期，AI 改变的是每个阶段的交付件和判断依据</text>
+    ${sdlcColumnV05(108, 458, "产品", "PRD / 验收", "目标、边界、场景", "需求更结构化", L.blue)}
+    ${sdlcColumnV05(456, 458, "设计", "交互 / API", "约束、ADR、例外", "规则更显性", L.blue)}
+    ${sdlcColumnV05(804, 458, "开发", "Code / PR", "计划、diff、trace", "过程可回放", L.orange)}
+    ${sdlcColumnV05(1152, 458, "测试", "用例 / 报告", "CI、Eval、风险", "证据更连续", L.orange)}
+    ${sdlcColumnV05(1500, 458, "运维", "发布 / 监控", "回滚、复盘、学习", "反馈进系统", L.blue)}
+    <path d="M408 586 H438 M756 586 H786 M1104 586 H1134 M1452 586 H1482" stroke="${L.blue}" stroke-width="4" fill="none" marker-end="url(#arrowBlue)" opacity="0.75"/>
+    <path d="M250 802 C520 858 830 820 960 768 S1398 690 1650 762" stroke="${L.orange}" stroke-width="5" fill="none" marker-end="url(#arrowGray)" opacity="0.50"/>
+    <rect x="510" y="834" width="900" height="58" rx="16" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    <text x="960" y="846" class="body5" text-anchor="middle" style="font-size:26px">核心变化：从“人交接文档”转向“共同维护证据”。</text>
+    ${v02Takeaway("每一步交付件都要变成 Agent 可执行、人类可判断、平台可验证的证据。", 1420)}
   `;
   return svgBaseV5(slide, index, body);
 }
 
-function sdlcStepV05(x, y, titleValue, artifact, color) {
+function sdlcColumnV05(x, y, stage, before, after, diff, color) {
   return `
-    <rect x="${x}" y="${y}" width="230" height="94" rx="15" fill="${L.bg}" stroke="${color}" stroke-width="2"/>
-    <text x="${x + 115}" y="${y + 18}" class="label5" text-anchor="middle" style="font-size:29px">${esc(titleValue)}</text>
-    <text x="${x + 115}" y="${y + 58}" class="small5" text-anchor="middle" style="font-size:21px;fill:${L.muted};font-weight:760">${esc(artifact)}</text>
+    <rect x="${x}" y="${y}" width="312" height="336" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="${x + 156}" y="${y + 28}" class="label5" text-anchor="middle" style="font-size:32px">${esc(stage)}</text>
+    <path d="M${x + 48} ${y + 86} H${x + 264}" stroke="${color}" stroke-width="4" stroke-linecap="round"/>
+    <text x="${x + 52}" y="${y + 114}" class="small5" style="font-size:20px;fill:${L.blue};font-weight:900">传统交付</text>
+    <text x="${x + 52}" y="${y + 150}" class="body5" style="font-size:25px">${esc(before)}</text>
+    <text x="${x + 52}" y="${y + 196}" class="small5" style="font-size:20px;fill:${L.orange};font-weight:900">AI 介入后</text>
+    <text x="${x + 52}" y="${y + 232}" class="body5" style="font-size:25px">${esc(after)}</text>
+    <rect x="${x + 52}" y="${y + 278}" width="208" height="36" rx="18" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    <text x="${x + 156}" y="${y + 284}" class="small5" text-anchor="middle" style="font-size:19px;fill:${L.ink};font-weight:900">${esc(diff)}</text>
   `;
 }
 
@@ -2086,39 +2062,37 @@ function slideExplorationV02(slide, index) {
 function slideReliabilityV02(slide, index) {
   const body = `
     ${v5Header("02 / 关键机制", "概率过程，证据放行", "允许 Agent 多路径探索，但把放行收敛到可复现证据和阶段门禁。", 66)}
-    <rect x="96" y="372" width="510" height="416" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="146" y="430" class="small5" style="fill:${L.blue};font-weight:900">01 / 概率探索层</text>
-    <text x="146" y="492" class="num5" style="font-size:42px">允许过程多路径</text>
-    ${v02Lines(["沙箱执行 / 权限控制", "危险操作拦截 / 失败回注", "trace 用于复现，不让人逐步盯操作", "过程可变，但必须可停下、可追溯"], 146, 568, 23, L.muted, 34, 680)}
-
-    <path d="M628 536 H690" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
-    <rect x="708" y="344" width="504" height="456" rx="22" fill="${L.paper}" stroke="${L.blue}" stroke-width="3" filter="url(#paperShadow)"/>
-    <text x="960" y="408" class="small5" text-anchor="middle" style="fill:${L.blue};font-weight:900">02 / 证据包</text>
-    <text x="960" y="458" class="num5" text-anchor="middle" style="font-size:42px;fill:${L.ink}">把过程压缩成</text>
-    <text x="960" y="514" class="num5" text-anchor="middle" style="font-size:42px;fill:${L.ink}">人能判断的对象</text>
-    <rect x="770" y="556" width="380" height="70" rx="12" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
-    <text x="960" y="572" class="small5" text-anchor="middle" style="font-size:23px;fill:${L.ink};font-weight:860">diff / 测试 / 日志 / 风险 / 回滚</text>
-    <rect x="806" y="636" width="308" height="52" rx="26" fill="#FFF6EE" stroke="${L.orange}" stroke-width="2"/>
-    <text x="960" y="644" class="num5" text-anchor="middle" style="font-size:31px;fill:${L.orange}">0.99^10 ≈ 0.90</text>
-    <text x="960" y="704" class="small5" text-anchor="middle" style="font-size:21px;fill:${L.muted};font-weight:720">长链路需要阶段性纠偏</text>
-    <text x="960" y="744" class="small5" text-anchor="middle" style="font-size:22px;fill:${L.ink};font-weight:850">证据服务判断，而不是替代判断</text>
-
-    <path d="M1234 536 H1294" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
-    <rect x="1314" y="372" width="510" height="416" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="1364" y="430" class="small5" style="fill:${L.orange};font-weight:900">03 / 阶段门禁</text>
-    <text x="1364" y="492" class="num5" style="font-size:42px">只在转换点放行</text>
-    ${v02Lines(["计划 → 实现：目标和边界", "实现 → 评审：契约、测试、owner", "评审 → 合并：风险、回滚、责任", "只看关键交付物，不追踪每步操作"], 1364, 568, 23, L.muted, 34, 680)}
-    ${v02Takeaway("新的工程确定性：过程可以概率探索，结果必须以证据、门禁和责任确定放行。", 1380)}
+    ${reliabilityCardV05(110, 400, "01", "概率探索层", "允许过程多路径", ["沙箱执行", "权限控制", "失败回注", "trace 可回放"], L.blue, "terminal")}
+    <path d="M620 570 H700" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
+    ${reliabilityCardV05(730, 374, "02", "证据包", "压缩成人能判断的对象", ["diff", "测试", "风险", "回滚"], L.blue, "file")}
+    <rect x="830" y="694" width="300" height="54" rx="27" fill="#FFF6EE" stroke="${L.orange}" stroke-width="2"/>
+    <text x="980" y="704" class="num5" text-anchor="middle" style="font-size:30px;fill:${L.orange}">0.99^10 ≈ 0.90</text>
+    <text x="980" y="762" class="small5" text-anchor="middle" style="font-size:22px;fill:${L.muted};font-weight:760">长链路需要阶段性纠偏</text>
+    <path d="M1240 570 H1320" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
+    ${reliabilityCardV05(1350, 400, "03", "阶段门禁", "只在转换点放行", ["计划 → 实现", "实现 → 评审", "评审 → 合并", "发布 → 复盘"], L.orange, "shield")}
+    ${v02Takeaway("新的工程确定性：过程可探索，结果必须以证据、门禁和责任放行。", 1320)}
   `;
   return svgBaseV5(slide, index, body);
 }
 
-function reliabilityGate(x, y, n, titleValue, desc) {
+function reliabilityCardV05(x, y, n, label, titleValue, chips, color, icon) {
+  const chipText = chips.map((chip, i) => {
+    const cx = x + 52 + (i % 2) * 180;
+    const cy = y + 236 + Math.floor(i / 2) * 56;
+    return `
+      <rect x="${cx}" y="${cy}" width="154" height="40" rx="20" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+      <text x="${cx + 77}" y="${cy + 9}" class="small5" text-anchor="middle" style="font-size:19px;fill:${L.ink};font-weight:900">${esc(chip)}</text>
+    `;
+  }).join("");
   return `
-    <circle cx="${x}" cy="${y + 18}" r="19" fill="${L.blue}" opacity="0.12"/>
-    <text x="${x}" y="${y + 6}" class="small5" text-anchor="middle" style="font-size:20px;fill:${L.blue};font-weight:900">${esc(n)}</text>
-    <text x="${x + 36}" y="${y - 2}" class="label5" style="font-size:27px">${esc(titleValue)}</text>
-    <text x="${x + 36}" y="${y + 40}" class="small5" style="font-size:22px;fill:${L.muted};font-weight:720">${esc(desc)}</text>
+    <rect x="${x}" y="${y}" width="460" height="392" rx="20" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="${x + 76}" cy="${y + 76}" r="46" fill="${color}" opacity="0.10"/>
+    ${v5Icon(icon, x + 48, y + 48, 56, color)}
+    <text x="${x + 144}" y="${y + 44}" class="num5" style="font-size:36px;fill:${color}">${esc(n)}</text>
+    <text x="${x + 210}" y="${y + 48}" class="small5" style="font-size:23px;fill:${color};font-weight:900">${esc(label)}</text>
+    <text x="${x + 52}" y="${y + 146}" class="num5" style="font-size:36px;fill:${L.ink}">${esc(titleValue)}</text>
+    <path d="M${x + 52} ${y + 202} H${x + 408}" stroke="${color}" stroke-width="4" stroke-linecap="round" opacity="0.75"/>
+    ${chipText}
   `;
 }
 
@@ -2139,57 +2113,58 @@ function slideExternalSignalsV02(slide, index) {
 function slideLifecycleV02(slide, index) {
   const body = `
     ${v5Header("02 / 速度代价", "速度的代价：把返工变成可管理队列", "处理办法不是再加审批，而是量化代价、分流风险、闭环修复。", 58)}
-    <rect x="112" y="390" width="500" height="380" rx="20" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <rect x="710" y="390" width="500" height="380" rx="20" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <rect x="1308" y="390" width="500" height="380" rx="20" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <path d="M612 580 H704" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
-    <path d="M1210 580 H1302" stroke="${L.orange}" stroke-width="5" fill="none" marker-end="url(#arrowGray)"/>
-
-    <circle cx="362" cy="450" r="36" fill="${L.blue}" opacity="0.12"/>
-    ${v5Icon("grid", 333, 421, 58, L.blue)}
-    <text x="362" y="510" class="small5" text-anchor="middle" style="font-size:22px;fill:${L.blue};font-weight:900">01 / 量化代价</text>
-    <text x="362" y="570" class="num5" text-anchor="middle" style="font-size:36px">看净时间，不看代码量</text>
-    ${v02Lines(["METR：熟悉项目也可能变慢", "Harness：评审、修 bug、", "工具切换成为隐形工作", "看 PR 等待、返工率、MTTR"], 362, 628, 24, L.muted, 34, 680, "middle")}
-
-    <circle cx="960" cy="450" r="36" fill="${L.orange}" opacity="0.12"/>
-    ${v5Icon("team", 931, 421, 58, L.orange)}
-    <text x="960" y="510" class="small5" text-anchor="middle" style="font-size:22px;fill:${L.orange};font-weight:900">02 / 风险分流</text>
-    <text x="960" y="570" class="num5" text-anchor="middle" style="font-size:36px">让变更先被正确排队</text>
-    ${v02Lines(["按 owner / diff / 模块热度", "SLO 影响做风险打标", "低风险自动验证", "高风险进入设计与人工评审"], 960, 628, 24, L.muted, 34, 680, "middle")}
-
-    <circle cx="1558" cy="450" r="36" fill="${L.blue}" opacity="0.12"/>
-    ${v5Icon("loop", 1529, 421, 58, L.blue)}
-    <text x="1558" y="510" class="small5" text-anchor="middle" style="font-size:22px;fill:${L.blue};font-weight:900">03 / 闭环修复</text>
-    <text x="1558" y="570" class="num5" text-anchor="middle" style="font-size:36px">让失败回到 Agent</text>
-    ${v02Lines(["SWE-CI：CI 循环看可维护性", "SWE-PRBench：AI 评审非裁决", "AgentTrace / AgentRx：", "定位失败步骤与根因"], 1558, 628, 24, L.muted, 34, 680, "middle")}
-
-    <rect x="300" y="804" width="1320" height="80" rx="14" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
-    <text x="960" y="826" class="body5" text-anchor="middle" style="font-size:27px"><tspan style="fill:${L.blue};font-weight:900">可执行方向：</tspan><tspan>PR 风险评分 + 证据包 + CI 失败回注 + Trace 归因</tspan></text>
+    ${speedCostCardV05(122, 410, "01", "量化代价", "看净时间，不看代码量", ["PR 等待", "返工率", "失败重跑", "MTTR"], L.blue, "grid")}
+    <path d="M610 590 H700" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
+    ${speedCostCardV05(720, 410, "02", "风险分流", "让变更先被正确排队", ["owner", "diff 大小", "模块热度", "SLO 影响"], L.orange, "team")}
+    <path d="M1208 590 H1298" stroke="${L.orange}" stroke-width="5" fill="none" marker-end="url(#arrowGray)"/>
+    ${speedCostCardV05(1318, 410, "03", "闭环修复", "让失败回到 Agent", ["CI 回注", "AI 评审辅助", "Trace 归因", "根因复盘"], L.blue, "loop")}
+    <rect x="300" y="806" width="1320" height="70" rx="14" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    <text x="960" y="824" class="body5" text-anchor="middle" style="font-size:27px"><tspan style="fill:${L.blue};font-weight:900">可执行方向：</tspan><tspan>PR 风险评分 + 证据包 + CI 失败回注 + Trace 归因</tspan></text>
     ${v02Takeaway("把速度收益从“写得快”，重新收敛到“交付快、返工少、风险可解释”。", 1200)}
   `;
   return svgBaseV5(slide, index, body);
 }
 
+function speedCostCardV05(x, y, n, label, titleValue, chips, color, icon) {
+  const chipText = chips.map((chip, i) => {
+    const cx = x + 50 + (i % 2) * 190;
+    const cy = y + 244 + Math.floor(i / 2) * 58;
+    return `
+      <rect x="${cx}" y="${cy}" width="166" height="42" rx="21" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+      <text x="${cx + 83}" y="${cy + 10}" class="small5" text-anchor="middle" style="font-size:19px;fill:${L.ink};font-weight:900">${esc(chip)}</text>
+    `;
+  }).join("");
+  return `
+    <rect x="${x}" y="${y}" width="488" height="350" rx="20" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="${x + 244}" cy="${y + 58}" r="38" fill="${color}" opacity="0.12"/>
+    ${v5Icon(icon, x + 214, y + 28, 60, color)}
+    <text x="${x + 244}" y="${y + 122}" class="small5" text-anchor="middle" style="font-size:22px;fill:${color};font-weight:900">${esc(n)} / ${esc(label)}</text>
+    <text x="${x + 244}" y="${y + 178}" class="num5" text-anchor="middle" style="font-size:34px">${esc(titleValue)}</text>
+    ${chipText}
+  `;
+}
+
 function slideQualityV02(slide, index) {
   const body = `
-    ${v5Header("03 / 工程质量与治理", "从门禁到智能护栏", "开源重公共责任，大厂重复杂交付；共同核心是责任链和证据链。", 66)}
-    <rect x="128" y="420" width="520" height="312" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="188" y="478" class="small5" style="fill:${L.blue};font-weight:900">开源高质量要求</text>
-    <text x="188" y="536" class="num5" style="font-size:40px">维护者要验证海量变更</text>
-    ${v02Lines(["贡献者对提交负责", "维护者看方向、可读性、测试、长期演进", "核心问题：如何提升对提交代码质量", "的信任度"], 188, 604, 23, L.muted, 31, 650)}
-    <rect x="1272" y="420" width="520" height="312" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="1332" y="478" class="small5" style="fill:${L.orange};font-weight:900">大厂复杂交付</text>
-    <text x="1332" y="536" class="num5" style="font-size:40px">跨团队看确定性工件</text>
-    ${v02Lines(["需求 / 设计 / API / SLO / 证据", "Artifact 贯穿计划、实现、发布与复盘", "核心问题：哪些产物必须稳定可追踪"], 1332, 604, 23, L.muted, 34, 650)}
-    <circle cx="960" cy="590" r="166" fill="${L.bg}" stroke="${L.line2}" stroke-width="3"/>
-    <text x="960" y="514" class="num5" text-anchor="middle" style="font-size:38px;fill:${L.blue}">责任链</text>
-    <text x="960" y="582" class="num5" text-anchor="middle" style="font-size:38px;fill:${L.ink}">证据链</text>
-    <text x="960" y="650" class="num5" text-anchor="middle" style="font-size:38px;fill:${L.orange}">Artifact 链</text>
-    <path d="M648 576 H782" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
-    <path d="M1138 576 H1272" stroke="${L.orange}" stroke-width="5" fill="none" marker-end="url(#arrowGray)"/>
-    <rect x="300" y="805" width="1320" height="92" rx="14" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
-    <text x="960" y="830" class="body5" text-anchor="middle" style="font-size:30px">小批量、强证据、可回滚，是抵消 AI 大规模变更不确定性的工程底座。</text>
-    ${v02Takeaway("质量治理的核心不是多一道审批，而是每个小变更都带着责任、证据和稳定工件前进。", 1500)}
+    ${v5Header("03 / 工程质量与治理", "责任、证据与工程协议", "开源重公共责任，大厂重复杂交付；共同核心是把质量要求变成可执行证据。", 64)}
+    <rect x="110" y="410" width="520" height="300" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="164" y="462" class="small5" style="fill:${L.blue};font-weight:900">开源高质量要求</text>
+    <text x="164" y="522" class="num5" style="font-size:38px">提升对提交质量的信任</text>
+    ${v02Lines(["贡献者对代码负责", "维护者看方向、可读性、测试", "小批量变更 + 可复核证据"], 164, 590, 23, L.muted, 34, 650)}
+    <rect x="1290" y="410" width="520" height="300" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="1344" y="462" class="small5" style="fill:${L.orange};font-weight:900">大厂复杂交付</text>
+    <text x="1344" y="522" class="num5" style="font-size:38px">稳定工件贯穿系统</text>
+    ${v02Lines(["需求 / 设计 / API / SLO", "证据贯穿计划、发布与复盘", "owner、回滚、合规可追踪"], 1344, 590, 23, L.muted, 34, 650)}
+    <path d="M632 560 H760" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
+    <path d="M1160 560 H1288" stroke="${L.orange}" stroke-width="5" fill="none" marker-end="url(#arrowGray)"/>
+    <circle cx="960" cy="560" r="170" fill="${L.bg}" stroke="${L.line2}" stroke-width="3"/>
+    <text x="960" y="478" class="num5" text-anchor="middle" style="font-size:36px;fill:${L.blue}">责任链</text>
+    <text x="960" y="548" class="num5" text-anchor="middle" style="font-size:36px;fill:${L.ink}">证据链</text>
+    <text x="960" y="618" class="num5" text-anchor="middle" style="font-size:36px;fill:${L.orange}">Artifact 链</text>
+    <rect x="382" y="770" width="1156" height="86" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="442" y="792" class="small5" style="font-size:24px;fill:${L.blue};font-weight:900">工程协议化</text>
+    <text x="662" y="790" class="body5" style="font-size:27px">DFX / TDD / Review 从流程习惯变成 Agent 可执行、工具可检查、人可复核的契约。</text>
+    ${v02Takeaway("质量治理不是多一道审批，而是每个小变更都带着责任、证据和稳定工件前进。", 1480)}
   `;
   return svgBaseV5(slide, index, body);
 }
@@ -2210,7 +2185,7 @@ function slideFutureQualityV02(slide, index) {
 
 function slideBitfunV02(slide, index) {
   const body = `
-    ${v5Header("03 / BitFun 缩影", "把开发过程组织成团队工作流", "从 Issue 到 PR，不是聊天产物堆叠，而是交付对象、证据包和阶段门禁。", 62)}
+    ${v5Header("03 / 工作流落地", "把 AI 开发组织成可治理工作流", "从 Issue 到 PR，不是聊天产物堆叠，而是交付对象、证据包和阶段门禁。", 62)}
     <path d="M600 490 H690" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
     <path d="M1190 490 H1280" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
     <path d="M1530 584 V620 H770 V636" stroke="${L.orange}" stroke-width="5" fill="none" marker-end="url(#arrowGray)" opacity="0.88"/>
@@ -2230,33 +2205,30 @@ function slideBitfunV02(slide, index) {
 function slideRoleV02(slide, index) {
   const body = `
     ${v5Header("04 / 开发者角色", "在新工程系统中找准位置", "人承担目标、边界、证据和责任；AI 承担生成、检索、运行和反馈。", 64)}
-    <rect x="120" y="408" width="404" height="402" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <rect x="562" y="452" width="404" height="402" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <rect x="1004" y="408" width="404" height="402" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <rect x="1416" y="452" width="404" height="402" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    ${roleColumnV02(120, 408, "01", "定义问题", "价值、边界、风险", "信息整理、备选方案", L.blue)}
-    ${roleColumnV02(562, 452, "02", "组织上下文", "架构取舍、事实源", "检索、摘要、计划草案", L.blue)}
-    ${roleColumnV02(1004, 408, "03", "编排执行", "权限、节奏、验证矩阵", "生成、运行、反馈", L.orange)}
-    ${roleColumnV02(1416, 452, "04", "证据放行", "责任、解释、复盘", "trace、diff、测试", L.orange)}
-    <path d="M510 604 H548 M952 648 H990 M1394 604 H1402" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
-    ${v02Takeaway("关键不是“谁替代谁”，而是人在目标、边界、证据、责任上站稳。", 1400)}
+    <path d="M508 604 H548 M933 604 H973 M1358 604 H1398" stroke="${L.blue}" stroke-width="4" fill="none" marker-end="url(#arrowBlue)" opacity="0.72"/>
+    ${roleColumnV02(130, 420, "01", "定义问题", "价值、边界、风险", "信息整理、备选方案", L.blue)}
+    ${roleColumnV02(555, 420, "02", "组织上下文", "架构取舍、事实源", "检索、摘要、计划草案", L.blue)}
+    ${roleColumnV02(980, 420, "03", "编排执行", "权限、节奏、验证", "生成、运行、反馈", L.orange)}
+    ${roleColumnV02(1405, 420, "04", "证据放行", "责任、解释、复盘", "trace、diff、测试", L.orange)}
+    ${v02Takeaway("关键不是“谁替代谁”，而是人在目标、边界、证据、责任上站稳。", 1320)}
   `;
   return svgBaseV5(slide, index, body);
 }
 
 function roleColumnV02(x, y, n, titleValue, humanText, aiText, color) {
-  const w = 404;
+  const w = 380;
   return `
+    <rect x="${x}" y="${y}" width="${w}" height="400" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
     <text x="${x + 36}" y="${y + 34}" class="num5" style="font-size:44px;fill:${color}">${esc(n)}</text>
     <text x="${x + 36}" y="${y + 100}" class="label5" style="font-size:32px">${esc(titleValue)}</text>
-    <path d="M${x + 36} ${y + 164} H${x + 320}" stroke="${L.line2}" stroke-width="3"/>
+    <path d="M${x + 36} ${y + 164} H${x + w - 50}" stroke="${L.line2}" stroke-width="3"/>
     <rect x="${x + 36}" y="${y + 202}" width="66" height="34" rx="17" fill="${L.blue}" opacity="0.12"/>
     <text x="${x + 69}" y="${y + 209}" class="small5" text-anchor="middle" style="font-size:21px;fill:${L.blue};font-weight:900">人</text>
-    <text x="${x + 118}" y="${y + 207}" class="small5" style="font-size:24px;fill:${L.ink};font-weight:820">${esc(humanText)}</text>
+    <text x="${x + 118}" y="${y + 207}" class="small5" style="font-size:23px;fill:${L.ink};font-weight:820">${esc(humanText)}</text>
     <path d="M${x + 36} ${y + 266} H${x + w - 44}" stroke="${L.line2}" stroke-width="2"/>
     <rect x="${x + 36}" y="${y + 300}" width="66" height="34" rx="17" fill="${L.orange}" opacity="0.13"/>
     <text x="${x + 69}" y="${y + 307}" class="small5" text-anchor="middle" style="font-size:21px;fill:${L.orange};font-weight:900">AI</text>
-    <text x="${x + 118}" y="${y + 305}" class="small5" style="font-size:24px;fill:${L.ink};font-weight:820">${esc(aiText)}</text>
+    <text x="${x + 118}" y="${y + 305}" class="small5" style="font-size:23px;fill:${L.ink};font-weight:820">${esc(aiText)}</text>
     <circle cx="${x + w - 70}" cy="${y + 76}" r="28" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
     ${v5Icon(n === "01" ? "chat" : n === "02" ? "file" : n === "03" ? "terminal" : "check", x + w - 88, y + 58, 36, color)}
   `;
@@ -2269,10 +2241,10 @@ function slidePredictionV02(slide, index) {
     <path d="M320 472 C650 398 1240 408 1580 494" stroke="${L.orange}" stroke-width="4" fill="none" stroke-dasharray="10 14" opacity="0.32"/>
     ${newGradCardV05(120, 420, "01", "读懂与解释代码", ["能复现错误、读懂 diff、", "解释关键实现与边界条件。"], L.blue, "code")}
     ${newGradCardV05(1070, 420, "02", "证据驱动交付", ["把测试、CI、trace、review", "当成提交的一部分。"], L.orange, "check")}
-    ${newGradCardV05(120, 650, "03", "组织上下文", ["写清楚需求、约束、验收、", "ADR 与风险说明。"], L.orange, "file")}
+    ${newGradCardV05(120, 650, "03", "理解需求与场景", ["产品定位、用户路径、体验约束、", "验收标准要能讲清楚。"], L.orange, "file")}
     ${newGradCardV05(1070, 650, "04", "承担责任边界", ["判断该不该做、能不能合、", "出了问题如何解释。"], L.blue, "shield")}
     <rect x="356" y="846" width="1208" height="70" rx="16" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="960" y="862" class="body5" text-anchor="middle" style="font-size:29px">给新人最实际的判断：AI 是加速器，不是成长替代品；把“快”转化为“可靠”。</text>
+    <text x="960" y="862" class="body5" text-anchor="middle" style="font-size:28px">给新人最实际的判断：把“能写代码”升级为“能理解问题并可靠交付”。</text>
     ${v02Takeaway("讨论题：哪些任务可以交给 AI，哪些能力必须自己亲手练出来？", 1180)}
   `;
   return svgBaseV5(slide, index, body);
@@ -2487,7 +2459,7 @@ node .\\docs\\report\\ai-redefines-software-development-presentation\\build-deck
 
 ## V0.2 材料
 
-- \`ai-redefines-software-development-v0.2.pptx\`：V0.2 演讲用 PPTX，${slides.length} 页。
+- \`ai-redefines-software-development-v0.2.pptx\`：V0.2 演讲用 PPTX，14 页。
 - \`speaker-notes-v0.2.md\`：V0.2 分页讲稿，按约 15 分钟节奏扩展。
 - \`slides-png-v0.2/\`：V0.2 逐页 SVG 与 PNG。
 - \`preview-contact-sheet-v0.2.png\`：V0.2 缩略总览。
@@ -2503,7 +2475,7 @@ V0.2 主线：BitFun 的高速 AI 开发经验 -> 代码量膨胀后的真实问
 
 ## V0.3 材料
 
-- \`ai-redefines-software-development-v0.3.pptx\`：V0.3 演讲用 PPTX，${slides.length} 页。
+- \`ai-redefines-software-development-v0.3.pptx\`：V0.3 演讲用 PPTX，14 页。
 - \`speaker-notes-v0.3.md\`：V0.3 分页讲稿，按约 15 分钟节奏扩展。
 - \`slides-png-v0.3/\`：V0.3 逐页 SVG 与 PNG。
 - \`preview-contact-sheet-v0.3.png\`：V0.3 缩略总览。
@@ -2519,7 +2491,7 @@ V0.3 主线：BitFun 的高速 AI 开发经验 -> 代码量膨胀后的真实问
 
 ## V0.4 材料
 
-- \`ai-redefines-software-development-v0.4.pptx\`：V0.4 演讲用 PPTX，${slides.length} 页。
+- \`ai-redefines-software-development-v0.4.pptx\`：V0.4 演讲用 PPTX，14 页。
 - \`speaker-notes-v0.4.md\`：V0.4 分页讲稿，沿用 15 分钟节奏。
 - \`slides-png-v0.4/\`：V0.4 逐页 SVG 与 PNG。
 - \`preview-contact-sheet-v0.4.png\`：V0.4 缩略总览。

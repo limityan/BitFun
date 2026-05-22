@@ -53,7 +53,7 @@
       .micro5 { font-size: 19px; font-weight: 760; fill: #5F6670; }
     </style>
     <text x="42" y="46" class="brand5">BitFun</text>
-    <text x="1840" y="50" class="small5" text-anchor="end">01 / 14</text>
+    <text x="1840" y="50" class="small5" text-anchor="end">01 / 13</text>
 
 
     <text x="96" y="154" class="small5" style="fill:#106BEF;font-weight:900">BitFun / AI 软件工程报告</text>
@@ -69,8 +69,9 @@
     <g transform="translate(1530 286) scale(1.21875)"><circle cx="32" cy="22" r="8" stroke="#106BEF" stroke-width="2.4615384615384617" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="18" cy="30" r="6" stroke="#106BEF" stroke-width="2.4615384615384617" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="46" cy="30" r="6" stroke="#106BEF" stroke-width="2.4615384615384617" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M14 50 q18 -16 36 0 M4 54 q14 -12 28 -5 M32 49 q14 -7 28 5" stroke="#106BEF" stroke-width="2.4615384615384617" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
     <rect x="1206" y="502" width="356" height="56" rx="28" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
     <text x="1384" y="516" class="small5" text-anchor="middle" style="font-size:22px;fill:#050608;font-weight:900">生成能力之后，工程系统如何升级</text>
-    <text x="96" y="620" class="body5">演讲者：颜仲南</text>
-    <text x="96" y="678" class="body5" style="font-size:31px;fill:#050608;font-weight:820">身份：华为 软件IDE实验室</text>
+    <text x="96" y="620" class="body5">演讲者：</text>
+    <text x="244" y="620" class="body5">颜仲南</text>
+    <text x="244" y="678" class="body5" style="font-size:31px;fill:#050608;font-weight:820">华为 软件IDE实验室</text>
     <text x="96" y="742" class="muted5">2026.05</text>
 
 </svg>

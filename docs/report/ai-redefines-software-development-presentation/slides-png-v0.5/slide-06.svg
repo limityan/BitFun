@@ -61,7 +61,7 @@
       .micro5 { font-size: 19px; font-weight: 760; fill: #5F6670; }
     </style>
     <text x="42" y="46" class="brand5">BitFun</text>
-    <text x="1840" y="50" class="small5" text-anchor="end">06 / 14</text>
+    <text x="1840" y="50" class="small5" text-anchor="end">06 / 13</text>
 
 
 
@@ -71,32 +71,81 @@
     <path d="M96 356 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
     <circle cx="230" cy="356" r="5.5" fill="#FF5A1F"/>
 
-    <rect x="96" y="372" width="510" height="416" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="146" y="430" class="small5" style="fill:#106BEF;font-weight:900">01 / 概率探索层</text>
-    <text x="146" y="492" class="num5" style="font-size:42px">允许过程多路径</text>
-    <text x="146" y="568" class="small5" style="font-size:23px;fill:#5F6670;font-weight:680">沙箱执行 / 权限控制</text><text x="146" y="602" class="small5" style="font-size:23px;fill:#5F6670;font-weight:680">危险操作拦截 / 失败回注</text><text x="146" y="636" class="small5" style="font-size:23px;fill:#5F6670;font-weight:680">trace 用于复现，不让人逐步盯操作</text><text x="146" y="670" class="small5" style="font-size:23px;fill:#5F6670;font-weight:680">过程可变，但必须可停下、可追溯</text>
 
-    <path d="M628 536 H690" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
-    <rect x="708" y="344" width="504" height="456" rx="22" fill="#FFFFFF" stroke="#106BEF" stroke-width="3" filter="url(#paperShadow)"/>
-    <text x="960" y="408" class="small5" text-anchor="middle" style="fill:#106BEF;font-weight:900">02 / 证据包</text>
-    <text x="960" y="458" class="num5" text-anchor="middle" style="font-size:42px;fill:#050608">把过程压缩成</text>
-    <text x="960" y="514" class="num5" text-anchor="middle" style="font-size:42px;fill:#050608">人能判断的对象</text>
-    <rect x="770" y="556" width="380" height="70" rx="12" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-    <text x="960" y="572" class="small5" text-anchor="middle" style="font-size:23px;fill:#050608;font-weight:860">diff / 测试 / 日志 / 风险 / 回滚</text>
-    <rect x="806" y="636" width="308" height="52" rx="26" fill="#FFF6EE" stroke="#FF5A1F" stroke-width="2"/>
-    <text x="960" y="644" class="num5" text-anchor="middle" style="font-size:31px;fill:#FF5A1F">0.99^10 ≈ 0.90</text>
-    <text x="960" y="704" class="small5" text-anchor="middle" style="font-size:21px;fill:#5F6670;font-weight:720">长链路需要阶段性纠偏</text>
-    <text x="960" y="744" class="small5" text-anchor="middle" style="font-size:22px;fill:#050608;font-weight:850">证据服务判断，而不是替代判断</text>
+    <rect x="110" y="400" width="460" height="392" rx="20" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="186" cy="476" r="46" fill="#106BEF" opacity="0.10"/>
+    <g transform="translate(158 448) scale(0.875)"><path d="M18 18 L34 32 L18 46" stroke="#106BEF" stroke-width="3.4285714285714284" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M38 48 h16" stroke="#106BEF" stroke-width="3.4285714285714284" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    <text x="254" y="444" class="num5" style="font-size:36px;fill:#106BEF">01</text>
+    <text x="320" y="448" class="small5" style="font-size:23px;fill:#106BEF;font-weight:900">概率探索层</text>
+    <text x="162" y="546" class="num5" style="font-size:36px;fill:#050608">允许过程多路径</text>
+    <path d="M162 602 H518" stroke="#106BEF" stroke-width="4" stroke-linecap="round" opacity="0.75"/>
 
-    <path d="M1234 536 H1294" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
-    <rect x="1314" y="372" width="510" height="416" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="1364" y="430" class="small5" style="fill:#FF5A1F;font-weight:900">03 / 阶段门禁</text>
-    <text x="1364" y="492" class="num5" style="font-size:42px">只在转换点放行</text>
-    <text x="1364" y="568" class="small5" style="font-size:23px;fill:#5F6670;font-weight:680">计划 → 实现：目标和边界</text><text x="1364" y="602" class="small5" style="font-size:23px;fill:#5F6670;font-weight:680">实现 → 评审：契约、测试、owner</text><text x="1364" y="636" class="small5" style="font-size:23px;fill:#5F6670;font-weight:680">评审 → 合并：风险、回滚、责任</text><text x="1364" y="670" class="small5" style="font-size:23px;fill:#5F6670;font-weight:680">只看关键交付物，不追踪每步操作</text>
+      <rect x="162" y="636" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="239" y="645" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">沙箱执行</text>
 
-    <rect x="270" y="936" width="1380" height="78" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
-    <path d="M346 956 v38" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="992" y="958" class="body5" text-anchor="middle" style="font-size:30px">新的工程确定性：过程可以概率探索，结果必须以证据、门禁和责任确定放行。</text>
+      <rect x="342" y="636" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="419" y="645" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">权限控制</text>
+
+      <rect x="162" y="692" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="239" y="701" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">失败回注</text>
+
+      <rect x="342" y="692" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="419" y="701" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">trace 可回放</text>
+
+
+    <path d="M620 570 H700" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
+
+    <rect x="730" y="374" width="460" height="392" rx="20" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="806" cy="450" r="46" fill="#106BEF" opacity="0.10"/>
+    <g transform="translate(778 422) scale(0.875)"><path d="M18 8 h22 l10 10 v38 H18 Z M40 8 v12 h12 M26 32 h20 M26 42 h18" stroke="#106BEF" stroke-width="3.4285714285714284" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    <text x="874" y="418" class="num5" style="font-size:36px;fill:#106BEF">02</text>
+    <text x="940" y="422" class="small5" style="font-size:23px;fill:#106BEF;font-weight:900">证据包</text>
+    <text x="782" y="520" class="num5" style="font-size:36px;fill:#050608">压缩成人能判断的对象</text>
+    <path d="M782 576 H1138" stroke="#106BEF" stroke-width="4" stroke-linecap="round" opacity="0.75"/>
+
+      <rect x="782" y="610" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="859" y="619" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">diff</text>
+
+      <rect x="962" y="610" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1039" y="619" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">测试</text>
+
+      <rect x="782" y="666" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="859" y="675" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">风险</text>
+
+      <rect x="962" y="666" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1039" y="675" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">回滚</text>
+
+
+    <rect x="830" y="694" width="300" height="54" rx="27" fill="#FFF6EE" stroke="#FF5A1F" stroke-width="2"/>
+    <text x="980" y="704" class="num5" text-anchor="middle" style="font-size:30px;fill:#FF5A1F">0.99^10 ≈ 0.90</text>
+    <text x="980" y="762" class="small5" text-anchor="middle" style="font-size:22px;fill:#5F6670;font-weight:760">长链路需要阶段性纠偏</text>
+    <path d="M1240 570 H1320" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
+
+    <rect x="1350" y="400" width="460" height="392" rx="20" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="1426" cy="476" r="46" fill="#FF5A1F" opacity="0.10"/>
+    <g transform="translate(1398 448) scale(0.875)"><path d="M32 6 L52 14 V30 q0 18 -20 28 Q12 48 12 30 V14 Z M22 32 l7 7 l15 -18" stroke="#FF5A1F" stroke-width="3.4285714285714284" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    <text x="1494" y="444" class="num5" style="font-size:36px;fill:#FF5A1F">03</text>
+    <text x="1560" y="448" class="small5" style="font-size:23px;fill:#FF5A1F;font-weight:900">阶段门禁</text>
+    <text x="1402" y="546" class="num5" style="font-size:36px;fill:#050608">只在转换点放行</text>
+    <path d="M1402 602 H1758" stroke="#FF5A1F" stroke-width="4" stroke-linecap="round" opacity="0.75"/>
+
+      <rect x="1402" y="636" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1479" y="645" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">计划 → 实现</text>
+
+      <rect x="1582" y="636" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1659" y="645" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">实现 → 评审</text>
+
+      <rect x="1402" y="692" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1479" y="701" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">评审 → 合并</text>
+
+      <rect x="1582" y="692" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1659" y="701" class="small5" text-anchor="middle" style="font-size:19px;fill:#050608;font-weight:900">发布 → 复盘</text>
+
+
+
+    <rect x="300" y="954" width="1320" height="64" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <path d="M370 971 v30" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <text x="986" y="970" class="body5" text-anchor="middle" style="font-size:27px">新的工程确定性：过程可探索，结果必须以证据、门禁和责任放行。</text>
 
 
 </svg>
