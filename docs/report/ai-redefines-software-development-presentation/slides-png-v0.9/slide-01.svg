@@ -57,7 +57,7 @@
 
 
     <text x="96" y="154" class="small5" style="fill:#106BEF;font-weight:900">BitFun / AI 软件工程报告</text>
-    <text x="96" y="240" class="h15" style="font-size:82px">AI 如何重新定义软件开发</text>
+    <text x="96" y="240" class="h15" style="font-size:60px">AI 重新定义开发</text>
     <text x="100" y="360" class="sub5">从代码产能，到可治理交付</text>
     <path d="M96 436 h164" stroke="#106BEF" stroke-width="9" stroke-linecap="round"/>
     <circle cx="288" cy="436" r="6" fill="#FF5A1F"/>

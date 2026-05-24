@@ -64,29 +64,24 @@
     <text x="1840" y="50" class="small5" text-anchor="end">12 / 12</text>
 
 
-    <text x="96" y="150" class="small5" style="fill:#106BEF;font-weight:900">谢谢 / 讨论</text>
-    <text x="96" y="246" class="h15" style="font-size:90px">谢谢</text>
-    <path d="M96 386 h150" stroke="#106BEF" stroke-width="9" stroke-linecap="round"/>
-    <circle cx="276" cy="386" r="6" fill="#FF5A1F"/>
-    <rect x="170" y="500" width="1580" height="340" rx="22" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="240" y="556" class="label5" style="font-size:33px">留给 Q&amp;A 的三个讨论入口</text>
+    <text x="96" y="152" class="small5" style="fill:#106BEF;font-weight:900">AI 编程、工程治理、开发者角色</text>
+    <text x="96" y="248" class="h15" style="font-size:60px">谢谢</text>
+    <path d="M96 346 h150" stroke="#106BEF" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="276" cy="346" r="6" fill="#FF5A1F"/>
+    <rect x="170" y="500" width="1580" height="306" rx="22" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="240" y="558" class="label5" style="font-size:34px">两个落地问题</text>
 
-    <text x="248" y="638" class="micro5" style="font-size:21px;fill:#106BEF;font-weight:900">Google / DeepMind</text>
-    <circle cx="548" cy="651" r="6" fill="#106BEF"/>
-    <text x="578" y="636" class="body5" style="font-size:29px;fill:#050608;font-weight:850">任务什么时候适合单 Agent、并行 Agent 或集中编排？</text>
-
-
-    <text x="248" y="716" class="micro5" style="font-size:21px;fill:#FF5A1F;font-weight:900">IBM MAP / Gartner</text>
-    <circle cx="548" cy="729" r="6" fill="#FF5A1F"/>
-    <text x="578" y="714" class="body5" style="font-size:29px;fill:#050608;font-weight:850">工具建设要不要从单点能力转向运行基座？</text>
+    <text x="248" y="654" class="micro5" style="font-size:21px;fill:#106BEF;font-weight:900">Gartner / IBM MAP</text>
+    <circle cx="548" cy="667" r="6" fill="#106BEF"/>
+    <text x="578" y="652" class="body5" style="font-size:29px;fill:#050608;font-weight:850">先选哪条高频流程，做任务、环境、权限、评审的控制面？</text>
 
 
-    <text x="248" y="794" class="micro5" style="font-size:21px;fill:#106BEF;font-weight:900">MSR 2026</text>
-    <circle cx="548" cy="807" r="6" fill="#106BEF"/>
-    <text x="578" y="792" class="body5" style="font-size:29px;fill:#050608;font-weight:850">质量机制如何持续放大速度收益？</text>
+    <text x="248" y="736" class="micro5" style="font-size:21px;fill:#FF5A1F;font-weight:900">DORA / MSR</text>
+    <circle cx="548" cy="749" r="6" fill="#FF5A1F"/>
+    <text x="578" y="734" class="body5" style="font-size:29px;fill:#050608;font-weight:850">哪些质量指标要前置到任务、生成和合并之前？</text>
 
-    <rect x="1090" y="238" width="470" height="178" rx="18" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-    <text x="1144" y="286" class="num5" style="font-size:56px;fill:#106BEF">Q&amp;A</text>
-    <g transform="translate(1424 292) scale(1.34375)"><path d="M12 18 h40 q8 0 8 8 v18 q0 8 -8 8 H32 l-12 9 v-9 h-8 q-8 0 -8-8 V26 q0-8 8-8 Z" stroke="#106BEF" stroke-width="2.2325581395348837" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="24" cy="35" r="2.4" fill="#106BEF"/><circle cx="34" cy="35" r="2.4" fill="#106BEF"/><circle cx="44" cy="35" r="2.4" fill="#106BEF"/></g>
+    <rect x="1120" y="238" width="440" height="170" rx="18" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+    <text x="1172" y="284" class="num5" style="font-size:54px;fill:#106BEF">Q&amp;A</text>
+    <g transform="translate(1424 292) scale(1.28125)"><path d="M12 18 h40 q8 0 8 8 v18 q0 8 -8 8 H32 l-12 9 v-9 h-8 q-8 0 -8-8 V26 q0-8 8-8 Z" stroke="#106BEF" stroke-width="2.341463414634146" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="24" cy="35" r="2.4" fill="#106BEF"/><circle cx="34" cy="35" r="2.4" fill="#106BEF"/><circle cx="44" cy="35" r="2.4" fill="#106BEF"/></g>
 
 </svg>

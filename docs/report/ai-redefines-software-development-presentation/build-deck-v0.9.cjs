@@ -216,15 +216,15 @@ const slidesV05Archive = [
     render: slidePredictionV02,
   },
   {
-    section: "THANKS AND Q&A",
-    title: "谢谢",
-    subtitle: "AI 编程、工程治理、开发者角色",
-    time: "约 0.8 分钟（收束 + Q&A 入口）",
-    focus: "收束主旨并把讨论引向收益指标、确定性证据和开发者成长。",
-    question: "AI 编程真正值得追踪的收益指标、证据指标和成长指标分别是什么？",
+    section: "收束",
+    title: "下一步怎么落地",
+    subtitle: "两个可验证试点",
+    time: "约 0.8 分钟",
+    focus: "把收束从泛泛讨论改为两个可执行试点：运行控制面和质量前置。",
+    question: "如果只选两个试点来验证 AI 研发正收益，应该先做哪两个？",
     script:
-      "最后把今天的内容收束成三句话。第一，AI 扩大了个人产出，但团队不能只看代码量，而要看净交付时间、返工率、评审压力和线上风险。第二，AI 的执行过程可以概率化，但放行必须依赖确定性证据，包括测试、trace、风险说明、owner 和回滚路径。第三，开发者的成长不会停留在会不会写代码，而会更多转向架构判断、上下文组织、证据设计和工程治理。如果只把 AI 当成写代码工具，会低估它对流程的影响；如果只把 AI 当成替代人，也会低估人在目标、边界和责任上的价值。接下来可以围绕 AI 编程、工程治理和开发者角色继续交流。",
-    transition: "进入 Q&A。",
+      "最后把内容落成两个可验证试点。第一是运行控制面试点。Gartner 2026 判断企业 AI coding agent 会从单一 IDE 体验走向治理、验证和控制平台；IBM MAP 也说明生产 Agent 更常见的成功形态是短链路、可控和人类评估。因此 BitFun 可以先选一条高频工作流，例如 Issue 到分支、测试、评审，把任务入口、隔离工作区、权限、阶段门禁和评审材料串起来，用净周期、等待、返工和失败重跑来判断收益。第二是质量前置试点。DORA 2025 说明 AI 会放大组织已有能力，MSR 2026 也提醒短期速度收益可能被复杂度和质量风险吞回。所以不要只看行数或提交数，而要把检查面写到任务前，把测试、日志和轨迹收进生成中，把风险仲裁、契约测试和回滚说明放到合并前。这样 AI 的正收益就不是一句愿景，而是可以被衡量、被复盘、被持续放大的工程能力。",
+    transition: "进入交流。",
     render: slideThanksV02,
   },
 ];
@@ -375,15 +375,15 @@ const slides = [
     render: slideResponsibilityV06,
   },
   {
-    section: "THANKS AND Q&A",
-    title: "谢谢",
-    subtitle: "从代码产能，到可治理交付",
-    time: "约 0.9 分钟（收束 + Q&A 入口）",
-    focus: "用三条外部研究引出的讨论问题收束，给 Q&A 留入口。",
-    question: "如果 AI 已经进入日常开发，团队最应该先讨论收益、治理，还是人的判断位置？",
+    section: "收束",
+    title: "下一步怎么落地",
+    subtitle: "两个可验证试点",
+    time: "约 0.9 分钟",
+    focus: "用近期行业和论文信号收束为两个落地试点：运行控制面和质量前置。",
+    question: "如果只选两个试点来验证 AI 研发正收益，应该先做哪两个？",
     script:
-      "最后我不把结论收成标准答案，而是留三个讨论入口。第一，Google 和 DeepMind 的 agent scaling 研究说明多 Agent 不是越多越好，那么我们在团队里该如何判断任务适合单 Agent、并行 Agent 还是集中编排。第二，IBM MAP 和 Gartner 的信号都指向生产化：真实企业更关心短链路、可控、人类评估、治理和验证平台，那么我们的工具建设要不要从单点能力转向运行基座。第三，MSR 2026 提醒我们，速度提升可能被复杂度和质量风险吞回，那么团队要如何把质量债、返工率和维护成本纳入 AI 研发的收益计算。用一句话收束：AI 重新定义软件开发，不是因为它能写更多代码，而是因为它逼我们把软件工程从经验流程，升级成可验证、可治理、可复盘的系统。",
-    transition: "进入 Q&A。",
+      "最后把内容落成两个可验证试点。第一是运行控制面试点。Gartner 2026 判断企业 AI coding agent 会从单一 IDE 体验走向治理、验证和控制平台；IBM MAP 也说明生产 Agent 更常见的成功形态是短链路、可控和人类评估。因此 BitFun 可以先选一条高频工作流，例如 Issue 到分支、测试、评审，把任务入口、隔离工作区、权限、阶段门禁和评审材料串起来，用净周期、等待、返工和失败重跑来判断收益。第二是质量前置试点。DORA 2025 说明 AI 会放大组织已有能力，MSR 2026 也提醒短期速度收益可能被复杂度和质量风险吞回。所以不要只看行数或提交数，而要把检查面写到任务前，把测试、日志和轨迹收进生成中，把风险仲裁、契约测试和回滚说明放到合并前。这样 AI 的正收益就不是一句愿景，而是可以被衡量、被复盘、被持续放大的工程能力。",
+    transition: "进入交流。",
     render: slideThanksV02,
   },
 ];
@@ -486,8 +486,13 @@ const positiveToneOverrides = [
   },
   {
     index: 12,
+    title: "下一步怎么落地",
+    subtitle: "两个可验证试点",
+    time: "约 0.9 分钟",
+    focus: "用近期行业和论文信号收束为两个落地试点：运行控制面和质量前置。",
+    question: "如果只选两个试点来验证 AI 研发正收益，应该先做哪两个？",
     script:
-      "最后我不把结论收成标准答案，而是留三个讨论入口。第一，Google 和 DeepMind 的 agent scaling 研究说明多 Agent 要按任务结构设计，那么我们在团队里该如何判断任务适合单 Agent、并行 Agent 还是集中编排。第二，IBM MAP 和 Gartner 的信号都指向生产化：真实企业更关心短链路、可控、人类评估、治理和验证平台，那么我们的工具建设如何从单点能力走向运行基座。第三，MSR 2026 提醒我们，速度提升需要质量机制承接，那么团队要如何把质量、返工率和维护收益纳入 AI 研发的收益计算。用一句话收束：AI 一定会持续重新定义软件开发，它带来的不是一次工具替换，而是一轮工程系统升级。周边工程能力、团队沟通方式和个人技能跟上以后，这份正收益会被持续放大。",
+      "最后把内容落成两个可验证试点。第一是运行控制面试点。Gartner 2026 判断企业 AI coding agent 会从单一 IDE 体验走向治理、验证和控制平台；IBM MAP 也说明生产 Agent 更常见的成功形态是短链路、可控和人类评估。因此 BitFun 可以先选一条高频工作流，例如 Issue 到分支、测试、评审，把任务入口、隔离工作区、权限、阶段门禁和评审材料串起来，用净周期、等待、返工和失败重跑来判断收益。第二是质量前置试点。DORA 2025 说明 AI 会放大组织已有能力，MSR 2026 也提醒短期速度收益可能被复杂度和质量风险吞回。所以不要只看行数或提交数，而要把检查面写到任务前，把测试、日志和轨迹收进生成中，把风险仲裁、契约测试和回滚说明放到合并前。这样 AI 的正收益就不是一句愿景，而是可以被衡量、被复盘、被持续放大的工程能力。",
   },
 ];
 
@@ -551,6 +556,64 @@ const v09Slides = [
 
 slides.length = 0;
 slides.push(...v09Slides);
+
+const compactFinalTitlesV09 = [
+  {
+    title: "AI 重新定义开发",
+    subtitle: "从代码产能，到可治理交付",
+  },
+  {
+    title: "目录",
+  },
+  {
+    title: "速度的背后",
+    subtitle: "AI 缩短的是从想法到反馈的周期；质量取决于验证、评审和维护能否同步扩容。",
+  },
+  {
+    title: "行业探索",
+    subtitle: "最新信号不只讨论生产率，也开始转向架构选择、生产测量、平台治理和质量。",
+  },
+  {
+    title: "工具的方向",
+    subtitle: "优秀工具的共同方向不是只补全代码，而是把执行环境、仓库规则、评审回路和权限检查做实。",
+  },
+  {
+    title: "工程控制面",
+    subtitle: "规则上下文、工具准入、权限隔离和验证矩阵，共同保护 AI 交付能力。",
+  },
+  {
+    title: "确定性放行",
+    subtitle: "Agent 可以多路径探索；中间件负责把过程变成可审、可测、可追责的证据。",
+  },
+  {
+    title: "可治理工作流",
+    subtitle: "不是聊天产物堆叠，而是任务、环境、判断上下文、评审和门禁的连续交付对象。",
+  },
+  {
+    title: "质量前置",
+    subtitle: "质量不再是最后一轮人工兜底，而是任务前、生成中、合并前都能执行的协议。",
+  },
+  {
+    title: "能力演进",
+    subtitle: "AI 可以加速拆解和迁移，但产品能力、平台边界和行为等价要先被证明。",
+  },
+  {
+    title: "职责变化",
+    subtitle: "团队把上下文、证据、指标和门禁做实；个人在目标、边界、风险和责任上站稳。",
+  },
+  {
+    title: "谢谢",
+    subtitle: "AI 编程、工程治理、开发者角色",
+    time: "约 0.8 分钟",
+    focus: "回到简洁致谢页，用两个更落地的问题收束，不展开成方案页。",
+    question: "AI 研发正收益最应该先落在哪条工作流、哪组质量指标上？",
+    script:
+      "最后简单收束成两个落地问题。第一，团队可以先选哪一条高频工作流，做任务入口、隔离环境、权限、评审材料和阶段门禁的控制面。第二，质量指标应该怎么前置，至少把等待、返工、失败重跑、测试证据和回滚说明纳入判断。AI 的方向是正收益，但真正落地时，要把这份正收益放到能衡量、能复盘、能持续改进的工程系统里。谢谢大家。",
+    transition: "进入交流。",
+  },
+];
+
+slides.forEach((slide, i) => Object.assign(slide, compactFinalTitlesV09[i]));
 
 function esc(value) {
   return String(value)
@@ -1795,10 +1858,12 @@ function v5Chrome(slide, index) {
   `;
 }
 
-function v5Header(kicker, titleValue, subtitle, titleSize = 72) {
+const MAIN_TITLE_SIZE_V09 = 60;
+
+function v5Header(kicker, titleValue, subtitle, _titleSize = MAIN_TITLE_SIZE_V09) {
   return `
-    <text x="96" y="146" class="h15" style="font-size:${titleSize}px">${esc(titleValue)}</text>
-    ${subtitle ? `<text x="100" y="${titleSize > 72 ? 250 : 244}" class="sub5">${esc(subtitle)}</text>` : ""}
+    <text x="96" y="146" class="h15" style="font-size:${MAIN_TITLE_SIZE_V09}px">${esc(titleValue)}</text>
+    ${subtitle ? `<text x="100" y="244" class="sub5">${esc(subtitle)}</text>` : ""}
     <path d="M96 ${subtitle ? 318 : 268} h112" stroke="${L.blue}" stroke-width="8" stroke-linecap="round"/>
     <circle cx="${subtitle ? 230 : 226}" cy="${subtitle ? 318 : 268}" r="5.5" fill="${L.orange}"/>
   `;
@@ -1826,7 +1891,7 @@ function v02Takeaway(textValue, _ignoredWidth = TAKEAWAY_W_V02, _ignoredY = TAKE
   return `
     <rect x="${x}" y="${y}" width="${width}" height="${TAKEAWAY_H_V02}" rx="10" fill="${L.paper}" stroke="${L.line2}" stroke-width="2"/>
     <path d="M${x + 70} ${y + 17} v30" stroke="${L.blue}" stroke-width="8" stroke-linecap="round"/>
-    <text x="${x + width / 2 + 26}" y="${y + TAKEAWAY_H_V02 / 2 - 2}" class="body5" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" style="font-size:27px">${esc(textValue)}</text>
+    <text x="${x + width / 2 + 26}" y="${y + TAKEAWAY_H_V02 / 2 - 12}" class="body5" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" style="font-size:27px">${esc(textValue)}</text>
   `;
 }
 
@@ -2237,7 +2302,7 @@ function velocityQualityWatermarkV07(x, y, options = {}) {
 function slideTitleV02(slide, index) {
   const body = `
     <text x="96" y="154" class="small5" style="fill:${L.blue};font-weight:900">BitFun / AI 软件工程报告</text>
-    <text x="96" y="240" class="h15" style="font-size:82px">${esc(slide.title)}</text>
+    <text x="96" y="240" class="h15" style="font-size:${MAIN_TITLE_SIZE_V09}px">${esc(slide.title)}</text>
     <text x="100" y="360" class="sub5">${esc(slide.subtitle)}</text>
     <path d="M96 436 h164" stroke="${L.blue}" stroke-width="9" stroke-linecap="round"/>
     <circle cx="288" cy="436" r="6" fill="${L.orange}"/>
@@ -2252,7 +2317,7 @@ function slideTitleV02(slide, index) {
 
 function slideAgendaV02(slide, index) {
   const body = `
-    <text x="96" y="150" class="small5" style="fill:${L.blue};font-weight:900">目录</text>
+    <text x="96" y="146" class="h15" style="font-size:${MAIN_TITLE_SIZE_V09}px">${esc(slide.title)}</text>
     <path d="M96 220 h126" stroke="${L.blue}" stroke-width="8" stroke-linecap="round"/>
     <circle cx="246" cy="220" r="6" fill="${L.orange}"/>
     <path d="M178 346 V810" stroke="${L.line2}" stroke-width="3" stroke-dasharray="8 12"/>
@@ -2732,7 +2797,7 @@ function industryPatternCardV09(x, y, product, label, titleValue, lines, color, 
     <path d="M${x + 54} ${y + 166} H${x + 746}" stroke="${color}" stroke-width="3.2" stroke-linecap="round" opacity="0.48"/>
     ${lines.map((line, i) => `
       <circle cx="${x + 82 + i * 232}" cy="${y + 192}" r="5.8" fill="${color}" opacity="0.76"/>
-      <text x="${x + 102 + i * 232}" y="${y + 192}" class="micro5" dominant-baseline="middle" alignment-baseline="middle" style="font-size:18px;fill:${L.ink};font-weight:850">${esc(line)}</text>
+      <text x="${x + 102 + i * 232}" y="${y + 199}" class="micro5" style="font-size:18px;fill:${L.ink};font-weight:850">${esc(line)}</text>
     `).join("")}
   `;
 }
@@ -2963,9 +3028,6 @@ function capabilityNodeV09(x, y, n, titleValue, claim, desc, icon) {
 function slideBitfunV02(slide, index) {
   const body = `
     ${v5Header("03 / 工程治理", slide.title, slide.subtitle, 58)}
-    <path d="M600 490 H690" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
-    <path d="M1190 490 H1280" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
-    <path d="M1020 740 H1100" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
     ${workflowStepV02(100, 390, "01", "任务入口", "目标与边界", ["目标、非目标、风险", "验收标准先写清"], L.blue, "file")}
     ${workflowStepV02(690, 390, "02", "隔离工作区", "受控执行", ["独立环境探索", "避免污染主分支"], L.orange, "terminal")}
     ${workflowStepV02(1280, 390, "03", "判断上下文", "审查材料", ["为什么改、改了什么", "怎么验、风险如何退"], L.blue, "check")}
@@ -3068,27 +3130,41 @@ function newGradCardV05(x, y, n, titleValue, lines, color, icon) {
 
 function slideThanksV02(slide, index) {
   const body = `
-    <text x="96" y="150" class="small5" style="fill:${L.blue};font-weight:900">谢谢 / 讨论</text>
-    <text x="96" y="246" class="h15" style="font-size:90px">谢谢</text>
-    <path d="M96 386 h150" stroke="${L.blue}" stroke-width="9" stroke-linecap="round"/>
-    <circle cx="276" cy="386" r="6" fill="${L.orange}"/>
-    <rect x="170" y="500" width="1580" height="340" rx="22" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="240" y="556" class="label5" style="font-size:33px">留给 Q&amp;A 的三个讨论入口</text>
-    ${discussionPointV06(248, 638, "Google / DeepMind", "任务什么时候适合单 Agent、并行 Agent 或集中编排？", L.blue)}
-    ${discussionPointV06(248, 716, "IBM MAP / Gartner", "工具建设要不要从单点能力转向运行基座？", L.orange)}
-    ${discussionPointV06(248, 794, "MSR 2026", "质量机制如何持续放大速度收益？", L.blue)}
-    <rect x="1090" y="238" width="470" height="178" rx="18" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
-    <text x="1144" y="286" class="num5" style="font-size:56px;fill:${L.blue}">Q&amp;A</text>
-    ${v5Icon("chat", 1424, 292, 86, L.blue)}
+    <text x="96" y="152" class="small5" style="fill:${L.blue};font-weight:900">AI 编程、工程治理、开发者角色</text>
+    <text x="96" y="248" class="h15" style="font-size:${MAIN_TITLE_SIZE_V09}px">谢谢</text>
+    <path d="M96 346 h150" stroke="${L.blue}" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="276" cy="346" r="6" fill="${L.orange}"/>
+    <rect x="170" y="500" width="1580" height="306" rx="22" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="240" y="558" class="label5" style="font-size:34px">两个落地问题</text>
+    ${thanksPointV09(248, 654, "Gartner / IBM MAP", "先选哪条高频流程，做任务、环境、权限、评审的控制面？", L.blue)}
+    ${thanksPointV09(248, 736, "DORA / MSR", "哪些质量指标要前置到任务、生成和合并之前？", L.orange)}
+    <rect x="1120" y="238" width="440" height="170" rx="18" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    <text x="1172" y="284" class="num5" style="font-size:54px;fill:${L.blue}">Q&amp;A</text>
+    ${v5Icon("chat", 1424, 292, 82, L.blue)}
   `;
   return svgBaseV5(slide, index, body);
 }
 
-function discussionPointV06(x, y, source, textValue, color) {
+function thanksPointV09(x, y, source, textValue, color) {
   return `
     <text x="${x}" y="${y}" class="micro5" style="font-size:21px;fill:${color};font-weight:900">${esc(source)}</text>
     <circle cx="${x + 300}" cy="${y + 13}" r="6" fill="${color}"/>
     <text x="${x + 330}" y="${y - 2}" class="body5" style="font-size:29px;fill:${L.ink};font-weight:850">${esc(textValue)}</text>
+  `;
+}
+
+function landingPointV09(x, y, n, titleValue, source, bullets, color, icon) {
+  return `
+    <rect x="${x}" y="${y}" width="1580" height="232" rx="22" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="${x + 84}" cy="${y + 86}" r="50" fill="${color}" opacity="0.10"/>
+    ${v5Icon(icon, x + 54, y + 56, 60, color)}
+    <text x="${x + 166}" y="${y + 52}" class="num5" style="font-size:38px;fill:${color}">${esc(n)}</text>
+    <text x="${x + 248}" y="${y + 52}" class="label5" style="font-size:36px">${esc(titleValue)}</text>
+    <text x="${x + 248}" y="${y + 98}" class="micro5" style="font-size:22px;fill:${color};font-weight:900">${esc(source)}</text>
+    ${bullets.map((bullet, i) => `
+      <circle cx="${x + 250}" cy="${y + 132 + i * 34}" r="5.8" fill="${color}" opacity="0.78"/>
+      <text x="${x + 274}" y="${y + 139 + i * 34}" class="body5" style="font-size:24px;fill:${L.ink};font-weight:850">${esc(bullet)}</text>
+    `).join("")}
   `;
 }
 
@@ -3193,7 +3269,7 @@ function writeNotes() {
   linesOut.push("# AI 如何重新定义软件开发：分页演讲稿");
   linesOut.push("");
   linesOut.push(`建议时长：15 分钟。建议页数：${slides.length} 页。PPT 每页采用整页图片式设计，适合直接投屏演讲。`);
-  linesOut.push(`节奏校验：当前分页讲稿标注合计约 ${fmtMinutes(totalMinutes)} 分钟，其中主体讲述约 ${fmtMinutes(mainMinutes)} 分钟，收束与 Q&A 入口约 ${fmtMinutes(closeMinutes)} 分钟。`);
+  linesOut.push(`节奏校验：当前分页讲稿标注合计约 ${fmtMinutes(totalMinutes)} 分钟，其中主体讲述约 ${fmtMinutes(mainMinutes)} 分钟，最后收束约 ${fmtMinutes(closeMinutes)} 分钟。`);
   linesOut.push("");
   linesOut.push("## 报告简介");
   linesOut.push("");

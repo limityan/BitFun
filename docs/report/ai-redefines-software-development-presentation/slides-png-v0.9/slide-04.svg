@@ -65,7 +65,7 @@
 
 
 
-    <text x="96" y="146" class="h15" style="font-size:66px">研究共识：从速度争议到 Agent 工程化</text>
+    <text x="96" y="146" class="h15" style="font-size:60px">行业探索</text>
     <text x="100" y="244" class="sub5">最新信号不只讨论生产率，也开始转向架构选择、生产测量、平台治理和质量。</text>
     <path d="M96 318 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
     <circle cx="230" cy="318" r="5.5" fill="#FF5A1F"/>
@@ -109,7 +109,7 @@
 
     <rect x="170" y="954" width="1580" height="64" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
     <path d="M240 971 v30" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="986" y="984" class="body5" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" style="font-size:27px">核心判断：AI 研发收益取决于架构适配、生产可控、平台治理和质量约束。</text>
+    <text x="986" y="974" class="body5" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" style="font-size:27px">核心判断：AI 研发收益取决于架构适配、生产可控、平台治理和质量约束。</text>
 
 
 </svg>

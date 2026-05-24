@@ -65,7 +65,7 @@
 
 
 
-    <text x="96" y="146" class="h15" style="font-size:56px">行业做法：把 Agent 放进工程流程</text>
+    <text x="96" y="146" class="h15" style="font-size:60px">工具的方向</text>
     <text x="100" y="244" class="sub5">优秀工具的共同方向不是只补全代码，而是把执行环境、仓库规则、评审回路和权限检查做实。</text>
     <path d="M96 318 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
     <circle cx="230" cy="318" r="5.5" fill="#FF5A1F"/>
@@ -80,13 +80,13 @@
     <path d="M174 554 H866" stroke="#106BEF" stroke-width="3.2" stroke-linecap="round" opacity="0.48"/>
 
       <circle cx="202" cy="580" r="5.8" fill="#106BEF" opacity="0.76"/>
-      <text x="222" y="580" class="micro5" dominant-baseline="middle" alignment-baseline="middle" style="font-size:18px;fill:#050608;font-weight:850">临时开发环境</text>
+      <text x="222" y="587" class="micro5" style="font-size:18px;fill:#050608;font-weight:850">临时开发环境</text>
 
       <circle cx="434" cy="580" r="5.8" fill="#106BEF" opacity="0.76"/>
-      <text x="454" y="580" class="micro5" dominant-baseline="middle" alignment-baseline="middle" style="font-size:18px;fill:#050608;font-weight:850">测试与日志可见</text>
+      <text x="454" y="587" class="micro5" style="font-size:18px;fill:#050608;font-weight:850">测试与日志可见</text>
 
       <circle cx="666" cy="580" r="5.8" fill="#106BEF" opacity="0.76"/>
-      <text x="686" y="580" class="micro5" dominant-baseline="middle" alignment-baseline="middle" style="font-size:18px;fill:#050608;font-weight:850">评审指标可跟踪</text>
+      <text x="686" y="587" class="micro5" style="font-size:18px;fill:#050608;font-weight:850">评审指标可跟踪</text>
 
 
 
@@ -99,13 +99,13 @@
     <path d="M1054 554 H1746" stroke="#106BEF" stroke-width="3.2" stroke-linecap="round" opacity="0.48"/>
 
       <circle cx="1082" cy="580" r="5.8" fill="#106BEF" opacity="0.76"/>
-      <text x="1102" y="580" class="micro5" dominant-baseline="middle" alignment-baseline="middle" style="font-size:18px;fill:#050608;font-weight:850">连接代码仓库</text>
+      <text x="1102" y="587" class="micro5" style="font-size:18px;fill:#050608;font-weight:850">连接代码仓库</text>
 
       <circle cx="1314" cy="580" r="5.8" fill="#106BEF" opacity="0.76"/>
-      <text x="1334" y="580" class="micro5" dominant-baseline="middle" alignment-baseline="middle" style="font-size:18px;fill:#050608;font-weight:850">后台并行执行</text>
+      <text x="1334" y="587" class="micro5" style="font-size:18px;fill:#050608;font-weight:850">后台并行执行</text>
 
       <circle cx="1546" cy="580" r="5.8" fill="#106BEF" opacity="0.76"/>
-      <text x="1566" y="580" class="micro5" dominant-baseline="middle" alignment-baseline="middle" style="font-size:18px;fill:#050608;font-weight:850">结果转成交付评审</text>
+      <text x="1566" y="587" class="micro5" style="font-size:18px;fill:#050608;font-weight:850">结果转成交付评审</text>
 
 
 
@@ -118,13 +118,13 @@
     <path d="M174 814 H866" stroke="#106BEF" stroke-width="3.2" stroke-linecap="round" opacity="0.48"/>
 
       <circle cx="202" cy="840" r="5.8" fill="#106BEF" opacity="0.76"/>
-      <text x="222" y="840" class="micro5" dominant-baseline="middle" alignment-baseline="middle" style="font-size:18px;fill:#050608;font-weight:850">权限白名单</text>
+      <text x="222" y="847" class="micro5" style="font-size:18px;fill:#050608;font-weight:850">权限白名单</text>
 
       <circle cx="434" cy="840" r="5.8" fill="#106BEF" opacity="0.76"/>
-      <text x="454" y="840" class="micro5" dominant-baseline="middle" alignment-baseline="middle" style="font-size:18px;fill:#050608;font-weight:850">钩子执行检查</text>
+      <text x="454" y="847" class="micro5" style="font-size:18px;fill:#050608;font-weight:850">钩子执行检查</text>
 
       <circle cx="666" cy="840" r="5.8" fill="#106BEF" opacity="0.76"/>
-      <text x="686" y="840" class="micro5" dominant-baseline="middle" alignment-baseline="middle" style="font-size:18px;fill:#050608;font-weight:850">子代理分工</text>
+      <text x="686" y="847" class="micro5" style="font-size:18px;fill:#050608;font-weight:850">子代理分工</text>
 
 
 
@@ -137,19 +137,19 @@
     <path d="M1054 814 H1746" stroke="#106BEF" stroke-width="3.2" stroke-linecap="round" opacity="0.48"/>
 
       <circle cx="1082" cy="840" r="5.8" fill="#106BEF" opacity="0.76"/>
-      <text x="1102" y="840" class="micro5" dominant-baseline="middle" alignment-baseline="middle" style="font-size:18px;fill:#050608;font-weight:850">项目规则文件</text>
+      <text x="1102" y="847" class="micro5" style="font-size:18px;fill:#050608;font-weight:850">项目规则文件</text>
 
       <circle cx="1314" cy="840" r="5.8" fill="#106BEF" opacity="0.76"/>
-      <text x="1334" y="840" class="micro5" dominant-baseline="middle" alignment-baseline="middle" style="font-size:18px;fill:#050608;font-weight:850">后台远程环境</text>
+      <text x="1334" y="847" class="micro5" style="font-size:18px;fill:#050608;font-weight:850">后台远程环境</text>
 
       <circle cx="1546" cy="840" r="5.8" fill="#106BEF" opacity="0.76"/>
-      <text x="1566" y="840" class="micro5" dominant-baseline="middle" alignment-baseline="middle" style="font-size:18px;fill:#050608;font-weight:850">分支交付可接管</text>
+      <text x="1566" y="847" class="micro5" style="font-size:18px;fill:#050608;font-weight:850">分支交付可接管</text>
 
 
 
     <rect x="170" y="954" width="1580" height="64" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
     <path d="M240 971 v30" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="986" y="984" class="body5" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" style="font-size:27px">行业共同方向：入口从 IDE 扩展到工程运行面，质量靠上下文、环境、权限和评审回路承接。</text>
+    <text x="986" y="974" class="body5" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" style="font-size:27px">行业共同方向：入口从 IDE 扩展到工程运行面，质量靠上下文、环境、权限和评审回路承接。</text>
 
 
 </svg>

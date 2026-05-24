@@ -65,7 +65,7 @@
 
 
 
-    <text x="96" y="146" class="h15" style="font-size:58px">从概率探索到确定放行</text>
+    <text x="96" y="146" class="h15" style="font-size:60px">确定性放行</text>
     <text x="100" y="244" class="sub5">Agent 可以多路径探索；中间件负责把过程变成可审、可测、可追责的证据。</text>
     <path d="M96 318 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
     <circle cx="230" cy="318" r="5.5" fill="#FF5A1F"/>
@@ -137,7 +137,7 @@
 
     <rect x="170" y="954" width="1580" height="64" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
     <path d="M240 971 v30" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
-    <text x="986" y="984" class="body5" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" style="font-size:27px">探索可以发散，放行必须收敛：中间件把 AI 过程变成团队可判断的证据。</text>
+    <text x="986" y="974" class="body5" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" style="font-size:27px">探索可以发散，放行必须收敛：中间件把 AI 过程变成团队可判断的证据。</text>
 
 
 </svg>
