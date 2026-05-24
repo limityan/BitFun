@@ -1,6 +1,6 @@
 # AI 如何重新定义软件开发：演讲材料
 
-本目录保留原版演讲材料、V0.2、V0.3、V0.4 版本，并新增 V0.5 版本。V0.5 继续使用 V0.4 的整页图片式生成链路，更新首页身份信息、BitFun 单月 10W+ 行统计证据、证据包截图化表达，并补充传统 SDLC 到人 + Agent SDLC 的模式变化页，以及面向刚入职场开发者的能力转向页。
+本目录保留原版演讲材料、V0.2、V0.3、V0.4、V0.5、V0.6、V0.8 版本，并新增 V0.9 版本。V0.9 继续使用整页图片式生成链路，新增行业工具做法页，并压缩速度与质量的重复表述，把主线收敛为：行业信号 -> BitFun 工程控制面 -> 可治理工作流 -> 质量协议 -> 能力保护式演进。
 
 ## 原版材料
 
@@ -64,18 +64,18 @@ node .\docs\report\ai-redefines-software-development-presentation\build-deck-v0.
 
 V0.4 主线：沿用 V0.3 内容结构，并在第 3-12 页加入低干扰章节水印：01 软件工程变革、02 速度的背后、03 工程质量与治理、04 开发者角色。
 
-## V0.5 材料
+## V0.9 材料
 
-- `ai-redefines-software-development-v0.5.pptx`：V0.5 演讲用 PPTX，13 页。
-- `speaker-notes-v0.5.md`：V0.5 分页讲稿，沿用 15 分钟节奏。
-- `slides-png-v0.5/`：V0.5 逐页 SVG 与 PNG。
-- `preview-contact-sheet-v0.5.png`：V0.5 缩略总览。
-- `build-deck-v0.5.cjs`：V0.5 可复现生成脚本。
+- `ai-redefines-software-development-v0.9.pptx`：V0.9 演讲用 PPTX，12 页。
+- `speaker-notes-v0.9.md`：V0.9 分页讲稿，沿用 15 分钟节奏。
+- `slides-png-v0.9/`：V0.9 逐页 SVG 与 PNG。
+- `preview-contact-sheet-v0.9.png`：V0.9 缩略总览。
+- `build-deck-v0.9.cjs`：V0.9 可复现生成脚本。
 
-重新生成 V0.5：
+重新生成 V0.9：
 
 ```powershell
-node .\docs\report\ai-redefines-software-development-presentation\build-deck-v0.5.cjs
+node .\docs\report\ai-redefines-software-development-presentation\build-deck-v0.9.cjs
 ```
 
-V0.5 主线：沿用 V0.4 视觉风格与图片式生成方式，不再尝试原生 PPT 元素复刻；内容上补强 BitFun 统计证据、工程证据截图、传统软件工程角色/交付件与 AI 介入后的模式变化，并结合最新调研把新人能力方向收敛为读懂代码、证据交付、上下文组织和责任边界。
+V0.9 主线：现实问题 -> 研究与行业工具信号 -> BitFun 工程控制面 -> 概率过程到确定放行 -> 可治理工作流 -> 质量协议 -> 能力保护式演进 -> 团队和个人职责变化。

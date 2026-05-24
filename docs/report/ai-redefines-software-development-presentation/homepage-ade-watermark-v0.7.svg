@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <filter id="soft" x="-18%" y="-18%" width="136%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="16" flood-color="#0f172a" flood-opacity="0.07"/>
+    </filter>
+    <marker id="blueArrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L8 5 L2 8" fill="none" stroke="#76A6E8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <marker id="orangeArrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L8 5 L2 8" fill="none" stroke="#EF8A6A" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+  </defs>
+  <rect width="1600" height="900" fill="#f6f8fb"/>
+  <text x="96" y="78" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="30" font-weight="850" fill="#374151">首页右侧水印图：两种方向对比</text>
+  <text x="96" y="122" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="19" font-weight="650" fill="#6b7280">建议只保留少量文字；实际放入首页时透明度还会再压低。</text>
+
+  <g transform="translate(96 190)" filter="url(#soft)">
+    <rect x="0" y="0" width="620" height="410" rx="20" fill="#ffffff" stroke="#d7dce2" stroke-width="2"/>
+    <text x="46" y="48" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="26" font-weight="850" fill="#5f6b7a">A. 速度影响质量</text>
+    <text x="46" y="84" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="17" font-weight="650" fill="#8a94a3">适合讲“AI 放大产能后，工程系统要托住质量”</text>
+    <path d="M108 326 H536" stroke="#e3e8ef" stroke-width="3" stroke-linecap="round"/>
+    <path d="M108 326 V128" stroke="#e3e8ef" stroke-width="3" stroke-linecap="round"/>
+    <text x="86" y="116" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="19" font-weight="800" fill="#EF8A6A" text-anchor="end">质量</text>
+    <text x="536" y="358" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="19" font-weight="800" fill="#76A6E8" text-anchor="end">速度</text>
+    <path d="M118 276 C196 214 300 168 400 162 C466 158 500 160 526 148" fill="none" stroke="#76A6E8" stroke-width="5" stroke-linecap="round" opacity="0.75"/>
+    <path d="M118 186 C226 184 320 218 414 264 C466 286 500 306 526 292" fill="none" stroke="#EF8A6A" stroke-width="4.5" stroke-linecap="round" opacity="0.60"/>
+    <circle cx="400" cy="162" r="5.5" fill="#76A6E8" opacity="0.85"/>
+    <circle cx="414" cy="264" r="5.5" fill="#EF8A6A" opacity="0.80"/>
+  </g>
+
+  <g transform="translate(884 190)" filter="url(#soft)">
+    <rect x="0" y="0" width="620" height="410" rx="20" fill="#ffffff" stroke="#d7dce2" stroke-width="2"/>
+    <text x="46" y="48" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="26" font-weight="850" fill="#5f6b7a">B. IDE → ADE 控制面</text>
+    <text x="46" y="84" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="17" font-weight="650" fill="#8a94a3">适合讲“BitFun 从开发入口升级为 Agentic Development Environment”</text>
+
+    <g opacity="0.90">
+      <rect x="76" y="154" width="112" height="104" rx="18" fill="#f5f8fd" stroke="#76A6E8" stroke-width="3"/>
+      <path d="M104 184 H160 M104 210 H148 M104 236 H168" stroke="#b7c7dd" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="96" cy="184" r="4.5" fill="#76A6E8"/>
+      <circle cx="96" cy="210" r="4.5" fill="#EF8A6A"/>
+      <circle cx="96" cy="236" r="4.5" fill="#76A6E8"/>
+      <text x="132" y="292" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="18" font-weight="820" fill="#6b7280" text-anchor="middle">IDE 入口</text>
+    </g>
+
+    <path d="M194 206 C240 206 258 206 294 206" stroke="#76A6E8" stroke-width="4.5" stroke-linecap="round" marker-end="url(#blueArrow)" opacity="0.70"/>
+
+    <g opacity="0.90">
+      <circle cx="334" cy="206" r="18" fill="#76A6E8" opacity="0.15"/>
+      <circle cx="334" cy="206" r="7" fill="#76A6E8"/>
+      <path d="M352 206 C398 146 458 126 524 118" fill="none" stroke="#76A6E8" stroke-width="4" stroke-linecap="round" marker-end="url(#blueArrow)" opacity="0.70"/>
+      <path d="M352 206 C414 204 462 204 528 204" fill="none" stroke="#EF8A6A" stroke-width="4" stroke-linecap="round" marker-end="url(#orangeArrow)" opacity="0.58"/>
+      <path d="M352 206 C398 266 458 286 524 294" fill="none" stroke="#76A6E8" stroke-width="4" stroke-linecap="round" marker-end="url(#blueArrow)" opacity="0.70"/>
+    </g>
+
+    <g opacity="0.82">
+      <rect x="420" y="102" width="116" height="42" rx="21" fill="#f5f8fd" stroke="#b7c7dd" stroke-width="2"/>
+      <text x="478" y="117" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="16" font-weight="780" fill="#5f6b7a" text-anchor="middle">任务</text>
+      <rect x="420" y="184" width="116" height="42" rx="21" fill="#fff7f2" stroke="#f1b7a4" stroke-width="2"/>
+      <text x="478" y="199" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="16" font-weight="780" fill="#5f6b7a" text-anchor="middle">证据</text>
+      <rect x="420" y="266" width="116" height="42" rx="21" fill="#f5f8fd" stroke="#b7c7dd" stroke-width="2"/>
+      <text x="478" y="281" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="16" font-weight="780" fill="#5f6b7a" text-anchor="middle">门禁</text>
+    </g>
+
+    <text x="330" y="352" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="18" font-weight="820" fill="#6b7280" text-anchor="middle">ADE 控制面：编排 Agent、沉淀证据、治理放行</text>
+  </g>
+
+  <g transform="translate(96 674)">
+    <rect x="0" y="0" width="1408" height="86" rx="18" fill="#ffffff" stroke="#d7dce2" stroke-width="2"/>
+    <circle cx="42" cy="43" r="7" fill="#76A6E8"/>
+    <text x="70" y="28" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="20" font-weight="820" fill="#374151">我的判断：</text>
+    <text x="190" y="28" font-family="Microsoft YaHei, Segoe UI, sans-serif" font-size="20" font-weight="650" fill="#4b5563">当前这版主题更适合 A；如果首页要更明确服务 BitFun/ADE 产品叙事，就换 B，并同步改开场讲稿。</text>
+  </g>
+</svg>

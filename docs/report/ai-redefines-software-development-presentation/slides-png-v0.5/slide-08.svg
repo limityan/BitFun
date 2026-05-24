@@ -78,17 +78,17 @@
     <text x="366" y="532" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:22px;fill:#106BEF;font-weight:900">01 / 量化代价</text>
     <text x="366" y="586" class="num5" text-anchor="middle" dominant-baseline="middle" style="font-size:34px">看净时间，不看代码量</text>
 
-      <rect x="172" y="644" width="166" height="42" rx="21" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="255" y="665" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">PR 等待</text>
+      <rect x="170" y="642" width="176" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="258" y="664" class="small5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">PR 等待</text>
 
-      <rect x="362" y="644" width="166" height="42" rx="21" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="445" y="665" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">返工率</text>
+      <rect x="386" y="642" width="176" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="474" y="664" class="small5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">返工率</text>
 
-      <rect x="172" y="700" width="166" height="42" rx="21" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="255" y="721" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">失败重跑</text>
+      <rect x="170" y="700" width="176" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="258" y="722" class="small5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">失败重跑</text>
 
-      <rect x="362" y="700" width="166" height="42" rx="21" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="445" y="721" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">MTTR</text>
+      <rect x="386" y="700" width="176" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="474" y="722" class="small5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">MTTR</text>
 
 
     <path d="M610 590 H700" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
@@ -99,17 +99,17 @@
     <text x="964" y="532" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:22px;fill:#FF5A1F;font-weight:900">02 / 风险分流</text>
     <text x="964" y="586" class="num5" text-anchor="middle" dominant-baseline="middle" style="font-size:34px">让变更先被正确排队</text>
 
-      <rect x="770" y="644" width="166" height="42" rx="21" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="853" y="665" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">owner</text>
+      <rect x="768" y="642" width="176" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="856" y="664" class="small5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">owner</text>
 
-      <rect x="960" y="644" width="166" height="42" rx="21" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="1043" y="665" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">diff 大小</text>
+      <rect x="984" y="642" width="176" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1072" y="664" class="small5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">diff 大小</text>
 
-      <rect x="770" y="700" width="166" height="42" rx="21" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="853" y="721" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">模块热度</text>
+      <rect x="768" y="700" width="176" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="856" y="722" class="small5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">模块热度</text>
 
-      <rect x="960" y="700" width="166" height="42" rx="21" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="1043" y="721" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">SLO 影响</text>
+      <rect x="984" y="700" width="176" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1072" y="722" class="small5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">SLO 影响</text>
 
 
     <path d="M1208 590 H1298" stroke="#FF5A1F" stroke-width="5" fill="none" marker-end="url(#arrowGray)"/>
@@ -120,17 +120,17 @@
     <text x="1562" y="532" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:22px;fill:#106BEF;font-weight:900">03 / 闭环修复</text>
     <text x="1562" y="586" class="num5" text-anchor="middle" dominant-baseline="middle" style="font-size:34px">让失败回到 Agent</text>
 
-      <rect x="1368" y="644" width="166" height="42" rx="21" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="1451" y="665" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">CI 回注</text>
+      <rect x="1366" y="642" width="176" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1454" y="664" class="small5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">CI 回注</text>
 
-      <rect x="1558" y="644" width="166" height="42" rx="21" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="1641" y="665" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">AI 评审辅助</text>
+      <rect x="1582" y="642" width="176" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1670" y="664" class="small5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">AI 评审辅助</text>
 
-      <rect x="1368" y="700" width="166" height="42" rx="21" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="1451" y="721" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">Trace 归因</text>
+      <rect x="1366" y="700" width="176" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1454" y="722" class="small5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">Trace 归因</text>
 
-      <rect x="1558" y="700" width="166" height="42" rx="21" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="1641" y="721" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">根因复盘</text>
+      <rect x="1582" y="700" width="176" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1670" y="722" class="small5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">根因复盘</text>
 
 
     <rect x="300" y="806" width="1320" height="70" rx="14" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>

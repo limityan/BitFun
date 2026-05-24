@@ -71,7 +71,7 @@
     <path d="M96 356 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
     <circle cx="230" cy="356" r="5.5" fill="#FF5A1F"/>
 
-    <text x="132" y="396" class="small5" style="font-size:23px;fill:#106BEF;font-weight:900">BitFun 经验不是终点：代码生产放大以后，团队要管理新的交付对象和证据对象</text>
+    <text x="132" y="396" class="small5" style="font-size:23px;fill:#106BEF;font-weight:900">代码生产放大以后，团队要管理新的交付对象和证据对象</text>
 
     <rect x="116" y="436" width="704" height="104" rx="16" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
     <g transform="translate(150 459) scale(0.84375)"><path d="M18 18 L34 32 L18 46" stroke="#106BEF" stroke-width="3.5555555555555554" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M38 48 h16" stroke="#106BEF" stroke-width="3.5555555555555554" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>

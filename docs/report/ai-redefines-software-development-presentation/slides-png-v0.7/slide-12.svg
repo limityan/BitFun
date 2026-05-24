@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <pattern id="lightDots" width="34" height="34" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1.7" fill="#C4C6C1" opacity="0.55"/>
+    </pattern>
+    <filter id="paperShadow" x="-18%" y="-18%" width="136%" height="150%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#4B5563" flood-opacity="0.13"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#106BEF" stroke-width="2"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#A5A9AE" stroke-width="2"/>
+    </marker>
+  </defs>
+  <rect width="1920" height="1080" fill="#FBFAF7"/>
+
+    <path d="M1816 92 h-70 q-28 0 -28 28 v78" stroke="#D7D7D2" stroke-width="2" fill="none" opacity="0.34"/>
+    <path d="M1782 890 v-190 q0 -32 32 -32 h50" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M1650 820 h112 q30 0 30 -30 v-80" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <circle cx="1800" cy="708" r="7" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <circle cx="1762" cy="820" r="7" fill="#106BEF"/>
+    <circle cx="1848" cy="622" r="6" fill="#FF5A1F"/>
+    <rect x="1378" y="720" width="180" height="120" fill="url(#lightDots)" opacity="0.48"/>
+    <rect x="152" y="318" width="128" height="96" fill="url(#lightDots)" opacity="0.42"/>
+    <path d="M70 740 h120 v118 h250" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M50 510 h116 q26 0 26 26 v52" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <circle cx="150" cy="857" r="5" fill="#FF5A1F"/>
+
+    <g opacity="0.26" transform="translate(1350 820) scale(0.72)">
+      <path d="M0 120 L110 60 L220 120 L110 180 Z" fill="none" stroke="#C4C6C1" stroke-width="2"/>
+      <path d="M110 60 V180 M0 120 V220 M220 120 V220 M0 220 H320" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M260 50 h70 v170 h-70 Z M280 80 h30 M280 116 h30 M280 152 h30" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M360 96 h90 v124 h-90 Z M382 122 h46 M382 154 h46 M382 186 h46" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M88 144 h42 v76 h-42 Z M150 126 h48 v94 h-48 Z" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+    </g>
+
+
+
+    <g transform="rotate(-2 1508 104)">
+      <text x="1268" y="58"
+        style="font-family:'Arial Black','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:88px;font-weight:900;letter-spacing:1.4px;fill:#FF5A1F;fill-opacity:0.15;stroke:#FF5A1F;stroke-width:1.4;stroke-opacity:0.2;paint-order:stroke">05</text>
+      <text x="1370" y="92"
+        style="font-family:'Microsoft YaHei','Noto Sans SC','Segoe UI',sans-serif;font-size:38px;font-weight:900;letter-spacing:1.6px;fill:#FF5A1F;stroke:#FFFFFF;stroke-width:2.4;paint-order:stroke;fill-opacity:0.48">角色与行动</text>
+      <path d="M1368 150 C1488 118 1628 174 1768 134" stroke="#FF5A1F" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.24"/>
+    </g>
+
+
+    <style>
+      text { font-family: "Microsoft YaHei", "Noto Sans SC", "PingFang SC", "Segoe UI", Arial, sans-serif; dominant-baseline: hanging; }
+      .brand5 { font-size: 42px; font-weight: 900; fill: #050608; }
+      .num5 { font-family: "Arial", "Microsoft YaHei", sans-serif; font-weight: 900; fill: #050608; }
+      .h15 { font-size: 68px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .h25 { font-size: 58px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .sub5 { font-size: 31px; font-weight: 560; fill: #5F6670; }
+      .body5 { font-size: 30px; font-weight: 700; fill: #050608; }
+      .muted5 { font-size: 24px; font-weight: 560; fill: #5F6670; }
+      .label5 { font-size: 29px; font-weight: 900; fill: #050608; }
+      .small5 { font-size: 23px; font-weight: 760; fill: #5F6670; }
+      .micro5 { font-size: 19px; font-weight: 760; fill: #5F6670; }
+    </style>
+    <text x="42" y="46" class="brand5">BitFun</text>
+    <text x="1840" y="50" class="small5" text-anchor="end">12 / 13</text>
+
+
+
+    <text x="96" y="132" class="small5" style="fill:#106BEF;font-weight:900">06 / 职责变化</text>
+    <text x="96" y="188" class="h15" style="font-size:58px">职责变化：团队建系统，个人守判断</text>
+    <text x="100" y="282" class="sub5">团队把上下文、证据、指标和门禁做实；个人在目标、边界、风险和责任上站稳。</text>
+    <path d="M96 356 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="230" cy="356" r="5.5" fill="#FF5A1F"/>
+
+    <rect x="110" y="376" width="800" height="444" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <rect x="1010" y="376" width="800" height="444" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="166" y="430" class="small5" style="font-size:24px;fill:#106BEF;font-weight:900">TEAM RESPONSIBILITY</text>
+    <text x="166" y="484" class="num5" style="font-size:42px;fill:#050608">团队：把流程做实</text>
+
+    <text x="168" y="568" class="micro5" style="font-size:20px;fill:#106BEF;font-weight:900">01</text>
+    <text x="216" y="566" class="small5" style="font-size:25px;fill:#050608;font-weight:900">组织上下文</text>
+    <text x="372" y="568" class="small5" style="font-size:21px;fill:#5F6670;font-weight:760">需求、架构、日志、测试、历史决策进入 Agent 视野</text>
+
+
+    <text x="168" y="636" class="micro5" style="font-size:20px;fill:#106BEF;font-weight:900">02</text>
+    <text x="216" y="634" class="small5" style="font-size:25px;fill:#050608;font-weight:900">证据交付</text>
+    <text x="372" y="636" class="small5" style="font-size:21px;fill:#5F6670;font-weight:760">把测试、CI、trace、review 变成交付的一部分</text>
+
+
+    <text x="168" y="704" class="micro5" style="font-size:20px;fill:#FF5A1F;font-weight:900">03</text>
+    <text x="216" y="702" class="small5" style="font-size:25px;fill:#050608;font-weight:900">净收益指标</text>
+    <text x="372" y="704" class="small5" style="font-size:21px;fill:#5F6670;font-weight:760">看净时间、返工率、评审压力和线上风险</text>
+
+
+    <text x="168" y="772" class="micro5" style="font-size:20px;fill:#FF5A1F;font-weight:900">04</text>
+    <text x="216" y="770" class="small5" style="font-size:25px;fill:#050608;font-weight:900">阶段门禁</text>
+    <text x="372" y="772" class="small5" style="font-size:21px;fill:#5F6670;font-weight:760">用权限、隔离、独立评审承接自动化责任</text>
+
+    <text x="1066" y="430" class="small5" style="font-size:24px;fill:#FF5A1F;font-weight:900">PERSONAL RESPONSIBILITY</text>
+    <text x="1066" y="484" class="num5" style="font-size:42px;fill:#050608">个人：把判断站稳</text>
+
+    <text x="1068" y="568" class="micro5" style="font-size:20px;fill:#106BEF;font-weight:900">01</text>
+    <text x="1116" y="566" class="small5" style="font-size:25px;fill:#050608;font-weight:900">定义问题</text>
+    <text x="1272" y="568" class="small5" style="font-size:21px;fill:#5F6670;font-weight:760">说明目标、非目标、验收标准和风险边界</text>
+
+
+    <text x="1068" y="636" class="micro5" style="font-size:20px;fill:#106BEF;font-weight:900">02</text>
+    <text x="1116" y="634" class="small5" style="font-size:25px;fill:#050608;font-weight:900">核验事实</text>
+    <text x="1272" y="636" class="small5" style="font-size:21px;fill:#5F6670;font-weight:760">选择可信上下文，理解代码、架构和运行约束</text>
+
+
+    <text x="1068" y="704" class="micro5" style="font-size:20px;fill:#FF5A1F;font-weight:900">03</text>
+    <text x="1116" y="702" class="small5" style="font-size:25px;fill:#050608;font-weight:900">解释风险</text>
+    <text x="1272" y="704" class="small5" style="font-size:21px;fill:#5F6670;font-weight:760">判断能不能合、哪里要慢、谁需要参与</text>
+
+
+    <text x="1068" y="772" class="micro5" style="font-size:20px;fill:#FF5A1F;font-weight:900">04</text>
+    <text x="1116" y="770" class="small5" style="font-size:25px;fill:#050608;font-weight:900">承接责任</text>
+    <text x="1272" y="772" class="small5" style="font-size:21px;fill:#5F6670;font-weight:760">出了问题能解释、回滚、复盘和沉淀</text>
+
+    <path d="M936 560 V752" stroke="#C4C6C1" stroke-width="3" stroke-dasharray="8 12"/>
+    <circle cx="960" cy="656" r="54" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+    <g transform="translate(928 624) scale(1)"><circle cx="32" cy="22" r="8" stroke="#106BEF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="18" cy="30" r="6" stroke="#106BEF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="46" cy="30" r="6" stroke="#106BEF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M14 50 q18 -16 36 0 M4 54 q14 -12 28 -5 M32 49 q14 -7 28 5" stroke="#106BEF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+
+    <rect x="300" y="954" width="1320" height="64" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <path d="M370 971 v30" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <text x="986" y="986" class="body5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:27px">AI 时代的职责变化：团队建设可治理系统，个人承担关键判断。</text>
+
+
+</svg>

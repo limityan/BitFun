@@ -96,25 +96,25 @@
     <text x="818" y="550" class="small5" style="font-size:18px;fill:#FCA5A5">-46,479 deletions</text>
     <text x="1026" y="550" class="small5" style="font-size:18px;fill:#D1D5DB">churn: 232,012 lines</text>
 
-    <rect x="760" y="634" width="780" height="128" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="808" y="674" class="small5" style="font-size:23px;fill:#FF5A1F;font-weight:900">快在哪里：不是“写得多”，而是反馈路径变短</text>
+    <rect x="760" y="622" width="862" height="154" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="806" y="664" class="small5" style="font-size:22px;fill:#FF5A1F;font-weight:900">快在哪里：不是“写得多”，而是反馈路径变短</text>
 
 
-    <rect x="824" y="714" width="132" height="58" rx="14" fill="#FBFAF7" stroke="#106BEF" stroke-width="2"/>
-    <text x="890" y="743" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:18px;fill:#050608;font-weight:900">想法 / Issue</text>
+    <rect x="824" y="704" width="148" height="62" rx="16" fill="#FBFAF7" stroke="#106BEF" stroke-width="2"/>
+    <text x="898" y="735" class="small5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">想法 / Issue</text>
 
-    <rect x="998" y="714" width="132" height="58" rx="14" fill="#FBFAF7" stroke="#106BEF" stroke-width="2"/>
-    <text x="1064" y="743" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:18px;fill:#050608;font-weight:900">隔离执行</text>
+    <rect x="1008" y="704" width="148" height="62" rx="16" fill="#FBFAF7" stroke="#106BEF" stroke-width="2"/>
+    <text x="1082" y="735" class="small5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">隔离执行</text>
 
-    <rect x="1204" y="714" width="132" height="58" rx="14" fill="#FBFAF7" stroke="#FF5A1F" stroke-width="2"/>
-    <text x="1270" y="743" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:18px;fill:#050608;font-weight:900">原型 / PR</text>
+    <rect x="1220" y="704" width="148" height="62" rx="16" fill="#FBFAF7" stroke="#FF5A1F" stroke-width="2"/>
+    <text x="1294" y="735" class="small5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">原型 / PR</text>
 
-    <rect x="1410" y="714" width="132" height="58" rx="14" fill="#FBFAF7" stroke="#FF5A1F" stroke-width="2"/>
-    <text x="1476" y="743" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:18px;fill:#050608;font-weight:900">验证与评审</text>
+    <rect x="1432" y="704" width="148" height="62" rx="16" fill="#FBFAF7" stroke="#FF5A1F" stroke-width="2"/>
+    <text x="1506" y="735" class="small5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">验证与评审</text>
 
-    <path d="M962 743 H990" stroke="#106BEF" stroke-width="4" marker-end="url(#arrowBlue)"/>
-    <path d="M1136 743 H1196" stroke="#106BEF" stroke-width="4" marker-end="url(#arrowBlue)"/>
-    <path d="M1336 743 H1402" stroke="#FF5A1F" stroke-width="4" marker-end="url(#arrowGray)"/>
+    <path d="M982 735 H998" stroke="#106BEF" stroke-width="4" marker-end="url(#arrowBlue)"/>
+    <path d="M1166 735 H1210" stroke="#106BEF" stroke-width="4" marker-end="url(#arrowBlue)"/>
+    <path d="M1378 735 H1422" stroke="#FF5A1F" stroke-width="4" marker-end="url(#arrowGray)"/>
 
 
     <rect x="270" y="954" width="1380" height="64" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>

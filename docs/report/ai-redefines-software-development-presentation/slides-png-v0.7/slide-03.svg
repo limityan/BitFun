@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <pattern id="lightDots" width="34" height="34" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1.7" fill="#C4C6C1" opacity="0.55"/>
+    </pattern>
+    <filter id="paperShadow" x="-18%" y="-18%" width="136%" height="150%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#4B5563" flood-opacity="0.13"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#106BEF" stroke-width="2"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#A5A9AE" stroke-width="2"/>
+    </marker>
+  </defs>
+  <rect width="1920" height="1080" fill="#FBFAF7"/>
+
+    <path d="M1816 92 h-70 q-28 0 -28 28 v78" stroke="#D7D7D2" stroke-width="2" fill="none" opacity="0.34"/>
+    <path d="M1782 890 v-190 q0 -32 32 -32 h50" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M1650 820 h112 q30 0 30 -30 v-80" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <circle cx="1800" cy="708" r="7" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <circle cx="1762" cy="820" r="7" fill="#106BEF"/>
+    <circle cx="1848" cy="622" r="6" fill="#FF5A1F"/>
+    <rect x="1378" y="720" width="180" height="120" fill="url(#lightDots)" opacity="0.48"/>
+    <rect x="152" y="318" width="128" height="96" fill="url(#lightDots)" opacity="0.42"/>
+    <path d="M70 740 h120 v118 h250" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M50 510 h116 q26 0 26 26 v52" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <circle cx="150" cy="857" r="5" fill="#FF5A1F"/>
+
+    <g opacity="0.26" transform="translate(1350 820) scale(0.72)">
+      <path d="M0 120 L110 60 L220 120 L110 180 Z" fill="none" stroke="#C4C6C1" stroke-width="2"/>
+      <path d="M110 60 V180 M0 120 V220 M220 120 V220 M0 220 H320" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M260 50 h70 v170 h-70 Z M280 80 h30 M280 116 h30 M280 152 h30" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M360 96 h90 v124 h-90 Z M382 122 h46 M382 154 h46 M382 186 h46" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M88 144 h42 v76 h-42 Z M150 126 h48 v94 h-48 Z" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+    </g>
+
+
+
+    <g transform="rotate(-2 1508 104)">
+      <text x="1268" y="58"
+        style="font-family:'Arial Black','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:88px;font-weight:900;letter-spacing:1.4px;fill:#106BEF;fill-opacity:0.15;stroke:#106BEF;stroke-width:1.4;stroke-opacity:0.2;paint-order:stroke">01</text>
+      <text x="1370" y="92"
+        style="font-family:'Microsoft YaHei','Noto Sans SC','Segoe UI',sans-serif;font-size:38px;font-weight:900;letter-spacing:1.6px;fill:#106BEF;stroke:#FFFFFF;stroke-width:2.4;paint-order:stroke;fill-opacity:0.48">问题与证据</text>
+      <path d="M1368 150 C1488 118 1628 174 1768 134" stroke="#106BEF" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.24"/>
+    </g>
+
+
+    <style>
+      text { font-family: "Microsoft YaHei", "Noto Sans SC", "PingFang SC", "Segoe UI", Arial, sans-serif; dominant-baseline: hanging; }
+      .brand5 { font-size: 42px; font-weight: 900; fill: #050608; }
+      .num5 { font-family: "Arial", "Microsoft YaHei", sans-serif; font-weight: 900; fill: #050608; }
+      .h15 { font-size: 68px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .h25 { font-size: 58px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .sub5 { font-size: 31px; font-weight: 560; fill: #5F6670; }
+      .body5 { font-size: 30px; font-weight: 700; fill: #050608; }
+      .muted5 { font-size: 24px; font-weight: 560; fill: #5F6670; }
+      .label5 { font-size: 29px; font-weight: 900; fill: #050608; }
+      .small5 { font-size: 23px; font-weight: 760; fill: #5F6670; }
+      .micro5 { font-size: 19px; font-weight: 760; fill: #5F6670; }
+    </style>
+    <text x="42" y="46" class="brand5">BitFun</text>
+    <text x="1840" y="50" class="small5" text-anchor="end">03 / 13</text>
+
+
+
+    <text x="96" y="132" class="small5" style="fill:#106BEF;font-weight:900">01 / 现实问题</text>
+    <text x="96" y="188" class="h15" style="font-size:60px">单月 10W+ 行代码之后，收益如何被接住？</text>
+    <text x="100" y="282" class="sub5">高速产出是真实增益，也是一轮工程系统升级机会。</text>
+    <path d="M96 356 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="230" cy="356" r="5.5" fill="#FF5A1F"/>
+
+    <rect x="116" y="398" width="522" height="360" rx="20" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="174" y="446" class="small5" style="font-size:22px;fill:#106BEF;font-weight:900">BitFun 开发经验</text>
+    <text x="174" y="514" class="num5" style="font-size:52px;fill:#106BEF">单月 10W+ 行代码</text>
+    <path d="M174 592 H586" stroke="#C4C6C1" stroke-width="3"/>
+    <text x="174" y="636" class="body5" style="font-size:27px">不是炫耀数字，而是压力测试</text>
+    <text x="174" y="684" class="small5" style="font-size:21px">验证、评审、协作、维护是否同步扩容？</text>
+    <text x="174" y="730" class="small5" style="font-size:19px;fill:#5F6670;font-weight:720">统计口径：作者提交历史，非代码质量结论。</text>
+    <path d="M666 560 H742" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
+
+    <rect x="784" y="348" width="700" height="224" rx="18" fill="#111827" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <rect x="784" y="348" width="700" height="38" rx="18" fill="#1F2937"/>
+    <circle cx="814" cy="368" r="6" fill="#EF4444"/>
+    <circle cx="836" cy="368" r="6" fill="#F59E0B"/>
+    <circle cx="858" cy="368" r="6" fill="#22C55E"/>
+    <text x="888" y="359" class="small5" style="font-size:17px;fill:#D1D5DB;font-weight:900">GCWing/BitFun · git history snapshot</text>
+    <text x="818" y="404" class="micro5" style="font-size:18px;fill:#93C5FD">https://github.com/GCWing/BitFun</text>
+    <text x="818" y="436" class="small5" style="font-size:18px;fill:#E5E7EB;font-weight:850">range: 2026-04-22 ~ 2026-05-22   ref: gcwing-http/main</text>
+    <text x="818" y="468" class="small5" style="font-size:18px;fill:#E5E7EB;font-weight:850">author: limityan &lt;limit_yan@sina.com&gt;</text>
+    <text x="818" y="518" class="num5" style="font-size:36px;fill:#60A5FA">241</text>
+    <text x="900" y="520" class="small5" style="font-size:18px;fill:#D1D5DB">commits</text>
+    <text x="1026" y="518" class="num5" style="font-size:36px;fill:#34D399">+185,533</text>
+    <text x="1222" y="520" class="small5" style="font-size:18px;fill:#D1D5DB">insertions</text>
+    <text x="818" y="550" class="small5" style="font-size:18px;fill:#FCA5A5">-46,479 deletions</text>
+    <text x="1026" y="550" class="small5" style="font-size:18px;fill:#D1D5DB">churn: 232,012 lines</text>
+
+    <rect x="720" y="648" width="950" height="188" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="780" y="690" class="small5" style="font-size:23px;fill:#FF5A1F;font-weight:900">快在哪里：不是“写得多”，而是反馈路径变短</text>
+
+    <path d="M800 748 H1500" stroke="#C4C6C1" stroke-width="4" stroke-linecap="round"/>
+    <path d="M800 748 H1500" stroke="#106BEF" stroke-width="4" stroke-linecap="round" opacity="0.55" marker-end="url(#arrowBlue)"/>
+
+    <circle cx="800" cy="748" r="13" fill="#106BEF"/>
+    <circle cx="800" cy="748" r="27" fill="#106BEF" opacity="0.10"/>
+    <text x="800" y="792" class="small5" text-anchor="middle" style="font-size:20px;fill:#050608;font-weight:900">想法 / Issue</text>
+
+    <circle cx="1020" cy="748" r="13" fill="#106BEF"/>
+    <circle cx="1020" cy="748" r="27" fill="#106BEF" opacity="0.10"/>
+    <text x="1020" y="792" class="small5" text-anchor="middle" style="font-size:21px;fill:#050608;font-weight:900">隔离执行</text>
+
+    <circle cx="1260" cy="748" r="13" fill="#FF5A1F"/>
+    <circle cx="1260" cy="748" r="27" fill="#FF5A1F" opacity="0.10"/>
+    <text x="1260" y="792" class="small5" text-anchor="middle" style="font-size:21px;fill:#050608;font-weight:900">原型 / PR</text>
+
+    <circle cx="1500" cy="748" r="13" fill="#FF5A1F"/>
+    <circle cx="1500" cy="748" r="27" fill="#FF5A1F" opacity="0.10"/>
+    <text x="1500" y="792" class="small5" text-anchor="middle" style="font-size:21px;fill:#050608;font-weight:900">验证与评审</text>
+
+
+
+    <rect x="250" y="954" width="1420" height="64" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <path d="M320 971 v30" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <text x="986" y="986" class="body5" text-anchor="middle" dominant-baseline="central" alignment-baseline="middle" style="font-size:27px">BitFun 的价值不在代码量本身，而在暴露了 AI 开发需要新的治理口径。</text>
+
+
+</svg>

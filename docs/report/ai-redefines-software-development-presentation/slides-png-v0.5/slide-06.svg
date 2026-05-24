@@ -71,8 +71,8 @@
     <path d="M96 356 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
     <circle cx="230" cy="356" r="5.5" fill="#FF5A1F"/>
 
-    <rect x="1260" y="328" width="500" height="52" rx="26" fill="#FFF6EE" stroke="#FF5A1F" stroke-width="2"/>
-    <text x="1510" y="354" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:24px;fill:#FF5A1F;font-weight:900">引子：0.99^10 ≈ 0.90，长链路需要纠偏</text>
+    <rect x="1286" y="328" width="448" height="52" rx="26" fill="#FFF6EE" stroke="#FF5A1F" stroke-width="2"/>
+    <text x="1510" y="349" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:24px;fill:#FF5A1F;font-weight:900">0.99^10 ≈ 0.90，长链路需要纠偏</text>
 
     <rect x="110" y="412" width="460" height="370" rx="20" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
     <circle cx="186" cy="488" r="46" fill="#106BEF" opacity="0.10"/>
@@ -82,17 +82,17 @@
     <text x="162" y="558" class="num5" style="font-size:32px;fill:#050608">允许过程多路径</text>
     <path d="M162 614 H518" stroke="#106BEF" stroke-width="4" stroke-linecap="round" opacity="0.75"/>
 
-      <rect x="162" y="648" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="239" y="668" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">沙箱执行</text>
+      <rect x="154" y="644" width="170" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="239" y="661" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">沙箱执行</text>
 
-      <rect x="342" y="648" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="419" y="668" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">权限控制</text>
+      <rect x="356" y="644" width="170" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="441" y="661" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">权限控制</text>
 
-      <rect x="162" y="704" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="239" y="724" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">失败回注</text>
+      <rect x="154" y="702" width="170" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="239" y="719" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">失败回注</text>
 
-      <rect x="342" y="704" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="419" y="724" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">trace 可回放</text>
+      <rect x="356" y="702" width="170" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="441" y="719" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">trace 可回放</text>
 
 
     <path d="M620 590 H700" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
@@ -105,17 +105,17 @@
     <text x="782" y="558" class="num5" style="font-size:32px;fill:#050608">压缩成可判断对象</text>
     <path d="M782 614 H1138" stroke="#106BEF" stroke-width="4" stroke-linecap="round" opacity="0.75"/>
 
-      <rect x="782" y="648" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="859" y="668" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">diff</text>
+      <rect x="774" y="644" width="170" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="859" y="661" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">diff</text>
 
-      <rect x="962" y="648" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="1039" y="668" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">测试</text>
+      <rect x="976" y="644" width="170" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1061" y="661" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">测试</text>
 
-      <rect x="782" y="704" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="859" y="724" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">风险</text>
+      <rect x="774" y="702" width="170" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="859" y="719" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">风险</text>
 
-      <rect x="962" y="704" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="1039" y="724" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">回滚</text>
+      <rect x="976" y="702" width="170" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1061" y="719" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">回滚</text>
 
 
     <path d="M1240 590 H1320" stroke="#106BEF" stroke-width="5" fill="none" marker-end="url(#arrowBlue)"/>
@@ -128,17 +128,17 @@
     <text x="1402" y="558" class="num5" style="font-size:32px;fill:#050608">只在转换点放行</text>
     <path d="M1402 614 H1758" stroke="#FF5A1F" stroke-width="4" stroke-linecap="round" opacity="0.75"/>
 
-      <rect x="1402" y="648" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="1479" y="668" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">计划 → 实现</text>
+      <rect x="1394" y="644" width="170" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1479" y="661" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">计划 → 实现</text>
 
-      <rect x="1582" y="648" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="1659" y="668" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">实现 → 评审</text>
+      <rect x="1596" y="644" width="170" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1681" y="661" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">实现 → 评审</text>
 
-      <rect x="1402" y="704" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="1479" y="724" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">评审 → 合并</text>
+      <rect x="1394" y="702" width="170" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1479" y="719" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">评审 → 合并</text>
 
-      <rect x="1582" y="704" width="154" height="40" rx="20" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
-      <text x="1659" y="724" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:19px;fill:#050608;font-weight:900">发布 → 复盘</text>
+      <rect x="1596" y="702" width="170" height="44" rx="22" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+      <text x="1681" y="719" class="small5" text-anchor="middle" dominant-baseline="middle" style="font-size:21px;fill:#050608;font-weight:900">发布 → 复盘</text>
 
 
 
