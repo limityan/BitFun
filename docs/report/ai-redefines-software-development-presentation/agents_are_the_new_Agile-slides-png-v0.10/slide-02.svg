@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <pattern id="lightDots" width="34" height="34" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1.7" fill="#C4C6C1" opacity="0.55"/>
+    </pattern>
+    <filter id="paperShadow" x="-18%" y="-18%" width="136%" height="150%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#4B5563" flood-opacity="0.13"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#106BEF" stroke-width="2"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#A5A9AE" stroke-width="2"/>
+    </marker>
+  </defs>
+  <rect width="1920" height="1080" fill="#FBFAF7"/>
+
+    <path d="M1816 92 h-70 q-28 0 -28 28 v78" stroke="#D7D7D2" stroke-width="2" fill="none" opacity="0.34"/>
+    <path d="M1782 890 v-190 q0 -32 32 -32 h50" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M1650 820 h112 q30 0 30 -30 v-80" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <circle cx="1800" cy="708" r="7" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <circle cx="1762" cy="820" r="7" fill="#106BEF"/>
+    <circle cx="1848" cy="622" r="6" fill="#FF5A1F"/>
+    <rect x="1378" y="720" width="180" height="120" fill="url(#lightDots)" opacity="0.48"/>
+    <rect x="152" y="318" width="128" height="96" fill="url(#lightDots)" opacity="0.42"/>
+    <path d="M70 740 h120 v118 h250" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M50 510 h116 q26 0 26 26 v52" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <circle cx="150" cy="857" r="5" fill="#FF5A1F"/>
+
+    <g opacity="0.26" transform="translate(1350 820) scale(0.72)">
+      <path d="M0 120 L110 60 L220 120 L110 180 Z" fill="none" stroke="#C4C6C1" stroke-width="2"/>
+      <path d="M110 60 V180 M0 120 V220 M220 120 V220 M0 220 H320" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M260 50 h70 v170 h-70 Z M280 80 h30 M280 116 h30 M280 152 h30" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M360 96 h90 v124 h-90 Z M382 122 h46 M382 154 h46 M382 186 h46" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M88 144 h42 v76 h-42 Z M150 126 h48 v94 h-48 Z" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+    </g>
+
+
+
+
+    <style>
+      text { font-family: "Microsoft YaHei", "Noto Sans SC", "PingFang SC", "Segoe UI", Arial, sans-serif; dominant-baseline: hanging; }
+      .brand5 { font-size: 42px; font-weight: 900; fill: #050608; }
+      .num5 { font-family: "Arial", "Microsoft YaHei", sans-serif; font-weight: 900; fill: #050608; }
+      .h15 { font-size: 68px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .h25 { font-size: 58px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .sub5 { font-size: 31px; font-weight: 560; fill: #5F6670; }
+      .body5 { font-size: 30px; font-weight: 700; fill: #050608; }
+      .muted5 { font-size: 24px; font-weight: 560; fill: #5F6670; }
+      .label5 { font-size: 29px; font-weight: 900; fill: #050608; }
+      .small5 { font-size: 23px; font-weight: 760; fill: #5F6670; }
+      .micro5 { font-size: 19px; font-weight: 760; fill: #5F6670; }
+    </style>
+    <text x="42" y="46" class="brand5">BitFun</text>
+    <text x="1840" y="50" class="small5" text-anchor="end">02 / 12</text>
+
+
+    <text x="96" y="146" class="h15" style="font-size:60px">目录</text>
+    <path d="M96 220 h126" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="246" cy="220" r="6" fill="#FF5A1F"/>
+    <path d="M178 340 V808" stroke="#C4C6C1" stroke-width="3" stroke-dasharray="8 12"/>
+
+    <rect x="210" y="292" width="900" height="110" rx="16" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="246" y="316" class="num5" style="font-size:40px;fill:#106BEF">01</text>
+    <text x="326" y="314" class="label5" style="font-size:30px">软件工程变革</text>
+    <text x="326" y="356" class="small5" style="font-size:21px;fill:#5F6670;font-weight:820">从 BitFun 高吞吐经验看生命周期交付件变化。</text>
+    <text x="1060" y="328" class="small5" text-anchor="end" style="fill:#106BEF;font-size:21px;font-weight:900">03</text>
+
+
+    <rect x="318" y="424" width="900" height="110" rx="16" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="354" y="448" class="num5" style="font-size:40px;fill:#106BEF">02</text>
+    <text x="434" y="446" class="label5" style="font-size:30px">速度的背后</text>
+    <text x="434" y="488" class="small5" style="font-size:21px;fill:#5F6670;font-weight:820">研究和工具都指向系统化承接，而不是单点提速。</text>
+    <text x="1168" y="460" class="small5" text-anchor="end" style="fill:#106BEF;font-size:21px;font-weight:900">04-05</text>
+
+
+    <rect x="210" y="556" width="900" height="110" rx="16" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="246" y="580" class="num5" style="font-size:40px;fill:#106BEF">03</text>
+    <text x="326" y="578" class="label5" style="font-size:30px">工程质量与治理</text>
+    <text x="326" y="620" class="small5" style="font-size:21px;fill:#5F6670;font-weight:820">五层模型把概率执行收敛为可判断交付。</text>
+    <text x="1060" y="592" class="small5" text-anchor="end" style="fill:#106BEF;font-size:21px;font-weight:900">06-09</text>
+
+
+    <rect x="318" y="688" width="900" height="110" rx="16" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="354" y="712" class="num5" style="font-size:40px;fill:#106BEF">04</text>
+    <text x="434" y="710" class="label5" style="font-size:30px">开发者角色</text>
+    <text x="434" y="752" class="small5" style="font-size:21px;fill:#5F6670;font-weight:820">团队建设系统，个人承担关键判断和责任。</text>
+    <text x="1168" y="724" class="small5" text-anchor="end" style="fill:#106BEF;font-size:21px;font-weight:900">10-12</text>
+
+
+</svg>

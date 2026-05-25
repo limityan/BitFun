@@ -4,11 +4,11 @@ const sharp = require("sharp");
 const pptxgen = require("pptxgenjs");
 
 const outDir = __dirname;
-const slidesDir = path.join(outDir, "slides-png");
-const pptxPath = path.join(outDir, process.env.PPTX_FILE || "ai-redefines-software-development.pptx");
-const notesPath = path.join(outDir, "speaker-notes.md");
+const slidesDir = path.join(outDir, "agents_are_the_new_Agile-slides-png");
+const pptxPath = path.join(outDir, process.env.PPTX_FILE || "agents_are_the_new_Agile.pptx");
+const notesPath = path.join(outDir, "agents_are_the_new_Agile-speaker-notes.md");
 const readmePath = path.join(outDir, "README.md");
-const contactSheetPath = path.join(outDir, "preview-contact-sheet.png");
+const contactSheetPath = path.join(outDir, "agents_are_the_new_Agile-preview-contact-sheet.png");
 
 fs.mkdirSync(slidesDir, { recursive: true });
 
@@ -1841,10 +1841,10 @@ function writeReadme() {
 
 本目录包含一份 15 分钟演讲用 PPTX、分页演讲稿和逐页图片预览。
 
-- \`ai-redefines-software-development.pptx\`：演讲用 PPTX，${slides.length} 页，每页为整页图片式设计。
-- \`speaker-notes.md\`：按页分页的讲稿、页内重点、互动提问和转场。
-- \`slides-png/\`：每一页导出的 SVG 与 PNG，可用于单页预览或二次编辑。
-- \`preview-contact-sheet.png\`：8 页缩略总览。
+- \`agents_are_the_new_Agile.pptx\`：演讲用 PPTX，${slides.length} 页，每页为整页图片式设计。
+- \`agents_are_the_new_Agile-speaker-notes.md\`：按页分页的讲稿、页内重点、互动提问和转场。
+- \`agents_are_the_new_Agile-slides-png/\`：每一页导出的 SVG 与 PNG，可用于单页预览或二次编辑。
+- \`agents_are_the_new_Agile-preview-contact-sheet.png\`：8 页缩略总览。
 - \`build-deck.cjs\`：可复现生成脚本。
 
 重新生成：

@@ -4,11 +4,11 @@ const sharp = require("sharp");
 const pptxgen = require("pptxgenjs");
 
 const outDir = __dirname;
-const slidesDir = path.join(outDir, "agents_are_the_new_Agile-slides-png-v0.8");
-const pptxPath = path.join(outDir, process.env.PPTX_FILE || "agents_are_the_new_Agile-v0.8.pptx");
-const notesPath = path.join(outDir, "agents_are_the_new_Agile-speaker-notes-v0.8.md");
+const slidesDir = path.join(outDir, "agents_are_the_new_Agile-slides-png-v0.11");
+const pptxPath = path.join(outDir, process.env.PPTX_FILE || "agents_are_the_new_Agile-v0.11.pptx");
+const notesPath = path.join(outDir, "agents_are_the_new_Agile-speaker-notes-v0.11.md");
 const readmePath = path.join(outDir, "README.md");
-const contactSheetPath = path.join(outDir, "agents_are_the_new_Agile-preview-contact-sheet-v0.8.png");
+const contactSheetPath = path.join(outDir, "agents_are_the_new_Agile-preview-contact-sheet-v0.11.png");
 
 fs.mkdirSync(slidesDir, { recursive: true });
 
@@ -52,7 +52,7 @@ const C = {
 };
 
 const intro =
-  "本报告以 AI 放大代码产能后的工程升级为入口，重新梳理 AI 进入软件工程后的核心机会：生成能力已经成为确定趋势，真正需要同步增强的是上下文组织、证据生成、风险分流、阶段门禁和责任承接。报告结合 DORA、METR、Harness、Agent Harness、AgentOps 等研究与工程观点，把 AI 开发收敛为一套可落地、可放大正收益的工程框架。";
+  "本报告以 BitFun 单月高吞吐 AI 辅助开发经验为入口，讨论 AI 如何从代码补全走向 Agentic Coding，并进一步影响软件开发全生命周期。内容结合 Context Engineering、证据包、阶段门禁、质量协议与人类监督等概念，分析企业研发流程、工程治理方式和开发者角色的变化，理解 AI 时代软件工程从“写代码”走向“组织智能协作系统”的新范式。";
 
 const speakerName = process.env.SPEAKER_NAME || "颜仲南";
 const speakerOrg = process.env.SPEAKER_ORG || "华为 软件IDE实验室";
@@ -216,15 +216,15 @@ const slidesV05Archive = [
     render: slidePredictionV02,
   },
   {
-    section: "THANKS AND Q&A",
-    title: "谢谢",
-    subtitle: "AI 编程、工程治理、开发者角色",
-    time: "约 0.8 分钟（收束 + Q&A 入口）",
-    focus: "收束主旨并把讨论引向收益指标、确定性证据和开发者成长。",
-    question: "AI 编程真正值得追踪的收益指标、证据指标和成长指标分别是什么？",
+    section: "收束",
+    title: "下一步怎么落地",
+    subtitle: "两个可验证试点",
+    time: "约 0.8 分钟",
+    focus: "把收束从泛泛讨论改为两个可执行试点：运行控制面和质量前置。",
+    question: "如果只选两个试点来验证 AI 研发正收益，应该先做哪两个？",
     script:
-      "最后把今天的内容收束成三句话。第一，AI 扩大了个人产出，但团队不能只看代码量，而要看净交付时间、返工率、评审压力和线上风险。第二，AI 的执行过程可以概率化，但放行必须依赖确定性证据，包括测试、trace、风险说明、owner 和回滚路径。第三，开发者的成长不会停留在会不会写代码，而会更多转向架构判断、上下文组织、证据设计和工程治理。如果只把 AI 当成写代码工具，会低估它对流程的影响；如果只把 AI 当成替代人，也会低估人在目标、边界和责任上的价值。接下来可以围绕 AI 编程、工程治理和开发者角色继续交流。",
-    transition: "进入 Q&A。",
+      "最后把内容落成两个可验证试点。第一是运行控制面试点。Gartner 2026 判断企业 AI coding agent 会从单一 IDE 体验走向治理、验证和控制平台；IBM MAP 也说明生产 Agent 更常见的成功形态是短链路、可控和人类评估。因此 BitFun 可以先选一条高频工作流，例如 Issue 到分支、测试、评审，把任务入口、隔离工作区、权限、阶段门禁和评审材料串起来，用净周期、等待、返工和失败重跑来判断收益。第二是质量前置试点。DORA 2025 说明 AI 会放大组织已有能力，MSR 2026 也提醒短期速度收益可能被复杂度和质量风险吞回。所以不要只看行数或提交数，而要把检查面写到任务前，把测试、日志和轨迹收进生成中，把风险仲裁、契约测试和回滚说明放到合并前。这样 AI 的正收益就不是一句愿景，而是可以被衡量、被复盘、被持续放大的工程能力。",
+    transition: "进入交流。",
     render: slideThanksV02,
   },
 ];
@@ -375,15 +375,15 @@ const slides = [
     render: slideResponsibilityV06,
   },
   {
-    section: "THANKS AND Q&A",
-    title: "谢谢",
-    subtitle: "从代码产能，到可治理交付",
-    time: "约 0.9 分钟（收束 + Q&A 入口）",
-    focus: "用三条外部研究引出的讨论问题收束，给 Q&A 留入口。",
-    question: "如果 AI 已经进入日常开发，团队最应该先讨论收益、治理，还是人的判断位置？",
+    section: "收束",
+    title: "下一步怎么落地",
+    subtitle: "两个可验证试点",
+    time: "约 0.9 分钟",
+    focus: "用近期行业和论文信号收束为两个落地试点：运行控制面和质量前置。",
+    question: "如果只选两个试点来验证 AI 研发正收益，应该先做哪两个？",
     script:
-      "最后我不把结论收成标准答案，而是留三个讨论入口。第一，Google 和 DeepMind 的 agent scaling 研究说明多 Agent 不是越多越好，那么我们在团队里该如何判断任务适合单 Agent、并行 Agent 还是集中编排。第二，IBM MAP 和 Gartner 的信号都指向生产化：真实企业更关心短链路、可控、人类评估、治理和验证平台，那么我们的工具建设要不要从单点能力转向运行基座。第三，MSR 2026 提醒我们，速度提升可能被复杂度和质量风险吞回，那么团队要如何把质量债、返工率和维护成本纳入 AI 研发的收益计算。用一句话收束：AI 重新定义软件开发，不是因为它能写更多代码，而是因为它逼我们把软件工程从经验流程，升级成可验证、可治理、可复盘的系统。",
-    transition: "进入 Q&A。",
+      "最后把内容落成两个可验证试点。第一是运行控制面试点。Gartner 2026 判断企业 AI coding agent 会从单一 IDE 体验走向治理、验证和控制平台；IBM MAP 也说明生产 Agent 更常见的成功形态是短链路、可控和人类评估。因此 BitFun 可以先选一条高频工作流，例如 Issue 到分支、测试、评审，把任务入口、隔离工作区、权限、阶段门禁和评审材料串起来，用净周期、等待、返工和失败重跑来判断收益。第二是质量前置试点。DORA 2025 说明 AI 会放大组织已有能力，MSR 2026 也提醒短期速度收益可能被复杂度和质量风险吞回。所以不要只看行数或提交数，而要把检查面写到任务前，把测试、日志和轨迹收进生成中，把风险仲裁、契约测试和回滚说明放到合并前。这样 AI 的正收益就不是一句愿景，而是可以被衡量、被复盘、被持续放大的工程能力。",
+    transition: "进入交流。",
     render: slideThanksV02,
   },
 ];
@@ -392,9 +392,9 @@ const positiveToneOverrides = [
   {
     index: 1,
     title: "目录",
-    focus: "用四个风格统一的模块组织全篇：现实观察、研究共识、工程治理、能力演进。",
+    focus: "用四个风格统一的模块组织全篇：现实观察、行业信号、工程治理、能力演进。",
     script:
-      "今天按四个模块讲。第一是现实观察：AI 已经把代码产能打开了，下一步是让验证、评审、维护和责任一起升级，承接这份生产力。第二是研究共识：DORA、METR、Harness 等研究都在提示，AI 收益取决于组织系统，而不是单点工具。第三是工程治理：控制面、判断上下文、独立评审、阶段门禁和复盘回注，不是给 AI 降速，而是让 AI 的速度稳定变成净交付。第四是能力演进：团队要建设可治理的交付系统，个人要把判断建立在事实、风险和证据上。",
+      "今天按四个模块讲。第一是现实观察：AI 已经把代码产能打开了，下一步是让验证、评审、维护和责任一起升级。第二是行业信号：研究和主流工具都在说明，AI 收益不是单点补全，而是系统化承接。第三是工程治理：控制面、判断上下文、独立评审和阶段门禁，不是给 AI 降速，而是让 AI 的速度稳定变成净交付。第四是能力演进：质量协议、BitFun 能力迁移、团队职责和个人判断都要跟着变化。",
     transition: "先从代码产能被放大的现实问题进入，看看团队怎样把这份生产力接成稳定收益。",
   },
   {
@@ -486,8 +486,13 @@ const positiveToneOverrides = [
   },
   {
     index: 12,
+    title: "下一步怎么落地",
+    subtitle: "两个可验证试点",
+    time: "约 0.9 分钟",
+    focus: "用近期行业和论文信号收束为两个落地试点：运行控制面和质量前置。",
+    question: "如果只选两个试点来验证 AI 研发正收益，应该先做哪两个？",
     script:
-      "最后我不把结论收成标准答案，而是留三个讨论入口。第一，Google 和 DeepMind 的 agent scaling 研究说明多 Agent 要按任务结构设计，那么我们在团队里该如何判断任务适合单 Agent、并行 Agent 还是集中编排。第二，IBM MAP 和 Gartner 的信号都指向生产化：真实企业更关心短链路、可控、人类评估、治理和验证平台，那么我们的工具建设如何从单点能力走向运行基座。第三，MSR 2026 提醒我们，速度提升需要质量机制承接，那么团队要如何把质量、返工率和维护收益纳入 AI 研发的收益计算。用一句话收束：AI 一定会持续重新定义软件开发，它带来的不是一次工具替换，而是一轮工程系统升级。周边工程能力、团队沟通方式和个人技能跟上以后，这份正收益会被持续放大。",
+      "最后把内容落成两个可验证试点。第一是运行控制面试点。Gartner 2026 判断企业 AI coding agent 会从单一 IDE 体验走向治理、验证和控制平台；IBM MAP 也说明生产 Agent 更常见的成功形态是短链路、可控和人类评估。因此 BitFun 可以先选一条高频工作流，例如 Issue 到分支、测试、评审，把任务入口、隔离工作区、权限、阶段门禁和评审材料串起来，用净周期、等待、返工和失败重跑来判断收益。第二是质量前置试点。DORA 2025 说明 AI 会放大组织已有能力，MSR 2026 也提醒短期速度收益可能被复杂度和质量风险吞回。所以不要只看行数或提交数，而要把检查面写到任务前，把测试、日志和轨迹收进生成中，把风险仲裁、契约测试和回滚说明放到合并前。这样 AI 的正收益就不是一句愿景，而是可以被衡量、被复盘、被持续放大的工程能力。",
   },
 ];
 
@@ -495,10 +500,255 @@ for (const { index, ...fields } of positiveToneOverrides) {
   Object.assign(slides[index], fields);
 }
 
-// Merge the previous standalone "PR 判断上下文" and "速度与整体效率" pages.
-// Keep the merged page at index 7 and drop the old efficiency-only page so
-// later page numbers, notes, and section ranges are regenerated consistently.
-slides.splice(8, 1);
+const industryPatternsSlideV09 = {
+  section: "02 / 行业信号",
+  title: "行业做法：把 Agent 放进工程流程",
+  subtitle: "优秀工具的共同方向不是只补全代码，而是把执行环境、仓库规则、评审回路和权限检查做实。",
+  time: "约 1.3 分钟",
+  focus: "用 GitHub Copilot、Codex、Claude Code、Cursor 的官方能力归纳行业共识：从 IDE 助手走向可协作、可审计的 Agent 工作流。",
+  question: "主流工具面对 AI 生成代码的质量和协作问题，正在把能力往哪里放？",
+  script:
+    "在讲 BitFun 之前，先看几个主流工具的共同方向。GitHub Copilot cloud agent 把任务放到 GitHub Actions 驱动的临时环境里，可以研究仓库、制定计划、改分支、跑测试并进入评审，这说明质量承接正在靠近代码托管和协作平台。OpenAI Codex cloud 也是类似方向：任务在独立云环境中后台执行，可以连接 GitHub，并把结果转成交付评审；重点不是一次对话，而是把异步任务变成交付对象。Claude Code 的做法更偏本地工程控制：权限白名单、钩子检查、子代理和沙箱，用来把自动执行、格式化、检查和人工许可串起来。Cursor 则把规则文件和后台代理放到产品里，强调仓库级规则、远程环境、分支和可接管状态。四个例子各有产品差异，但共同点很清楚：AI 编程工具正在从“编辑器里帮我写一段代码”，走向“在受控环境里执行任务，并把上下文、测试、权限、日志和评审回路交给团队判断”。这个行业趋势，也正是 BitFun 后面要落的工程控制面。",
+  transition: "看完行业做法，再回到 BitFun：同样的问题，在本地工程系统里应该怎么承接。",
+  render: slideIndustryPatternsV09,
+};
+
+const qualityProtocolSlideV09 = {
+  section: "04 / 能力演进",
+  title: "质量协议：把检查面前置到工作流",
+  subtitle: "质量不再是最后一轮人工兜底，而是任务前、生成中、合并前都能执行的协议。",
+  time: "约 1.4 分钟",
+  focus: "合并质量链路和工程协议：把责任、证据、工件三条链前置到任务、生成和合并节点，减少与速度页的重复。",
+  question: "哪些质量要求应该从文档和经验，变成工具可以检查、Agent 可以读取、人可以复核的规则？",
+  script:
+    "前面讲的是让 AI 任务可执行、可放行，这一页只回答质量怎么落地。质量不要等到最后一个评审者兜底，而要前置到三个时间点。第一，任务前先写清检查面：性能、安全、兼容性、可观测、验收边界，明确哪些失败不能接受。第二，生成中让测试和评估持续收敛：先定义失败证据和回归口径，再让 Agent 在边界内实现、修复、重跑，而不是把生成结果一次性扔给人。第三，合并前做风险仲裁：人不需要重新读完整个过程，但要判断责任人、依赖、回滚、例外和证据是否完整。这里可以用三条链来检查：责任链回答谁决策、谁审核、谁承担；证据链回答测试、日志、执行轨迹和回滚是否完整；工件链回答代码、配置、依赖、发布物和运行数据是否可追踪。这样质量协议不是给速度踩刹车，而是把速度导入可复核的交付轨道。",
+  transition: "质量协议讲的是日常交付，再进一步看 BitFun 自身演进时，AI 加速重构如何不破坏能力边界。",
+  render: slideQualityProtocolV09,
+};
+
+const capabilityEvolutionSlideV09 = {
+  section: "04 / 能力演进",
+  title: "BitFun 演进：先锁能力，再迁边界",
+  subtitle: "AI 可以加速拆解和迁移，但产品能力、平台边界和行为等价要先被证明。",
+  time: "约 1.3 分钟",
+  focus: "把 BitFun 未来演进落到能力保护式重构：先锁能力，再设接口、查边界、验等价。",
+  question: "当 AI 让重构速度变快，团队如何避免把产品能力和平台边界拆散？",
+  script:
+    "最后落回 BitFun 自身的演进。AI 会让拆模块、迁移所有权、补适配器这些工作变快，但越是变快，越要先锁住能力边界。这里的原则是先锁能力，再迁边界。第一，先锁能力：把现有产品能力、远程兼容、日志、工具行为和关键路径列成可验证清单。第二，再设接口：用端口、适配器和提供者把运行所有权迁移的边界讲清楚，不把 DTO 抽取误认为运行所有权迁移。第三，查边界：用依赖方向、平台接口使用、远程场景和权限边界检查，避免共享 core 反向依赖桌面实现。第四，验等价：用契约测试、快照、端到端路径和最小验证矩阵证明行为没变。这样 AI 的价值不是更快搬代码，而是在一套迁移协议里放大工程能力。BitFun 后续从 IDE 走向更完整的 ADE，也需要这种能力保护：让 Agent 做更多，同时让产品能力、边界和责任更清楚。",
+  transition: "当工具、协议和演进方式都变化以后，最后要回到团队和个人职责怎样变化。",
+  render: slideCapabilityEvolutionV09,
+};
+
+const v09Slides = [
+  slides[0],
+  slides[1],
+  slides[2],
+  slides[3],
+  industryPatternsSlideV09,
+  slides[4],
+  slides[5],
+  slides[6],
+  qualityProtocolSlideV09,
+  capabilityEvolutionSlideV09,
+  slides[11],
+  slides[12],
+];
+
+slides.length = 0;
+slides.push(...v09Slides);
+
+const compactFinalTitlesV09 = [
+  {
+    title: "AI 如何重新定义软件开发",
+    subtitle: "从代码产能，到可治理交付",
+  },
+  {
+    title: "目录",
+  },
+  {
+    title: "速度的背后",
+    subtitle: "AI 缩短的是从想法到反馈的周期；质量取决于验证、评审和维护能否同步扩容。",
+  },
+  {
+    title: "行业探索",
+    subtitle: "最新信号不只讨论生产率，也开始转向架构选择、生产测量、平台治理和质量。",
+  },
+  {
+    title: "工具的方向",
+    subtitle: "优秀工具的共同方向不是只补全代码，而是把执行环境、仓库规则、评审回路和权限检查做实。",
+  },
+  {
+    title: "工程控制面",
+    subtitle: "规则上下文、工具准入、权限隔离和验证矩阵，共同保护 AI 交付能力。",
+  },
+  {
+    title: "确定性放行",
+    subtitle: "Agent 可以多路径探索；中间件负责把过程变成可审、可测、可追责的证据。",
+  },
+  {
+    title: "可治理工作流",
+    subtitle: "不是聊天产物堆叠，而是任务、环境、判断上下文、评审和门禁的连续交付对象。",
+  },
+  {
+    title: "质量前置",
+    subtitle: "质量不再是最后一轮人工兜底，而是任务前、生成中、合并前都能执行的协议。",
+  },
+  {
+    title: "能力演进",
+    subtitle: "AI 可以加速拆解和迁移，但产品能力、平台边界和行为等价要先被证明。",
+  },
+  {
+    title: "职责变化",
+    subtitle: "团队把上下文、证据、指标和门禁做实；个人在目标、边界、风险和责任上站稳。",
+  },
+  {
+    title: "谢谢",
+    subtitle: "AI 编程、工程治理、开发者角色",
+    time: "约 0.8 分钟",
+    focus: "回到简洁致谢页，用两个更落地的问题收束，不展开成方案页。",
+    question: "AI 研发正收益最应该先落在哪条工作流、哪组质量指标上？",
+    script:
+      "最后简单收束成两个落地问题。第一，团队可以先选哪一条高频工作流，做任务入口、隔离环境、权限、评审材料和阶段门禁的控制面。第二，质量指标应该怎么前置，至少把等待、返工、失败重跑、测试证据和回滚说明纳入判断。AI 的方向是正收益，但真正落地时，要把这份正收益放到能衡量、能复盘、能持续改进的工程系统里。谢谢大家。",
+    transition: "进入交流。",
+  },
+];
+
+slides.forEach((slide, i) => Object.assign(slide, compactFinalTitlesV09[i]));
+
+const finalContentV10 = [
+  {
+    title: "AI 如何重新定义软件开发",
+    subtitle: "从代码产能，到可治理 Agentic SDLC",
+    time: "约 0.5 分钟",
+    focus: "建立主旨：BitFun 是入口，核心问题是如何把 AI 高速产出变成可验证、可治理、可复盘的交付系统。",
+    question: "当代码生成不再稀缺，软件工程真正稀缺的是什么？",
+    script:
+      "各位好，今天分享的主题是《AI 如何重新定义软件开发》。我会以 BitFun 的一段真实开发经验为入口，但重点不是复盘项目细节，也不是比较哪个工具更强。真正想讨论的是：当 AI 已经能显著放大代码产出以后，软件工程需要怎样升级，才能把这份速度变成稳定的交付能力。今天的主线可以概括成一句话：从代码产能，到可治理 Agentic SDLC。也就是说，AI 不只是帮人写代码，而是逐步进入需求理解、设计、实现、测试、评审、发布和复盘这些环节；相应地，团队要建设上下文、隔离执行、证据包、阶段门禁和反馈学习环，让概率性的执行过程收敛成可判断的工程结果。",
+    transition: "先看今天的四个主题，后面每一页都围绕这条主线展开。",
+  },
+  {
+    title: "目录",
+    time: "约 0.7 分钟",
+    focus: "用四个模块组织全篇：软件工程变革、速度的背后、工程质量与治理、开发者角色。",
+    question: "AI 研发的收益，应该看代码量、局部速度，还是端到端风险可控？",
+    script:
+      "今天分四个部分。第一，软件工程变革：用 BitFun 的高吞吐开发经验说明，AI 带来的不是单点工具变化，而是软件生命周期中交付件和判断依据的变化。第二，速度的背后：行业研究、竞品实践和 BitFun/ADE 演进方向都在提示，代码写得更快不等于项目交付指数级变快，收益必须被工程系统承接。第三，工程质量与治理：从控制面、可治理工作流、质量前置和能力演进四个角度，说明如何把概率执行收敛成可判断交付。第四，开发者角色：讨论团队和个人在这个系统里分别需要做什么，尤其是刚进入职场的同学，哪些能力会变得更关键。",
+    transition: "先从 BitFun 的实际开发经验进入。",
+    render: slideAgendaV10,
+  },
+  {
+    title: "速度的背后",
+    subtitle: "BitFun 的高吞吐经验不是结论，而是对工程系统的压力测试。",
+    time: "约 1.3 分钟",
+    focus: "用 BitFun 统计把问题落到真实场景：代码增长后，净收益取决于验证、评审、返工和维护承接。",
+    question: "单月 10W+ 行代码更像生产力证明，还是工程系统压力测试？",
+    script:
+      "先看一个入口案例。在 GCWing/BitFun 仓库里，以 2026 年 4 月 22 日到 5 月 22 日为窗口，作者 limityan 在 main 分支上有 241 个提交，新增 185,533 行，删除 46,479 行。这里我只把它概括成单月 10W+ 行代码，因为数字本身不是要炫耀，而是一个工程压力测试。AI 确实让想法更快变成原型，让个人可以承担过去需要多人探索的工作；但代码更快进入仓库以后，真正的问题会转移到验证覆盖、评审等待、返工闭环和长期维护。换句话说，高吞吐不是净收益的证明，只说明生产环节已经被放大。团队真正要问的是：这些变更凭什么可以合并，证据是否足够，风险能否回滚，后续维护是否还能看懂。AI 放大的不是单个键盘速度，而是从想法到反馈的回路；如果后面的工程承接没有同步升级，速度也可能变成新的压力。",
+    transition: "这个判断不能只靠单个项目经验，接下来看看外部研究给出的信号。",
+    render: slideShockV10,
+  },
+  {
+    title: "强模型之后：运行基座",
+    subtitle: "最新研究把能力从“模型参数”扩展为“模型 × Harness × 环境”的工程系统。",
+    time: "约 1.6 分钟",
+    focus: "用 2026 年前后的 Harness Engineering、AgentTrace、SWE-CI/SWE-Chain 和 LangChain 案例说明：强模型阶段更需要运行基座、过程追踪和长期验证。",
+    question: "当模型越来越会写代码，工程系统要把哪些能力补在模型外侧？",
+    script:
+      "这一页我想把主线重新收束清楚：模型越强，软件工程越不是退场，而是从“人怎么写代码”转向“系统怎么让 AI 的工作可验证、可追踪、可维护”。2026 年的 AI Harness Engineering 论文提出，一个软件 Agent 的工程能力不是只由模型决定，而是来自模型、Harness 和环境组成的系统；Harness 负责任务规格、上下文选择、工具访问、验证、权限、观测和人工干预记录。AgentTrace 从另一个角度补上过程可观测性，用结构化日志记录操作、认知和上下文轨迹，服务于安全、问责、风险分析和信任校准。SWE-CI 与 SWE-Chain 则把评估从一次 patch 推向 CI 循环和连续版本升级，说明真正难的是长期维护。LangChain 的案例也很典型：固定同一个模型，只改 harness、trace、evals、自验证和执行流程，就把 Terminal Bench 2.0 表现从 52.8 提到 66.5。由此才能推导后面的观点：业界工具、BitFun/ADE、质量治理和开发者角色变化，本质都在围绕这个运行基座展开。",
+    transition: "行业工具的产品形态，也在往同一个方向收敛。",
+    render: slideExternalSignalsV10,
+  },
+  {
+    title: "业界工程化实践",
+    subtitle: "优秀工具不只增强生成能力，更在补齐软件工程运行能力。",
+    time: "约 1.3 分钟",
+    focus: "拆出业界竞品和主流工具在软件工程上的共性能力：任务云化、权限护栏、仓库规则、追踪评估。",
+    question: "为什么主流工具都在从 IDE 插件走向可执行、可观测的任务系统？",
+    script:
+      "从竞品和主流工具看，趋势已经比较清楚：优秀工具不再只比模型是否更会写代码，而是在把上一页说的运行基座产品化。GitHub Copilot cloud agent 和 OpenAI Codex cloud 把任务放进隔离环境，执行后进入分支和 PR，这是任务和环境的产品化；Claude Code 强调权限、Hooks、子 Agent 和沙箱，让自动执行可拦截、可审计，这是权限和生命周期钩子的产品化；Cursor 把仓库规则、AGENTS.md、后台 Agent 和可接管状态放进开发流程，这是上下文与团队规则的产品化；LangChain 和 AgentTrace 代表的 Trace/Evals 方向，则把失败定位、评估回归和 harness 调优变成工程循环。四个方向合起来说明：AI 编程工具正在从补全器变成任务运行系统，核心不是多一个按钮，而是把上下文、执行、权限、证据和评估组织起来。",
+    transition: "业界方向给了参照，下一页看 BitFun 如果继续演进到 IDE/ADE，应该承接哪些产品能力。",
+    render: slideIndustryPracticesV11,
+  },
+  {
+    title: "BitFun / ADE 演进",
+    subtitle: "从 IDE 入口走向工程运行面：上下文、执行、证据和团队协作需要产品化。",
+    time: "约 1.3 分钟",
+    focus: "拆出 BitFun 当前已有基础和后续待规划能力，避免把竞品观察和自身路线混在一页里。",
+    question: "BitFun 后续演进，应该只做更强 IDE，还是做承接 Agentic SDLC 的 ADE？",
+    script:
+      "回到 BitFun，后续演进不应该只理解成 IDE 功能增强，而是从 IDE 入口走向 ADE 运行面。已有基础包括仓库级规则和架构文档、工具准入、权限隔离、验证矩阵，以及本地和远程工作空间的上下文组织。待规划方向可以更产品化：第一，任务控制面，把 Issue、目标、非目标、验收标准和风险边界作为 Agent 执行入口。第二，证据包标准，把 diff、测试、日志、影响范围和回滚说明沉淀成评审材料。第三，多 Agent 协作台，让实现、评审、修复、验证这些角色分离，但结果进入同一条工程流。第四，企业级 ADE 能力，把模型选择、权限审计、团队规则、质量指标和 PR/发布流程打通。这样 BitFun 的定位就不是“更会调用模型的 IDE”，而是“让 AI 能进入软件工程循环的运行面”。",
+    transition: "有了产品演进方向，再看 BitFun 现有机制如何构成工程控制面。",
+    render: slideBitfunAdeDirectionV11,
+  },
+  {
+    title: "工程控制面",
+    subtitle: "BitFun 的规则、工具、权限和验证，把模型能力放进工程轨道。",
+    time: "约 1.4 分钟",
+    focus: "把 BitFun 本地机制映射到可控执行：规则上下文、工具准入、权限隔离、验证矩阵。",
+    question: "同样的模型，为什么放进不同工程系统里，可靠性会差很多？",
+    script:
+      "回到 BitFun，会看到控制面不是抽象概念。第一，规则上下文：AGENTS.md、模块规则、架构文档和验证矩阵，先告诉 AI 什么能改、什么边界需要确认。第二，工具准入：tool_pipeline 这类机制决定哪些工具可用、何时要读取工具规格、哪些能力需要限制。第三，权限隔离：workspace paths、miniapp 权限和主机能力白名单，把文件、命令、网络等影响面限制在可控范围内。第四，验证矩阵：前端、核心逻辑、桌面集成、深度评审等不同风险路径，对应不同的最小验证。控制面的价值不是让人追踪每个提示词，而是把团队真正关心的输入、边界、执行、证据和放行规则结构化，让模型差异和过程波动被工程系统收敛。",
+    transition: "控制面解决的是基础约束，下一页把它落到一条从任务到 PR 的可治理工作流。",
+    render: slideExplorationV10,
+  },
+  {
+    title: "可治理工作流",
+    subtitle: "用阶段产物收敛概率过程：任务、执行、证据、门禁与学习。",
+    time: "约 1.6 分钟",
+    focus: "合并原来的治理模型与评审工作流，用一页讲清概率性执行如何被阶段产物收敛。",
+    question: "如果每一步都有 99% 正确率，团队靠什么避免长链路错误被放大？",
+    script:
+      "控制面之后，需要一条可治理工作流，把概率性的 Agent 执行收敛成团队能判断的阶段产物。这里不再分开讲抽象模型和流程，而是合在一起看四个转换点。第一，任务契约：目标、非目标、验收标准、风险边界和上下文来源先说清楚，让 Agent 的探索有边界。第二，隔离执行：在工作区、权限和工具轨迹受控的环境里运行，允许探索，但不污染主线。第三，证据包：把变更摘要、测试结果、关键日志、影响范围、未决风险和回滚路径放到一起，让评审不再从最终 diff 倒推上下文。第四，门禁与学习：低风险变更快速通过，高风险变更补齐证据后再进入 PR、合并或发布；失败案例回到规则、测试和上下文里。核心不是让过程完全确定，而是用阶段证据不断纠偏，避免 0.99 的多轮串联变成系统性风险。",
+    transition: "当工作流可治理以后，质量要求要进一步前置到任务和生成阶段。",
+    render: slideGovernedWorkflowV11,
+  },
+  {
+    title: "质量前置",
+    subtitle: "速度提升的代价，要用质量协议在任务前、生成中、合并前处理。",
+    time: "约 1.4 分钟",
+    focus: "把速度代价处理为可执行质量协议，而不是重复讲质量概念。",
+    question: "代码更快进入仓库后，哪些质量要求必须提前进入任务定义？",
+    script:
+      "工作流解决的是变更如何进入评审，质量前置解决的是评审之前要把什么问题提前定义清楚。速度提升的代价，不能只靠最后一个评审者兜底。更可执行的做法是把质量协议前置到三个时间点。任务前，先写清检查面：性能、安全、兼容性、可观测、验收边界，以及哪些失败不能接受。生成中，先定义失败证据和回归口径，再让 Agent 实现、修复、重跑，而不是把最终 diff 一次性扔给人。合并前，人做风险仲裁，重点看质量例外能否接受、回滚责任是否明确、剩余风险是否记录。这里可以结合 TDD 的新形态：测试不只是开发者手写用例，也可以变成 Agent 执行前的验收协议、生成中的评估脚本和合并前的回归证据。质量协议的目标不是给 AI 降速，而是把局部速度转成端到端效率。",
+    transition: "日常质量协议之外，BitFun 自身演进还要处理能力迁移和架构稳定性。",
+    render: slideQualityProtocolV10,
+  },
+  {
+    title: "能力演进",
+    subtitle: "AI 可以加速改造，但架构与规则必须先约束能力边界。",
+    time: "约 1.3 分钟",
+    focus: "把 BitFun/ADE 的前瞻判断落到能力保护式演进：先锁能力，再迁边界。",
+    question: "当 AI 让重构更快，团队如何避免把产品能力和平台边界拆散？",
+    script:
+      "BitFun 后续从 IDE 走向更完整的 ADE，会遇到更典型的大工程问题：能力越来越多，Agent 参与越来越深，架构边界反而更重要。AI 可以加速拆模块、迁移所有权、补适配器，但越是提速，越要先锁能力，再迁边界。第一，锁能力：把产品能力、远程兼容、日志、工具行为和关键路径列成可验证清单。第二，设接口：用端口、适配器和提供者讲清运行所有权迁移边界，不把 DTO 抽取误认为 owner 迁移。第三，查边界：用依赖方向、平台接口、权限边界和远程场景检查越界。第四，验等价：用契约测试、快照和端到端路径证明行为没变。这里的前瞻判断是：在 AI 时代，架构不但不会弱化，反而会成为约束 AI 不确定性的核心资产。",
+    transition: "最后回到人和团队：在这个新系统里，开发者角色会怎样变化。",
+    render: slideCapabilityEvolutionV10,
+  },
+  {
+    title: "开发者角色",
+    subtitle: "团队建设可治理系统，个人承担关键判断；新人要从实现者走向系统参与者。",
+    time: "约 1.7 分钟",
+    focus: "从团队、个人和新人三个角度说明角色变化，并给出技术成长方向。",
+    question: "AI 参与每个阶段后，哪些能力应该由系统承接，哪些判断必须由人承担？",
+    script:
+      "最后看开发者角色。团队层面，未来的重点不是追求全自动，而是建设可治理交付系统：把需求、架构、日志、测试和历史决策组织成 Agent 可用的上下文；把测试、CI、执行轨迹、代码评审和风险说明变成证据包；用净时间、返工率、评审压力和线上风险判断真实收益。个人层面，变化不是远离代码，而是判断位置前移：开发者要会定义问题，说明目标、非目标和风险边界；要会核验事实，判断上下文是否可信；要会解释风险，判断什么可以自动推进、什么需要补证据；还要能承接责任，出问题能回滚、复盘和沉淀。对刚进入职场的同学，技术成长方向会更宽：不仅要写代码，还要理解需求、用户场景、产品定位、架构约束和运行证据。AI 会降低实现门槛，但会提高对系统理解和工程判断的要求。",
+    transition: "最后用三条结论收束，并进入交流。",
+    render: slideResponsibilityV10,
+  },
+  {
+    title: "谢谢",
+    subtitle: "AI 编程、工程治理、开发者角色",
+    time: "约 0.9 分钟",
+    focus: "用两个可执行试点和一个前瞻判断收束。",
+    question: "AI 研发正收益最应该先落在哪条工作流、哪组质量指标上？",
+    script:
+      "最后收束成两件可以落地的事情和一个判断。第一，可以先选一条高频流程，做运行控制面试点，把任务入口、隔离环境、权限、证据包、评审材料和阶段门禁串起来。第二，可以做质量前置试点，把等待、返工、失败重跑、测试证据和回滚说明纳入质量指标，而不是只看代码量。第三个判断是：未来优秀的软件工程师，不是单纯更快写代码的人，而是能把 AI 放进可验证、可治理、可复盘工程系统的人。谢谢大家。",
+    transition: "进入交流。",
+    render: slideThanksV10,
+  },
+];
+
+slides.forEach((slide, i) => Object.assign(slide, finalContentV10[i]));
 
 function esc(value) {
   return String(value)
@@ -1688,9 +1938,9 @@ function sectionWatermark(index) {
 function sectionWatermarkInfo(index) {
   const page = index + 1;
   if (page === 3) return { n: "01", title: "现实观察" };
-  if (page === 4) return { n: "02", title: "研究共识" };
-  if (page >= 5 && page <= 8) return { n: "03", title: "工程治理" };
-  if (page >= 9 && page <= 12) return { n: "04", title: "能力演进" };
+  if (page >= 4 && page <= 6) return { n: "02", title: "行业信号" };
+  if (page >= 7 && page <= 10) return { n: "03", title: "工程治理" };
+  if (page >= 11 && page <= 12) return { n: "04", title: "开发者角色" };
   return null;
 }
 
@@ -1743,10 +1993,12 @@ function v5Chrome(slide, index) {
   `;
 }
 
-function v5Header(kicker, titleValue, subtitle, titleSize = 72) {
+const MAIN_TITLE_SIZE_V09 = 60;
+
+function v5Header(kicker, titleValue, subtitle, _titleSize = MAIN_TITLE_SIZE_V09) {
   return `
-    <text x="96" y="146" class="h15" style="font-size:${titleSize}px">${esc(titleValue)}</text>
-    ${subtitle ? `<text x="100" y="${titleSize > 72 ? 250 : 244}" class="sub5">${esc(subtitle)}</text>` : ""}
+    <text x="96" y="146" class="h15" style="font-size:${MAIN_TITLE_SIZE_V09}px">${esc(titleValue)}</text>
+    ${subtitle ? `<text x="100" y="244" class="sub5">${esc(subtitle)}</text>` : ""}
     <path d="M96 ${subtitle ? 318 : 268} h112" stroke="${L.blue}" stroke-width="8" stroke-linecap="round"/>
     <circle cx="${subtitle ? 230 : 226}" cy="${subtitle ? 318 : 268}" r="5.5" fill="${L.orange}"/>
   `;
@@ -1774,7 +2026,7 @@ function v02Takeaway(textValue, _ignoredWidth = TAKEAWAY_W_V02, _ignoredY = TAKE
   return `
     <rect x="${x}" y="${y}" width="${width}" height="${TAKEAWAY_H_V02}" rx="10" fill="${L.paper}" stroke="${L.line2}" stroke-width="2"/>
     <path d="M${x + 70} ${y + 17} v30" stroke="${L.blue}" stroke-width="8" stroke-linecap="round"/>
-    <text x="${x + width / 2 + 26}" y="${y + TAKEAWAY_H_V02 / 2 - 2}" class="body5" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" style="font-size:27px">${esc(textValue)}</text>
+    <text x="${x + width / 2 + 26}" y="${y + TAKEAWAY_H_V02 / 2 - 12}" class="body5" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" style="font-size:27px">${esc(textValue)}</text>
   `;
 }
 
@@ -2185,7 +2437,7 @@ function velocityQualityWatermarkV07(x, y, options = {}) {
 function slideTitleV02(slide, index) {
   const body = `
     <text x="96" y="154" class="small5" style="fill:${L.blue};font-weight:900">BitFun / AI 软件工程报告</text>
-    <text x="96" y="240" class="h15" style="font-size:82px">${esc(slide.title)}</text>
+    <text x="96" y="240" class="h15" style="font-size:${MAIN_TITLE_SIZE_V09}px">${esc(slide.title)}</text>
     <text x="100" y="360" class="sub5">${esc(slide.subtitle)}</text>
     <path d="M96 436 h164" stroke="${L.blue}" stroke-width="9" stroke-linecap="round"/>
     <circle cx="288" cy="436" r="6" fill="${L.orange}"/>
@@ -2200,14 +2452,14 @@ function slideTitleV02(slide, index) {
 
 function slideAgendaV02(slide, index) {
   const body = `
-    <text x="96" y="150" class="small5" style="fill:${L.blue};font-weight:900">目录</text>
+    <text x="96" y="146" class="h15" style="font-size:${MAIN_TITLE_SIZE_V09}px">${esc(slide.title)}</text>
     <path d="M96 220 h126" stroke="${L.blue}" stroke-width="8" stroke-linecap="round"/>
     <circle cx="246" cy="220" r="6" fill="${L.orange}"/>
     <path d="M178 346 V810" stroke="${L.line2}" stroke-width="3" stroke-dasharray="8 12"/>
     ${agendaItemV09(220, 300, "01", "现实观察", "从 BitFun 产能跃迁看速度与质量压力。", "03")}
-    ${agendaItemV09(286, 430, "02", "研究共识", "行业研究指向 Agent 工程化与系统承接。", "04")}
-    ${agendaItemV09(220, 560, "03", "工程治理", "用控制面、判断上下文与门禁承接速度。", "05-08")}
-    ${agendaItemV09(286, 690, "04", "能力演进", "质量协议、团队职责与个人判断升级。", "09-12")}
+    ${agendaItemV09(286, 430, "02", "行业信号", "研究与竞品都转向系统化承接。", "04-05")}
+    ${agendaItemV09(220, 560, "03", "工程治理", "用控制面、判断上下文与门禁承接速度。", "06-08")}
+    ${agendaItemV09(286, 690, "04", "能力演进", "质量协议、BitFun 演进与职责升级。", "09-12")}
   `;
   return svgBaseV5(slide, index, body);
 }
@@ -2657,6 +2909,34 @@ function slideExternalSignalsV02(slide, index) {
   return svgBaseV5(slide, index, body);
 }
 
+function slideIndustryPatternsV09(slide, index) {
+  const body = `
+    ${v5Header("02 / 行业信号", slide.title, slide.subtitle, 56)}
+    ${industryPatternCardV09(120, 388, "GitHub Copilot", "协作平台化", "云端任务进入分支和评审", ["临时开发环境", "测试与日志可见", "评审指标可跟踪"], L.blue, "team")}
+    ${industryPatternCardV09(1000, 388, "OpenAI Codex", "异步委派", "独立云环境处理任务", ["连接代码仓库", "后台并行执行", "结果转成交付评审"], L.blue, "terminal")}
+    ${industryPatternCardV09(120, 648, "Claude Code", "权限与校验", "把自动执行放进护栏", ["权限白名单", "钩子执行检查", "子代理分工"], L.blue, "shield")}
+    ${industryPatternCardV09(1000, 648, "Cursor", "规则与远程代理", "仓库上下文持续复用", ["项目规则文件", "后台远程环境", "分支交付可接管"], L.blue, "file")}
+    ${v02Takeaway("行业共同方向：入口从 IDE 扩展到工程运行面，质量靠上下文、环境、权限和评审回路承接。", 1500)}
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function industryPatternCardV09(x, y, product, label, titleValue, lines, color, icon) {
+  return `
+    <rect x="${x}" y="${y}" width="800" height="222" rx="20" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="${x + 72}" cy="${y + 72}" r="40" fill="${color}" opacity="0.10"/>
+    ${v5Icon(icon, x + 46, y + 46, 52, color)}
+    <text x="${x + 138}" y="${y + 38}" class="small5" style="font-size:23px;fill:${color};font-weight:900">${esc(product)}</text>
+    <text x="${x + 138}" y="${y + 78}" class="micro5" style="font-size:20px;fill:${L.muted};font-weight:820">${esc(label)}</text>
+    <text x="${x + 54}" y="${y + 128}" class="num5" style="font-size:31px;fill:${L.ink}">${esc(titleValue)}</text>
+    <path d="M${x + 54} ${y + 166} H${x + 746}" stroke="${color}" stroke-width="3.2" stroke-linecap="round" opacity="0.48"/>
+    ${lines.map((line, i) => `
+      <circle cx="${x + 82 + i * 232}" cy="${y + 192}" r="5.8" fill="${color}" opacity="0.76"/>
+      <text x="${x + 102 + i * 232}" y="${y + 199}" class="micro5" style="font-size:18px;fill:${L.ink};font-weight:850">${esc(line)}</text>
+    `).join("")}
+  `;
+}
+
 function slideLifecycleV02(slide, index) {
   const body = `
     ${v5Header("03 / 工程治理", slide.title, slide.subtitle, 58)}
@@ -2825,12 +3105,64 @@ function qualityProtocolCardV09(x, y, n, stage, titleValue, lines, color, icon) 
   `;
 }
 
+function slideQualityProtocolV09(slide, index) {
+  const body = `
+    ${v5Header("04 / 能力演进", slide.title, slide.subtitle, 58)}
+    ${qualityProtocolCardV09(100, 400, "01", "任务前", "检查面先写清", ["性能 / 安全 / 兼容性", "验收边界和失败证据"], L.blue, "shield")}
+    ${qualityProtocolCardV09(680, 400, "02", "生成中", "测试评估持续收敛", ["定义回归口径", "生成、修复、重跑闭环"], L.blue, "check")}
+    ${qualityProtocolCardV09(1260, 400, "03", "合并前", "人做风险仲裁", ["责任、依赖、回滚", "证据完整才放行"], L.blue, "file")}
+    <path d="M660 574 H704 M1240 574 H1284" stroke="${L.line2}" stroke-width="5" fill="none" marker-end="url(#arrowGray)" opacity="0.86"/>
+    <rect x="236" y="748" width="1448" height="92" rx="16" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    ${qualityChainTokenV09(324, 780, "责任链", "谁决策 / 审核 / 承担", L.blue)}
+    ${qualityChainTokenV09(764, 780, "证据链", "测试 / 轨迹 / 回滚", L.blue)}
+    ${qualityChainTokenV09(1198, 780, "工件链", "代码 / 配置 / 发布物", L.blue)}
+    ${v02Takeaway("质量协议不是给速度踩刹车，而是让每一次 AI 产出都能被检查、复核和追踪。", 1520)}
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function qualityChainTokenV09(x, y, titleValue, desc, color) {
+  return `
+    <circle cx="${x}" cy="${y + 24}" r="15" fill="${color}" opacity="0.88"/>
+    <text x="${x + 34}" y="${y}" class="num5" style="font-size:27px;fill:${color}">${esc(titleValue)}</text>
+    <text x="${x + 34}" y="${y + 38}" class="small5" style="font-size:20px;fill:${L.muted};font-weight:820">${esc(desc)}</text>
+  `;
+}
+
+function slideCapabilityEvolutionV09(slide, index) {
+  const body = `
+    ${v5Header("04 / 能力演进", slide.title, slide.subtitle, 58)}
+    <text x="126" y="360" class="small5" style="font-size:23px;fill:${L.blue};font-weight:900">BitFun 从 IDE 走向 ADE，需要让 Agent 做更多，也让能力边界更清楚。</text>
+    <rect x="116" y="420" width="1688" height="350" rx="22" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    ${capabilityNodeV09(210, 508, "01", "锁能力", "产品能力清单", "远程兼容、日志、工具行为", "check")}
+    ${capabilityNodeV09(610, 508, "02", "设接口", "端口与适配器", "把所有权迁移边界讲清", "grid")}
+    ${capabilityNodeV09(1010, 508, "03", "查边界", "依赖方向检查", "平台接口和权限不越界", "shield")}
+    ${capabilityNodeV09(1410, 508, "04", "验等价", "契约测试与快照", "证明行为没有变化", "file")}
+    <path d="M510 598 H580 M910 598 H980 M1310 598 H1380" stroke="${L.line2}" stroke-width="5" stroke-linecap="round" marker-end="url(#arrowGray)" opacity="0.84"/>
+    <rect x="320" y="812" width="1280" height="58" rx="16" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    <text x="960" y="841" class="body5" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" style="font-size:26px"><tspan style="fill:${L.blue};font-weight:900">迁移判断：</tspan><tspan>能力没丢、边界没破、行为没变，再让 AI 扩大改造范围。</tspan></text>
+    ${v02Takeaway("能力保护式演进：让 AI 提速发生在可证明的迁移协议里，而不是靠重构后的自信。", 1500)}
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function capabilityNodeV09(x, y, n, titleValue, claim, desc, icon) {
+  return `
+    <g>
+      <circle cx="${x + 84}" cy="${y + 56}" r="48" fill="${L.blue}" opacity="0.10"/>
+      ${v5Icon(icon, x + 54, y + 26, 60, L.blue)}
+      <text x="${x + 166}" y="${y + 8}" class="num5" style="font-size:34px;fill:${L.blue}">${esc(n)}</text>
+      <text x="${x + 166}" y="${y + 56}" class="label5" style="font-size:31px">${esc(titleValue)}</text>
+      <path d="M${x + 8} ${y + 142} H${x + 304}" stroke="${L.blue}" stroke-width="3.6" stroke-linecap="round" opacity="0.58"/>
+      <text x="${x + 8}" y="${y + 174}" class="small5" style="font-size:24px;fill:${L.ink};font-weight:900">${esc(claim)}</text>
+      <text x="${x + 8}" y="${y + 218}" class="small5" style="font-size:21px;fill:${L.muted};font-weight:820">${esc(desc)}</text>
+    </g>
+  `;
+}
+
 function slideBitfunV02(slide, index) {
   const body = `
     ${v5Header("03 / 工程治理", slide.title, slide.subtitle, 58)}
-    <path d="M600 490 H690" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
-    <path d="M1190 490 H1280" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
-    <path d="M1020 740 H1100" stroke="${L.blue}" stroke-width="5" fill="none" marker-end="url(#arrowBlue)" opacity="0.88"/>
     ${workflowStepV02(100, 390, "01", "任务入口", "目标与边界", ["目标、非目标、风险", "验收标准先写清"], L.blue, "file")}
     ${workflowStepV02(690, 390, "02", "隔离工作区", "受控执行", ["独立环境探索", "避免污染主分支"], L.orange, "terminal")}
     ${workflowStepV02(1280, 390, "03", "判断上下文", "审查材料", ["为什么改、改了什么", "怎么验、风险如何退"], L.blue, "check")}
@@ -2933,27 +3265,483 @@ function newGradCardV05(x, y, n, titleValue, lines, color, icon) {
 
 function slideThanksV02(slide, index) {
   const body = `
-    <text x="96" y="150" class="small5" style="fill:${L.blue};font-weight:900">谢谢 / 讨论</text>
-    <text x="96" y="246" class="h15" style="font-size:90px">谢谢</text>
-    <path d="M96 386 h150" stroke="${L.blue}" stroke-width="9" stroke-linecap="round"/>
-    <circle cx="276" cy="386" r="6" fill="${L.orange}"/>
-    <rect x="170" y="500" width="1580" height="340" rx="22" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
-    <text x="240" y="556" class="label5" style="font-size:33px">留给 Q&amp;A 的三个讨论入口</text>
-    ${discussionPointV06(248, 638, "Google / DeepMind", "任务什么时候适合单 Agent、并行 Agent 或集中编排？", L.blue)}
-    ${discussionPointV06(248, 716, "IBM MAP / Gartner", "工具建设要不要从单点能力转向运行基座？", L.orange)}
-    ${discussionPointV06(248, 794, "MSR 2026", "质量机制如何持续放大速度收益？", L.blue)}
-    <rect x="1090" y="238" width="470" height="178" rx="18" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
-    <text x="1144" y="286" class="num5" style="font-size:56px;fill:${L.blue}">Q&amp;A</text>
-    ${v5Icon("chat", 1424, 292, 86, L.blue)}
+    <text x="96" y="152" class="small5" style="fill:${L.blue};font-weight:900">AI 编程、工程治理、开发者角色</text>
+    <text x="96" y="248" class="h15" style="font-size:${MAIN_TITLE_SIZE_V09}px">谢谢</text>
+    <path d="M96 346 h150" stroke="${L.blue}" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="276" cy="346" r="6" fill="${L.orange}"/>
+    <rect x="170" y="500" width="1580" height="306" rx="22" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="240" y="558" class="label5" style="font-size:34px">两个落地问题</text>
+    ${thanksPointV09(248, 654, "Gartner / IBM MAP", "先选哪条高频流程，做任务、环境、权限、评审的控制面？", L.blue)}
+    ${thanksPointV09(248, 736, "DORA / MSR", "哪些质量指标要前置到任务、生成和合并之前？", L.orange)}
+    <rect x="1120" y="238" width="440" height="170" rx="18" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    <text x="1172" y="284" class="num5" style="font-size:54px;fill:${L.blue}">Q&amp;A</text>
+    ${v5Icon("chat", 1424, 292, 82, L.blue)}
   `;
   return svgBaseV5(slide, index, body);
 }
 
-function discussionPointV06(x, y, source, textValue, color) {
+function thanksPointV09(x, y, source, textValue, color) {
   return `
     <text x="${x}" y="${y}" class="micro5" style="font-size:21px;fill:${color};font-weight:900">${esc(source)}</text>
     <circle cx="${x + 300}" cy="${y + 13}" r="6" fill="${color}"/>
     <text x="${x + 330}" y="${y - 2}" class="body5" style="font-size:29px;fill:${L.ink};font-weight:850">${esc(textValue)}</text>
+  `;
+}
+
+function slideAgendaV10(slide, index) {
+  const body = `
+    <text x="96" y="146" class="h15" style="font-size:${MAIN_TITLE_SIZE_V09}px">${esc(slide.title)}</text>
+    <path d="M96 220 h126" stroke="${L.blue}" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="246" cy="220" r="6" fill="${L.orange}"/>
+    <path d="M178 340 V808" stroke="${L.line2}" stroke-width="3" stroke-dasharray="8 12"/>
+    ${agendaItemV10(210, 292, "01", "软件工程变革", "从 BitFun 高吞吐经验看生命周期交付件变化。", "03")}
+    ${agendaItemV10(318, 424, "02", "速度的背后", "研究、竞品和 BitFun 路线都指向系统化承接。", "04-06")}
+    ${agendaItemV10(210, 556, "03", "工程质量与治理", "控制面、工作流、质量协议和架构演进。", "07-10")}
+    ${agendaItemV10(318, 688, "04", "开发者角色", "团队建设系统，个人承担关键判断和责任。", "11-12")}
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function agendaItemV10(x, y, n, titleValue, desc, pages) {
+  return `
+    <rect x="${x}" y="${y}" width="900" height="110" rx="16" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="${x + 36}" y="${y + 24}" class="num5" style="font-size:40px;fill:${L.blue}">${esc(n)}</text>
+    <text x="${x + 116}" y="${y + 22}" class="label5" style="font-size:30px">${esc(titleValue)}</text>
+    <text x="${x + 116}" y="${y + 64}" class="small5" style="font-size:21px;fill:${L.muted};font-weight:820">${esc(desc)}</text>
+    <text x="${x + 850}" y="${y + 36}" class="small5" text-anchor="end" style="fill:${L.blue};font-size:21px;font-weight:900">${esc(pages)}</text>
+  `;
+}
+
+function slideShockV10(slide, index) {
+  const body = `
+    ${v5Header("01 / 软件工程变革", slide.title, slide.subtitle, 60)}
+    <rect x="112" y="346" width="840" height="188" rx="20" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="162" y="392" class="small5" style="font-size:24px;fill:${L.blue};font-weight:900">BitFun 开发经验</text>
+    <text x="162" y="434" class="num5" style="font-size:50px;fill:${L.ink}">单月 10W+ 行代码</text>
+    <text x="162" y="486" class="small5" style="font-size:21px;fill:${L.muted};font-weight:820">入口不是代码量本身，而是验证、评审和维护如何接住。</text>
+    ${repoStatsCaptureV10(1112, 334)}
+    ${shockCardV10(112, 612, "01", "生产环节被放大", ["想法更快变原型", "探索更快进入仓库"], L.blue, "grid")}
+    ${shockCardV10(704, 612, "02", "瓶颈向后移动", ["评审等待与返工", "CI、回滚、维护压力"], L.orange, "team")}
+    ${shockCardV10(1296, 612, "03", "净收益要重新衡量", ["端到端周期", "质量、风险和复盘"], L.blue, "check")}
+    ${v02Takeaway("不是炫耀数字，而是提醒团队：代码吞吐变大后，工程承接必须同步升级。")}
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function repoStatsCaptureV10(x, y) {
+  return `
+    <rect x="${x}" y="${y}" width="690" height="206" rx="18" fill="#111827" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <rect x="${x}" y="${y}" width="690" height="38" rx="18" fill="#1F2937"/>
+    <circle cx="${x + 30}" cy="${y + 20}" r="6" fill="#EF4444"/>
+    <circle cx="${x + 52}" cy="${y + 20}" r="6" fill="#F59E0B"/>
+    <circle cx="${x + 74}" cy="${y + 20}" r="6" fill="#22C55E"/>
+    <text x="${x + 104}" y="${y + 11}" class="small5" style="font-size:17px;fill:#D1D5DB;font-weight:900">${esc(bitfunStats.repo)} · git history snapshot</text>
+    <text x="${x + 34}" y="${y + 58}" class="micro5" style="font-size:18px;fill:#93C5FD">${esc(bitfunStats.url)}</text>
+    <text x="${x + 34}" y="${y + 90}" class="small5" style="font-size:18px;fill:#E5E7EB;font-weight:850">range: ${esc(bitfunStats.range)}   author: limityan</text>
+    <text x="${x + 34}" y="${y + 146}" class="num5" style="font-size:36px;fill:#60A5FA">${esc(bitfunStats.commits)}</text>
+    <text x="${x + 116}" y="${y + 150}" class="small5" style="font-size:18px;fill:#D1D5DB">commits</text>
+    <text x="${x + 236}" y="${y + 146}" class="num5" style="font-size:36px;fill:#34D399">+${esc(bitfunStats.additions)}</text>
+    <text x="${x + 432}" y="${y + 150}" class="small5" style="font-size:18px;fill:#D1D5DB">insertions</text>
+    <text x="${x + 34}" y="${y + 180}" class="small5" style="font-size:18px;fill:#FCA5A5">-${esc(bitfunStats.deletions)} deletions</text>
+    <text x="${x + 236}" y="${y + 180}" class="small5" style="font-size:18px;fill:#D1D5DB">churn: ${esc(bitfunStats.churn)} lines</text>
+  `;
+}
+
+function shockCardV10(x, y, n, titleValue, lines, color, icon) {
+  return `
+    <rect x="${x}" y="${y}" width="512" height="252" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="${x + 66}" cy="${y + 70}" r="42" fill="${color}" opacity="0.10"/>
+    ${v5Icon(icon, x + 40, y + 44, 52, color)}
+    <text x="${x + 132}" y="${y + 44}" class="num5" style="font-size:34px;fill:${color}">${esc(n)}</text>
+    <text x="${x + 196}" y="${y + 47}" class="label5" style="font-size:30px">${esc(titleValue)}</text>
+    <path d="M${x + 54} ${y + 126} H${x + 458}" stroke="${color}" stroke-width="3.5" stroke-linecap="round" opacity="0.62"/>
+    ${lines.map((line, i) => `
+      <circle cx="${x + 72}" cy="${y + 166 + i * 42}" r="5.8" fill="${color}" opacity="0.82"/>
+      <text x="${x + 96}" y="${y + 154 + i * 42}" class="small5" style="font-size:22px;fill:${L.ink};font-weight:840">${esc(line)}</text>
+    `).join("")}
+  `;
+}
+
+function slideExternalSignalsV10(slide, index) {
+  const body = `
+    ${v5Header("02 / 速度的背后", slide.title, slide.subtitle, 58)}
+    ${evidenceSignalCardV10(132, 382, "AI Harness 2026", "模型×基座", "能力来自运行系统", ["任务规格 / 上下文 / 工具访问", "验证 / 权限 / 干预记录"], L.blue, "stack")}
+    ${evidenceSignalCardV10(976, 382, "AgentTrace 2026", "Trace", "过程要可观测", ["操作 / 认知 / 上下文日志", "风险分析与信任校准"], L.orange, "terminal")}
+    ${evidenceSignalCardV10(132, 654, "SWE-CI / Chain", "长期维护", "评估走向连续演进", ["CI 循环与版本升级", "不是一次 patch 即结束"], L.blue, "loop")}
+    ${evidenceSignalCardV10(976, 654, "LangChain 2026", "13.7pt", "改 Harness 也能提能力", ["Trace + Evals 定位失败", "同模型下调工具和流程"], L.orange, "check")}
+    ${v02Takeaway("下一步不是只换模型，而是建设 Harness、Trace、Evals 和长期维护验证。")}
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function evidenceSignalCardV10(x, y, source, metric, claim, lines, color, icon) {
+  return `
+    <rect x="${x}" y="${y}" width="812" height="222" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="${x + 76}" cy="${y + 78}" r="44" fill="${color}" opacity="0.10"/>
+    ${v5Icon(icon, x + 48, y + 50, 56, color)}
+    <text x="${x + 148}" y="${y + 36}" class="small5" style="font-size:23px;fill:${color};font-weight:900">${esc(source)}</text>
+    <text x="${x + 148}" y="${y + 90}" class="num5" style="font-size:46px;fill:${color}">${esc(metric)}</text>
+    <text x="${x + 450}" y="${y + 98}" class="label5" style="font-size:26px">${esc(claim)}</text>
+    <path d="M${x + 54} ${y + 156} H${x + 758}" stroke="${color}" stroke-width="3.5" stroke-linecap="round" opacity="0.55"/>
+    ${lines.map((line, i) => `
+      <circle cx="${x + 78 + i * 360}" cy="${y + 190}" r="6" fill="${color}" opacity="0.78"/>
+      <text x="${x + 100 + i * 360}" y="${y + 178}" class="small5" style="font-size:21px;fill:${L.ink};font-weight:820">${esc(line)}</text>
+    `).join("")}
+  `;
+}
+
+function slideIndustryPracticesV11(slide, index) {
+  const body = `
+    ${v5Header("02 / 行业信号", slide.title, slide.subtitle, 58)}
+    ${industryPracticeCardV11(132, 382, "01", "任务云化", "GitHub / Codex", ["隔离环境后台执行", "结果进入分支与 PR"], L.blue, "terminal")}
+    ${industryPracticeCardV11(976, 382, "02", "权限护栏", "Claude Code", ["Hooks、子 Agent、沙箱", "自动执行可拦截可审计"], L.orange, "shield")}
+    ${industryPracticeCardV11(132, 654, "03", "仓库规则", "Cursor / AGENTS.md", ["项目规则持续复用", "后台 Agent 可接管"], L.blue, "file")}
+    ${industryPracticeCardV11(976, 654, "04", "追踪评估", "LangChain / Trace", ["Trace 定位失败模式", "Evals 驱动基座调优"], L.orange, "loop")}
+    ${v02Takeaway("业界共识：AI 编程工具正在从补全器变成可执行、可观测、可治理的任务运行系统。")}
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function industryPracticeCardV11(x, y, n, titleValue, product, lines, color, icon) {
+  return `
+    <rect x="${x}" y="${y}" width="812" height="222" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="${x + 76}" cy="${y + 76}" r="44" fill="${color}" opacity="0.10"/>
+    ${v5Icon(icon, x + 48, y + 48, 56, color)}
+    <text x="${x + 148}" y="${y + 32}" class="num5" style="font-size:34px;fill:${color}">${esc(n)}</text>
+    <text x="${x + 214}" y="${y + 36}" class="label5" style="font-size:31px">${esc(titleValue)}</text>
+    <rect x="${x + 520}" y="${y + 34}" width="220" height="44" rx="14" fill="${L.bg}" stroke="${L.line2}" stroke-width="1.8"/>
+    <text x="${x + 630}" y="${y + 47}" class="micro5" text-anchor="middle" style="font-size:18px;fill:${color};font-weight:900">${esc(product)}</text>
+    <path d="M${x + 54} ${y + 126} H${x + 758}" stroke="${color}" stroke-width="3.5" stroke-linecap="round" opacity="0.55"/>
+    ${lines.map((line, i) => `
+      <circle cx="${x + 78 + i * 350}" cy="${y + 172}" r="6" fill="${color}" opacity="0.78"/>
+      <text x="${x + 100 + i * 350}" y="${y + 160}" class="small5" style="font-size:21px;fill:${L.ink};font-weight:820">${esc(line)}</text>
+    `).join("")}
+  `;
+}
+
+function slideBitfunAdeDirectionV11(slide, index) {
+  const body = `
+    ${v5Header("02 / 行业信号", slide.title, slide.subtitle, 56)}
+    <rect x="112" y="376" width="804" height="470" rx="22" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="166" y="430" class="small5" style="font-size:25px;fill:${L.blue};font-weight:900">已有基础</text>
+    ${adeDirectionRowV11(168, 502, "规则上下文", "AGENTS.md、架构文档、模块边界", L.blue, "file")}
+    ${adeDirectionRowV11(168, 590, "工具与权限", "工具准入、白名单、隔离工作区", L.blue, "shield")}
+    ${adeDirectionRowV11(168, 678, "验证矩阵", "按前端、核心、桌面、专项测试分层", L.orange, "check")}
+    ${adeDirectionRowV11(168, 766, "工作区上下文", "本地、远程、历史决策可复用", L.orange, "grid")}
+    <rect x="1004" y="376" width="804" height="470" rx="22" fill="#F8FBFF" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="1058" y="430" class="small5" style="font-size:25px;fill:${L.orange};font-weight:900">待规划产品能力</text>
+    ${adeDirectionRowV11(1060, 502, "任务控制面", "Issue、目标、非目标、验收标准", L.orange, "terminal")}
+    ${adeDirectionRowV11(1060, 590, "证据包标准", "diff、测试、影响范围、回滚说明", L.blue, "check")}
+    ${adeDirectionRowV11(1060, 678, "多 Agent 协作台", "实现、评审、修复、验证角色分离", L.orange, "team")}
+    ${adeDirectionRowV11(1060, 766, "企业 ADE 运行面", "权限审计、质量指标、PR/发布打通", L.blue, "stack")}
+    ${v02Takeaway("BitFun 的演进方向：从 IDE 入口，走向承接 Agentic SDLC 的工程运行面。")}
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function adeDirectionRowV11(x, y, titleValue, desc, color, icon) {
+  return `
+    <circle cx="${x + 34}" cy="${y + 28}" r="28" fill="${color}" opacity="0.11"/>
+    ${v5Icon(icon, x + 16, y + 10, 36, color)}
+    <text x="${x + 88}" y="${y}" class="label5" style="font-size:27px">${esc(titleValue)}</text>
+    <text x="${x + 88}" y="${y + 40}" class="small5" style="font-size:21px;fill:${L.muted};font-weight:800">${esc(desc)}</text>
+  `;
+}
+
+function slideIndustryPatternsV10(slide, index) {
+  const body = `
+    ${v5Header("02 / 速度的背后", slide.title, slide.subtitle, 58)}
+    <rect x="112" y="376" width="820" height="474" rx="22" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="166" y="430" class="small5" style="font-size:24px;fill:${L.blue};font-weight:900">行业工具正在收敛到四类工程能力</text>
+    ${toolDirectionRowV10(168, 500, "01", "任务云化", "云端/后台执行，结果进入分支与 PR", L.blue, "terminal")}
+    ${toolDirectionRowV10(168, 590, "02", "仓库规则", "项目规则、AGENTS.md、历史决策持续复用", L.blue, "file")}
+    ${toolDirectionRowV10(168, 680, "03", "权限护栏", "沙箱、白名单、钩子、人工许可", L.orange, "shield")}
+    ${toolDirectionRowV10(168, 770, "04", "评审回路", "测试、日志、轨迹与风险说明随变更交付", L.orange, "check")}
+    <rect x="1010" y="376" width="798" height="474" rx="22" fill="#F8FBFF" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="1066" y="430" class="small5" style="font-size:24px;fill:${L.orange};font-weight:900">BitFun / ADE 的产品技术位置</text>
+    <text x="1066" y="494" class="num5" style="font-size:42px;fill:${L.ink}">工程运行面</text>
+    ${adePointV10(1070, 586, "企业上下文", "仓库规则、架构边界、历史决策")}
+    ${adePointV10(1070, 654, "模型偏差收敛", "不同模型和个人习惯进入统一门禁")}
+    ${adePointV10(1070, 722, "权限与证据包", "执行轨迹、测试、风险、回滚可审计")}
+    ${adePointV10(1070, 790, "跨端协作", "本地、远程、PR 与团队流程打通")}
+    ${v02Takeaway("未来开发工具的竞争点：不只是更会生成，而是能把生成放进团队工程运行面。")}
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function toolDirectionRowV10(x, y, n, titleValue, desc, color, icon) {
+  return `
+    <circle cx="${x + 34}" cy="${y + 28}" r="28" fill="${color}" opacity="0.11"/>
+    ${v5Icon(icon, x + 16, y + 10, 36, color)}
+    <text x="${x + 88}" y="${y}" class="num5" style="font-size:27px;fill:${color}">${esc(n)}</text>
+    <text x="${x + 146}" y="${y}" class="label5" style="font-size:28px">${esc(titleValue)}</text>
+    <text x="${x + 146}" y="${y + 40}" class="small5" style="font-size:21px;fill:${L.muted};font-weight:800">${esc(desc)}</text>
+  `;
+}
+
+function adePointV10(x, y, titleValue, desc) {
+  return `
+    <circle cx="${x + 12}" cy="${y + 14}" r="6.5" fill="${L.blue}" opacity="0.86"/>
+    <text x="${x + 36}" y="${y}" class="small5" style="font-size:25px;fill:${L.ink};font-weight:900">${esc(titleValue)}</text>
+    <text x="${x + 200}" y="${y + 2}" class="small5" style="font-size:22px;fill:${L.muted};font-weight:790">${esc(desc)}</text>
+  `;
+}
+
+function slideExplorationV10(slide, index) {
+  const body = `
+    ${v5Header("03 / 工程质量与治理", slide.title, slide.subtitle, 58)}
+    <text x="130" y="356" class="small5" style="font-size:23px;fill:${L.blue};font-weight:900">模型生成的是可能性；控制面负责把可能性放进可读取、可拦截、可验证的轨道。</text>
+    <rect x="110" y="414" width="1700" height="432" rx="22" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <path d="M532 450 V812 M954 450 V812 M1376 450 V812" stroke="${L.line2}" stroke-width="2"/>
+    ${controlLaneV10(150, 478, "01", "规则上下文", "AGENTS.md / 架构文档", ["仓库与模块边界", "日志、远程兼容", "验证矩阵入口"], L.blue, "file")}
+    ${controlLaneV10(572, 478, "02", "工具准入", "tool_pipeline", ["工具白名单", "运行时能力限制", "先读规格再执行"], L.orange, "grid")}
+    ${controlLaneV10(994, 478, "03", "权限隔离", "workspace / miniapp", ["产物根目录防逃逸", "文件命令网络白名单", "高风险差异可见"], L.blue, "shield")}
+    ${controlLaneV10(1416, 478, "04", "验证矩阵", "风险分层检查", ["前端、核心、桌面", "专项测试分层", "失败回到闭环"], L.orange, "check")}
+    ${v02Takeaway("控制面的作用：把规则、工具、权限和验证变成模型可依赖的工程轨道。")}
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function controlLaneV10(x, y, n, titleValue, codeLabel, lines, color, icon) {
+  return `
+    <g>
+      <circle cx="${x + 42}" cy="${y + 42}" r="40" fill="${color}" opacity="0.11"/>
+      ${v5Icon(icon, x + 17, y + 17, 50, color)}
+      <text x="${x + 100}" y="${y + 4}" class="num5" style="font-size:32px;fill:${color}">${esc(n)}</text>
+      <text x="${x + 100}" y="${y + 50}" class="label5" style="font-size:29px">${esc(titleValue)}</text>
+      <rect x="${x}" y="${y + 112}" width="348" height="42" rx="12" fill="${L.bg}" stroke="${L.line2}" stroke-width="1.8"/>
+      <text x="${x + 174}" y="${y + 123}" class="micro5" text-anchor="middle" style="font-size:18px;fill:${color};font-weight:900">${esc(codeLabel)}</text>
+      <path d="M${x} ${y + 180} H${x + 348}" stroke="${color}" stroke-width="3.2" stroke-linecap="round" opacity="0.65"/>
+      ${lines.map((line, i) => `
+        <circle cx="${x + 18}" cy="${y + 224 + i * 46}" r="5.5" fill="${color}" opacity="0.80"/>
+        <text x="${x + 40}" y="${y + 212 + i * 46}" class="small5" style="font-size:21px;fill:${L.ink};font-weight:820">${esc(line)}</text>
+      `).join("")}
+    </g>
+  `;
+}
+
+function slideGovernedWorkflowV11(slide, index) {
+  const body = `
+    ${v5Header("03 / 工程治理", slide.title, slide.subtitle, 56)}
+    <rect x="1168" y="338" width="618" height="66" rx="18" fill="#FFF6EE" stroke="${L.orange}" stroke-width="2"/>
+    <text x="1477" y="356" class="small5" text-anchor="middle" style="font-size:25px;fill:${L.orange};font-weight:900">0.99^10 ≈ 0.90：长链路必须阶段纠偏</text>
+    ${governedStageV11(108, 456, "01", "任务契约", "目标 / 非目标", ["验收标准", "风险边界", "上下文来源"], L.blue, "file")}
+    ${governedStageV11(548, 456, "02", "隔离执行", "工作区 / 权限", ["工具轨迹", "沙箱执行", "主线不污染"], L.orange, "terminal")}
+    ${governedStageV11(988, 456, "03", "证据包", "PR 判断上下文", ["变更摘要", "测试与日志", "影响与回滚"], L.blue, "check")}
+    ${governedStageV11(1428, 456, "04", "门禁学习", "合并 / 发布", ["低风险快过", "高风险补证", "失败回注规则"], L.orange, "loop")}
+    <path d="M508 634 H548 M948 634 H988 M1388 634 H1428" stroke="${L.line2}" stroke-width="5" stroke-linecap="round" opacity="0.62"/>
+    ${v02Takeaway("过程可以概率探索，结果必须用阶段证据放行，并把失败回注到规则和测试。")}
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function governedStageV11(x, y, n, titleValue, tag, lines, color, icon) {
+  return `
+    <rect x="${x}" y="${y}" width="400" height="350" rx="20" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="${x + 66}" cy="${y + 68}" r="40" fill="${color}" opacity="0.10"/>
+    ${v5Icon(icon, x + 40, y + 42, 52, color)}
+    <text x="${x + 132}" y="${y + 38}" class="num5" style="font-size:32px;fill:${color}">${esc(n)}</text>
+    <text x="${x + 132}" y="${y + 86}" class="label5" style="font-size:30px">${esc(titleValue)}</text>
+    <rect x="${x + 42}" y="${y + 142}" width="316" height="42" rx="14" fill="${L.bg}" stroke="${L.line2}" stroke-width="1.8"/>
+    <text x="${x + 200}" y="${y + 154}" class="micro5" text-anchor="middle" style="font-size:18px;fill:${color};font-weight:900">${esc(tag)}</text>
+    <path d="M${x + 42} ${y + 214} H${x + 358}" stroke="${color}" stroke-width="3.5" stroke-linecap="round" opacity="0.62"/>
+    ${lines.map((line, i) => `
+      <circle cx="${x + 62}" cy="${y + 254 + i * 38}" r="5.5" fill="${color}" opacity="0.80"/>
+      <text x="${x + 84}" y="${y + 242 + i * 38}" class="small5" style="font-size:21px;fill:${L.ink};font-weight:820">${esc(line)}</text>
+    `).join("")}
+  `;
+}
+
+function slideGovernableSdlcV10(slide, index) {
+  const body = `
+    ${v5Header("03 / 工程质量与治理", slide.title, slide.subtitle, 56)}
+    <rect x="1168" y="338" width="618" height="66" rx="18" fill="#FFF6EE" stroke="${L.orange}" stroke-width="2"/>
+    <text x="1477" y="356" class="small5" text-anchor="middle" style="font-size:25px;fill:${L.orange};font-weight:900">0.99^10 ≈ 0.90：长链路必须阶段性纠偏</text>
+    ${sdlcLayerV10(98, 456, "01", "上下文控制面", "任务、规则、架构事实", "先有可信输入", L.blue, "file")}
+    ${sdlcLayerV10(444, 456, "02", "执行隔离层", "工作区、权限、沙箱", "过程可探索", L.blue, "terminal")}
+    ${sdlcLayerV10(790, 456, "03", "证据包", "diff、测试、风险、回滚", "结果可判断", L.orange, "check")}
+    ${sdlcLayerV10(1136, 456, "04", "阶段门禁", "计划、评审、合并、发布", "转换点放行", L.blue, "shield")}
+    ${sdlcLayerV10(1482, 456, "05", "反馈学习环", "失败、复盘、规则更新", "系统会变好", L.orange, "loop")}
+    <path d="M408 634 H438 M754 634 H784 M1100 634 H1130 M1446 634 H1476" stroke="${L.line2}" stroke-width="5" stroke-linecap="round" opacity="0.72"/>
+    ${v02Takeaway("可控地解决不可控：放大 AI 探索空间，同时用证据、门禁和学习环收敛结果。")}
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function sdlcLayerV10(x, y, n, titleValue, desc, kicker, color, icon) {
+  return `
+    <rect x="${x}" y="${y}" width="310" height="350" rx="20" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="${x + 66}" cy="${y + 68}" r="40" fill="${color}" opacity="0.10"/>
+    ${v5Icon(icon, x + 40, y + 42, 52, color)}
+    <text x="${x + 136}" y="${y + 40}" class="num5" style="font-size:32px;fill:${color}">${esc(n)}</text>
+    <text x="${x + 42}" y="${y + 132}" class="label5" style="font-size:27px">${esc(titleValue)}</text>
+    <path d="M${x + 42} ${y + 176} H${x + 266}" stroke="${color}" stroke-width="3.5" stroke-linecap="round" opacity="0.62"/>
+    <text x="${x + 42}" y="${y + 214}" class="small5" style="font-size:22px;fill:${L.ink};font-weight:850">${esc(desc)}</text>
+    <rect x="${x + 42}" y="${y + 286}" width="226" height="40" rx="20" fill="${L.bg}" stroke="${L.line2}" stroke-width="1.8"/>
+    <text x="${x + 155}" y="${y + 296}" class="micro5" text-anchor="middle" style="font-size:18px;fill:${color};font-weight:900">${esc(kicker)}</text>
+  `;
+}
+
+function slideBitfunWorkflowV10(slide, index) {
+  const body = `
+    ${v5Header("03 / 工程质量与治理", slide.title, slide.subtitle, 56)}
+    <text x="126" y="356" class="small5" style="font-size:23px;fill:${L.blue};font-weight:900">评审从看最终 diff，转向看任务、证据和风险能否闭合。</text>
+    ${workflowPanelV11(126, 430, "01", "任务入口", "Issue / Spec", ["目标、非目标、验收标准", "风险边界与上下文来源"], L.blue, "file")}
+    ${workflowPanelV11(714, 430, "02", "证据包", "PR 判断上下文", ["变更摘要、测试和关键日志", "未决风险、影响范围、回滚路径"], L.orange, "check")}
+    ${workflowPanelV11(1302, 430, "03", "门禁与复盘", "合并 / 发布 / 学习", ["低风险快速通过", "高风险补证据后再放行"], L.blue, "shield")}
+    <path d="M642 612 H692 M1230 612 H1280" stroke="${L.line2}" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.72"/>
+    ${v02Takeaway("从最终 diff 转向证据闭环：目标清楚、测试可验、风险可控。")}
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function workflowPanelV11(x, y, n, titleValue, tag, lines, color, icon) {
+  return `
+    <rect x="${x}" y="${y}" width="492" height="318" rx="20" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="${x + 74}" cy="${y + 74}" r="42" fill="${color}" opacity="0.10"/>
+    ${v5Icon(icon, x + 47, y + 47, 54, color)}
+    <text x="${x + 142}" y="${y + 38}" class="num5" style="font-size:34px;fill:${color}">${esc(n)}</text>
+    <text x="${x + 142}" y="${y + 88}" class="label5" style="font-size:32px">${esc(titleValue)}</text>
+    <rect x="${x + 54}" y="${y + 142}" width="384" height="44" rx="14" fill="${L.bg}" stroke="${L.line2}" stroke-width="1.8"/>
+    <text x="${x + 246}" y="${y + 155}" class="micro5" text-anchor="middle" style="font-size:19px;fill:${color};font-weight:900">${esc(tag)}</text>
+    <path d="M${x + 54} ${y + 216} H${x + 438}" stroke="${color}" stroke-width="3.6" stroke-linecap="round" opacity="0.58"/>
+    ${v02Lines(lines, x + 64, y + 250, 22, L.ink, 38, 850)}
+  `;
+}
+
+function workflowNodeV10(x, y, n, titleValue, desc, tag, color, icon) {
+  return `
+    <rect x="${x}" y="${y}" width="500" height="198" rx="18" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="${x + 72}" cy="${y + 72}" r="40" fill="${color}" opacity="0.10"/>
+    ${v5Icon(icon, x + 46, y + 46, 52, color)}
+    <text x="${x + 140}" y="${y + 34}" class="num5" style="font-size:32px;fill:${color}">${esc(n)}</text>
+    <text x="${x + 202}" y="${y + 38}" class="label5" style="font-size:28px">${esc(titleValue)}</text>
+    <text x="${x + 54}" y="${y + 120}" class="small5" style="font-size:22px;fill:${L.ink};font-weight:850">${esc(desc)}</text>
+    <text x="${x + 54}" y="${y + 158}" class="micro5" style="font-size:18px;fill:${color};font-weight:900">${esc(tag)}</text>
+  `;
+}
+
+function slideQualityProtocolV10(slide, index) {
+  const body = `
+    ${v5Header("03 / 工程质量与治理", slide.title, slide.subtitle, 58)}
+    ${qualityMomentV10(112, 408, "01", "任务前", "检查面先写清", ["性能 / 安全 / 兼容性", "验收边界和失败证据"], L.blue, "shield")}
+    ${qualityMomentV10(704, 408, "02", "生成中", "测试评估持续收敛", ["定义回归口径", "生成、修复、重跑闭环"], L.orange, "check")}
+    ${qualityMomentV10(1296, 408, "03", "合并前", "人做风险仲裁", ["责任、例外、回滚", "剩余风险有结论"], L.blue, "file")}
+    <path d="M624 584 H682 M1216 584 H1274" stroke="${L.line2}" stroke-width="5" fill="none" marker-end="url(#arrowGray)" opacity="0.86"/>
+    <rect x="278" y="760" width="1364" height="80" rx="16" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    <text x="960" y="785" class="body5" text-anchor="middle" style="font-size:29px;fill:${L.ink};font-weight:900">TDD 新形态：验收协议 → 评估脚本 → 回归证据</text>
+    ${v02Takeaway("质量协议的目标不是给 AI 降速，而是把局部速度转成端到端效率。")}
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function qualityMomentV10(x, y, n, stage, titleValue, lines, color, icon) {
+  return `
+    <rect x="${x}" y="${y}" width="512" height="300" rx="20" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="${x + 72}" cy="${y + 72}" r="40" fill="${color}" opacity="0.10"/>
+    ${v5Icon(icon, x + 46, y + 46, 52, color)}
+    <text x="${x + 140}" y="${y + 42}" class="num5" style="font-size:34px;fill:${color}">${esc(n)}</text>
+    <text x="${x + 208}" y="${y + 48}" class="small5" style="font-size:24px;fill:${color};font-weight:900">${esc(stage)}</text>
+    <text x="${x + 56}" y="${y + 134}" class="num5" style="font-size:33px;fill:${L.ink}">${esc(titleValue)}</text>
+    <path d="M${x + 56} ${y + 184} H${x + 456}" stroke="${color}" stroke-width="4" stroke-linecap="round" opacity="0.62"/>
+    ${v02Lines(lines, x + 56, y + 218, 22, L.muted, 36, 820)}
+  `;
+}
+
+function slideCapabilityEvolutionV10(slide, index) {
+  const body = `
+    ${v5Header("03 / 工程质量与治理", slide.title, slide.subtitle, 58)}
+    <text x="126" y="358" class="small5" style="font-size:23px;fill:${L.blue};font-weight:900">AI 让改造更快，架构和规则要先把能力边界讲清楚。</text>
+    <rect x="116" y="424" width="1688" height="350" rx="22" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    ${capabilityNodeV10(210, 506, "01", "锁能力", "能力清单", "关键路径、远程兼容、日志、工具行为", "check", L.blue)}
+    ${capabilityNodeV10(610, 506, "02", "设接口", "端口与适配器", "把运行所有权迁移边界讲清", "grid", L.orange)}
+    ${capabilityNodeV10(1010, 506, "03", "查边界", "依赖方向检查", "平台接口和权限不越界", "shield", L.blue)}
+    ${capabilityNodeV10(1410, 506, "04", "验等价", "契约测试与快照", "证明行为没有变化", "file", L.orange)}
+    <path d="M510 598 H580 M910 598 H980 M1310 598 H1380" stroke="${L.line2}" stroke-width="5" stroke-linecap="round" opacity="0.58"/>
+    ${v02Takeaway("能力保护式演进：架构与规则会成为约束 AI 不确定性的核心资产。")}
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function capabilityNodeV10(x, y, n, titleValue, claim, desc, icon, color) {
+  return `
+    <g>
+      <circle cx="${x + 58}" cy="${y + 56}" r="48" fill="${color}" opacity="0.10"/>
+      ${v5Icon(icon, x + 28, y + 26, 60, color)}
+      <text x="${x + 126}" y="${y + 8}" class="num5" style="font-size:34px;fill:${color}">${esc(n)}</text>
+      <text x="${x + 126}" y="${y + 56}" class="label5" style="font-size:31px">${esc(titleValue)}</text>
+      <path d="M${x + 8} ${y + 142} H${x + 304}" stroke="${color}" stroke-width="3.6" stroke-linecap="round" opacity="0.58"/>
+      <text x="${x + 8}" y="${y + 174}" class="small5" style="font-size:24px;fill:${L.ink};font-weight:900">${esc(claim)}</text>
+      <text x="${x + 8}" y="${y + 218}" class="small5" style="font-size:20px;fill:${L.muted};font-weight:820">${esc(desc)}</text>
+    </g>
+  `;
+}
+
+function slideResponsibilityV10(slide, index) {
+  const body = `
+    ${v5Header("04 / 开发者角色", slide.title, slide.subtitle, 56)}
+    ${rolePanelV10(108, 390, "团队", "建设可治理交付系统", ["组织 Agent 可用上下文", "把构建、轨迹、评审做成证据包", "用净时间、返工率、线上风险衡量收益"], L.blue, "team")}
+    ${rolePanelV10(690, 390, "个人", "把判断位置前移", ["定义目标、非目标和风险边界", "核验事实与可信上下文", "解释风险并承接责任"], L.orange, "shield")}
+    ${rolePanelV10(1272, 390, "新人", "从实现者走向系统参与者", ["理解需求、用户场景、产品定位", "理解架构约束和运行证据", "让 AI 放大专业判断，而非替代判断"], L.blue, "file")}
+    ${v02Takeaway("AI 降低实现门槛，但提高了对系统理解、证据判断和责任承接的要求。")}
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function rolePanelV10(x, y, tag, titleValue, lines, color, icon) {
+  return `
+    <rect x="${x}" y="${y}" width="540" height="454" rx="22" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="${x + 78}" cy="${y + 78}" r="44" fill="${color}" opacity="0.10"/>
+    ${v5Icon(icon, x + 50, y + 50, 56, color)}
+    <text x="${x + 148}" y="${y + 42}" class="small5" style="font-size:24px;fill:${color};font-weight:900">${esc(tag)}</text>
+    <text x="${x + 54}" y="${y + 142}" class="num5" style="font-size:34px;fill:${L.ink}">${esc(titleValue)}</text>
+    <path d="M${x + 54} ${y + 198} H${x + 486}" stroke="${color}" stroke-width="4" stroke-linecap="round" opacity="0.62"/>
+    ${lines.map((line, i) => `
+      <circle cx="${x + 64}" cy="${y + 252 + i * 62}" r="7" fill="${color}" opacity="0.82"/>
+      <text x="${x + 92}" y="${y + 238 + i * 62}" class="small5" style="font-size:23px;fill:${L.ink};font-weight:820">${esc(line)}</text>
+    `).join("")}
+  `;
+}
+
+function slideThanksV10(slide, index) {
+  const body = `
+    <text x="96" y="152" class="small5" style="fill:${L.blue};font-weight:900">AI 编程、工程治理、开发者角色</text>
+    <text x="96" y="248" class="h15" style="font-size:${MAIN_TITLE_SIZE_V09}px">谢谢</text>
+    <path d="M96 346 h150" stroke="${L.blue}" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="276" cy="346" r="6" fill="${L.orange}"/>
+    <rect x="158" y="492" width="1604" height="336" rx="22" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <text x="230" y="548" class="label5" style="font-size:34px">两个试点，一个判断</text>
+    ${thanksLandingV10(244, 642, "01", "运行控制面试点", "任务入口、隔离环境、权限、证据包、评审材料、阶段门禁", L.blue)}
+    ${thanksLandingV10(244, 722, "02", "质量前置试点", "等待、返工、失败重跑、测试证据、回滚说明纳入指标", L.orange)}
+    <rect x="1120" y="240" width="440" height="170" rx="18" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    <text x="1172" y="284" class="num5" style="font-size:54px;fill:${L.blue}">Q&amp;A</text>
+    ${v5Icon("chat", 1424, 292, 82, L.blue)}
+    <rect x="560" y="848" width="800" height="58" rx="16" fill="${L.bg}" stroke="${L.line2}" stroke-width="2"/>
+    <text x="960" y="865" class="small5" text-anchor="middle" style="font-size:25px;fill:${L.ink};font-weight:900">把 AI 放进可验证、可治理、可复盘的工程系统</text>
+  `;
+  return svgBaseV5(slide, index, body);
+}
+
+function thanksLandingV10(x, y, n, titleValue, desc, color) {
+  return `
+    <text x="${x}" y="${y}" class="num5" style="font-size:28px;fill:${color}">${esc(n)}</text>
+    <text x="${x + 70}" y="${y}" class="body5" style="font-size:29px;fill:${L.ink};font-weight:900">${esc(titleValue)}</text>
+    <text x="${x + 330}" y="${y + 3}" class="small5" style="font-size:23px;fill:${L.muted};font-weight:800">${esc(desc)}</text>
+  `;
+}
+
+function landingPointV09(x, y, n, titleValue, source, bullets, color, icon) {
+  return `
+    <rect x="${x}" y="${y}" width="1580" height="232" rx="22" fill="${L.paper}" stroke="${L.line2}" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="${x + 84}" cy="${y + 86}" r="50" fill="${color}" opacity="0.10"/>
+    ${v5Icon(icon, x + 54, y + 56, 60, color)}
+    <text x="${x + 166}" y="${y + 52}" class="num5" style="font-size:38px;fill:${color}">${esc(n)}</text>
+    <text x="${x + 248}" y="${y + 52}" class="label5" style="font-size:36px">${esc(titleValue)}</text>
+    <text x="${x + 248}" y="${y + 98}" class="micro5" style="font-size:22px;fill:${color};font-weight:900">${esc(source)}</text>
+    ${bullets.map((bullet, i) => `
+      <circle cx="${x + 250}" cy="${y + 132 + i * 34}" r="5.8" fill="${color}" opacity="0.78"/>
+      <text x="${x + 274}" y="${y + 139 + i * 34}" class="body5" style="font-size:24px;fill:${L.ink};font-weight:850">${esc(bullet)}</text>
+    `).join("")}
   `;
 }
 
@@ -3057,8 +3845,8 @@ function writeNotes() {
   const closeMinutes = slideTimeMinutes(slides[slides.length - 1]);
   linesOut.push("# AI 如何重新定义软件开发：分页演讲稿");
   linesOut.push("");
-  linesOut.push(`建议时长：15 分钟。建议页数：${slides.length} 页。PPT 每页采用整页图片式设计，适合直接投屏演讲。`);
-  linesOut.push(`节奏校验：当前分页讲稿标注合计约 ${fmtMinutes(totalMinutes)} 分钟，其中主体讲述约 ${fmtMinutes(mainMinutes)} 分钟，收束与 Q&A 入口约 ${fmtMinutes(closeMinutes)} 分钟。`);
+  linesOut.push(`建议时长：约 15 分钟。建议页数：${slides.length} 页。PPT 每页采用整页图片式设计，适合直接投屏演讲。`);
+  linesOut.push(`节奏校验：当前分页讲稿标注合计约 ${fmtMinutes(totalMinutes)} 分钟，其中主体讲述约 ${fmtMinutes(mainMinutes)} 分钟，最后收束约 ${fmtMinutes(closeMinutes)} 分钟。`);
   linesOut.push("");
   linesOut.push("## 报告简介");
   linesOut.push("");
@@ -3066,11 +3854,22 @@ function writeNotes() {
   linesOut.push("");
   linesOut.push("## 可引用调研");
   linesOut.push("");
+  linesOut.push("- AI Harness Engineering（https://arxiv.org/abs/2605.13357）：提出软件 Agent 能力来自 model-harness-environment 系统，Harness 负责任务规格、上下文选择、工具访问、观测、验证、权限、熵审计和人工干预记录，支撑“强模型之后更需要工程运行基座”。");
+  linesOut.push("- AgentTrace（https://arxiv.org/abs/2602.10133）：用结构化日志捕获 operational、cognitive、contextual 三类 trace，用于安全、问责、风险分析和信任校准，支撑“概率执行过程需要可观测证据”。");
+  linesOut.push("- SWE-CI / SWE-Chain（https://arxiv.org/abs/2603.03823, https://arxiv.org/abs/2605.14415）：把编码 Agent 评估从一次性修复推进到 CI 循环、长期维护和连续版本升级，支撑“最终验证应看长期可维护性”。");
+  linesOut.push("- LangChain Harness Engineering（https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering）：在固定 gpt-5.2-codex 的情况下，通过 trace、evals、自验证和 harness 调整把 Terminal Bench 2.0 分数从 52.8 提到 66.5，说明改进点常在模型外侧的运行系统。");
+  linesOut.push("- Anthropic Claude Opus 4.5（https://www.anthropic.com/news/claude-opus-4-5）：前沿模型把 SWE-bench Verified 推到 80%+ 区间，说明真实开源 issue 修复能力已明显上台阶。");
+  linesOut.push("- SWE-CI（https://arxiv.org/abs/2603.03823）：把编码 Agent 评估从静态一次性修复推进到 CI 循环和长期维护，任务平均覆盖真实仓库 233 天、71 个连续提交的演进历史。");
+  linesOut.push("- SWE-Bench Mobile（https://arxiv.org/abs/2602.09540）：用 PRD、Figma、生产级 iOS 代码库和测试套件评估工业移动任务，最优组合约 12%，且同模型不同 Agent 设计最高存在 6x 差距。");
+  linesOut.push("- Gartner Enterprise AI Coding Agents 2026（https://www.gartner.com/en/newsroom/press-releases/2026-05-20-gartner-says-the-market-for-enterprise-ai-coding-agents-is-entering-a-new-phase-of-expansion-and-competitive-realignment）：预测到 2027 年，超过 65% 使用 agentic coding 的工程团队会把 IDE 视为可选入口，治理、验证和控制转向自动化平台。");
   linesOut.push("- DORA 2025（https://dora.dev/dora-report-2025/）：AI 的主要作用是放大组织既有强项与弱项，收益来自底层组织系统，而不是工具采购本身。");
   linesOut.push("- Google Research / DeepMind, Towards a Science of Scaling Agent Systems（https://research.google/blog/towards-a-science-of-scaling-agent-systems-when-and-why-agent-systems-work/）：多 Agent 在可并行任务上可能收益明显，但在顺序任务上退化；独立多 Agent 的错误放大可达 17.2x，集中式校验能显著收敛错误传播。");
   linesOut.push("- IBM Research / ICLR 2026 MAP（https://research.ibm.com/publications/measuring-agents-in-production）：生产 Agent 的现实状态更偏简单、短链路、可控和人类评估，68% 最多执行 10 步即需要人工介入，74% 主要依赖人类评估。");
-  linesOut.push("- Gartner Enterprise AI Coding Agents 2026（https://www.gartner.com/en/newsroom/press-releases/2026-05-20-gartner-says-the-market-for-enterprise-ai-coding-agents-is-entering-a-new-phase-of-expansion-and-competitive-realignment）：预测到 2027 年，超过 65% 使用 agentic coding 的工程团队会把 IDE 视为可选入口，治理、验证和控制转向自动化平台。");
   linesOut.push("- MSR 2026, Speed at the Cost of Quality（https://cmustrudel.github.io/papers/msr2026he.pdf）：Cursor/LLM agent assistant 带来前置速度收益的同时，也观察到静态分析警告、重复代码密度和认知复杂度等质量风险。");
+  linesOut.push("- GitHub Copilot cloud agent（https://docs.github.com/en/copilot/concepts/agents/cloud-agent/about-cloud-agent）：把任务放进 GitHub Actions 驱动的临时环境，可研究仓库、计划、改分支、跑测试并进入 PR。");
+  linesOut.push("- OpenAI Codex web（https://developers.openai.com/codex/cloud）：在独立云环境中后台执行任务，可连接 GitHub 并从工作结果创建 PR。");
+  linesOut.push("- Claude Code subagents / hooks / permissions（https://code.claude.com/docs/en/sub-agents, https://support.claude.com/en/articles/14554000-claude-code-power-user-tips）：用子 Agent、权限白名单、Hooks 和沙箱把自动执行放进可审计护栏。");
+  linesOut.push("- Cursor Background Agents / Rules（https://docs.cursor.com/background-agents, https://docs.cursor.com/en/context）：用后台远程 Agent、项目规则和 AGENTS.md 组织仓库级上下文与分支交付。");
   if (false) {
   linesOut.push("- Google / DORA 2025（https://blog.google/innovation-and-ai/technology/developers-tools/dora-report-2025/）：80% 以上受访者认为 AI 提升生产力，59% 认为代码质量改善；但报告同时提出 trust paradox，并强调 AI 是组织的 mirror and multiplier，采用工具之外还需要文化、流程和系统演进。");
   linesOut.push("- DORA GenAI report 2025.2（https://dora.dev/ai/gen-ai-report/dora-impact-of-generative-ai-in-software-development.pdf）：报告提醒新技术采用可能带来短期生产率下降，也指出 AI 提高代码生成速度后，小批量、稳健测试等基本工程原则更重要。");
@@ -3110,11 +3909,11 @@ function writeNotes() {
   linesOut.push("");
   linesOut.push("## BitFun 本地工程证据");
   linesOut.push("");
-  linesOut.push("- AGENTS.md：仓库级规则、平台边界、remote compatibility、验证矩阵，支撑第 5 页“规则上下文”和“验证矩阵”。");
-  linesOut.push("- tool_pipeline.rs：allowed_tools、runtime_tool_restrictions、collapsed tools / GetToolSpec，支撑第 5 页“工具准入”。");
-  linesOut.push("- workspace_paths.rs、miniapp/host_dispatch.rs、miniapp/manager.rs：runtime artifact root 防逃逸、MiniApp allowlist、高风险权限 diff，支撑第 5 页“权限隔离”。");
-  linesOut.push("- docs/architecture/core-decomposition.md 与 scripts/check-core-boundaries.mjs：product-full capability guardrail、port/provider 迁移、boundary check 与等价验证边界，支撑第 10 页“能力保护式重构”。");
-  linesOut.push("- product-domains MiniApp/function-agent contract tests：用契约测试和快照保护 owner 迁移后的行为等价，支撑第 10 页“速度提升也能沉淀为质量提升”。");
+  linesOut.push("- AGENTS.md：仓库级规则、平台边界、远程兼容、验证矩阵，支撑第 7 页“规则上下文”和“验证矩阵”。");
+  linesOut.push("- tool_pipeline.rs：可用工具白名单、运行时工具限制、折叠工具规格读取，支撑第 7 页“工具准入”。");
+  linesOut.push("- workspace_paths.rs、miniapp/host_dispatch.rs、miniapp/manager.rs：运行产物根目录防逃逸、小应用能力白名单、高风险权限差异，支撑第 7 页“权限隔离”。");
+  linesOut.push("- docs/architecture/core-decomposition.md 与 scripts/check-core-boundaries.mjs：产品能力保护、端口和提供者迁移、边界检查与等价验证，支撑第 10 页“能力保护式演进”。");
+  linesOut.push("- product-domains MiniApp/function-agent contract tests：用契约测试和快照保护 owner 迁移后的行为等价，支撑第 10 页“能力没丢、边界没破、行为没变”。");
   linesOut.push("");
   linesOut.push("## 15 分钟演讲节奏");
   linesOut.push("");
@@ -3148,7 +3947,7 @@ function writeNotes() {
 function writeReadme() {
   const text = `# AI 如何重新定义软件开发：演讲材料
 
-本目录保留原版演讲材料、V0.2、V0.3、V0.4、V0.5、V0.6 版本，并新增 V0.7 版本。V0.7 继续使用整页图片式生成链路，但把第 5 页落到 BitFun 工程控制面，把第 10 页落到能力保护式重构，让外部研究、工程机制和 BitFun 演进方向形成一条更清晰的主线。
+本目录保留原版演讲材料、V0.2、V0.3、V0.4、V0.5、V0.6、V0.8、V0.9、V0.10 版本，并新增 V0.11 版本。V0.11 继续使用整页图片式生成链路，不做元素化编辑版改造；本版把主旨标题恢复为《AI 如何重新定义软件开发》，并拆分业界实践与 BitFun/ADE 演进方向，同时把 6-10 页治理内容压缩为四页。
 
 ## 原版材料
 
@@ -3212,21 +4011,53 @@ node .\\docs\\report\\ai-redefines-software-development-presentation\\build-deck
 
 V0.4 主线：沿用 V0.3 内容结构，并在第 3-12 页加入低干扰章节水印：01 软件工程变革、02 速度的背后、03 工程质量与治理、04 开发者角色。
 
-## V0.7 材料
+## V0.9 材料
 
-- \`agents_are_the_new_Agile-v0.8.pptx\`：V0.7 演讲用 PPTX，${slides.length} 页。
-- \`agents_are_the_new_Agile-speaker-notes-v0.8.md\`：V0.7 分页讲稿，沿用 15 分钟节奏。
-- \`agents_are_the_new_Agile-slides-png-v0.8/\`：V0.7 逐页 SVG 与 PNG。
-- \`agents_are_the_new_Agile-preview-contact-sheet-v0.8.png\`：V0.7 缩略总览。
-- \`build-deck-v0.8.cjs\`：V0.7 可复现生成脚本。
+- \`agents_are_the_new_Agile-v0.9.pptx\`：V0.9 演讲用 PPTX，${slides.length} 页。
+- \`agents_are_the_new_Agile-speaker-notes-v0.9.md\`：V0.9 分页讲稿，沿用 15 分钟节奏。
+- \`agents_are_the_new_Agile-slides-png-v0.9/\`：V0.9 逐页 SVG 与 PNG。
+- \`agents_are_the_new_Agile-preview-contact-sheet-v0.9.png\`：V0.9 缩略总览。
+- \`build-deck-v0.9.cjs\`：V0.9 可复现生成脚本。
 
-重新生成 V0.7：
+重新生成 V0.9：
 
 \`\`\`powershell
-node .\\docs\\report\\ai-redefines-software-development-presentation\\build-deck-v0.8.cjs
+node .\\docs\\report\\ai-redefines-software-development-presentation\\build-deck-v0.9.cjs
 \`\`\`
 
-V0.7 主线：现实问题 -> 研究共识 -> BitFun 工程控制面 -> 可治理工作流 -> 能力保护式重构 -> 工程协议与职责变化。重点从泛化观点继续下探到 BitFun 当前机制和未来演进路径。
+V0.9 主线：现实问题 -> 研究与行业工具信号 -> BitFun 工程控制面 -> 概率过程到确定放行 -> 可治理工作流 -> 质量协议 -> 能力保护式演进 -> 团队和个人职责变化。
+
+## V0.10 材料
+
+- \`agents_are_the_new_Agile-v0.10.pptx\`：V0.10 演讲用 PPTX，${slides.length} 页。
+- \`agents_are_the_new_Agile-speaker-notes-v0.10.md\`：V0.10 分页讲稿，控制在 15 分钟内。
+- \`agents_are_the_new_Agile-slides-png-v0.10/\`：V0.10 逐页 SVG 与 PNG。
+- \`agents_are_the_new_Agile-preview-contact-sheet-v0.10.png\`：V0.10 缩略总览。
+- \`build-deck-v0.10.cjs\`：V0.10 可复现生成脚本。
+
+重新生成 V0.10：
+
+\`\`\`powershell
+node .\\docs\\report\\ai-redefines-software-development-presentation\\build-deck-v0.10.cjs
+\`\`\`
+
+V0.10 主线：BitFun 单月高吞吐经验 -> 速度不等于净收益 -> 研究与行业工具说明收益需要系统化承接 -> 可治理 Agentic SDLC 五层模型 -> BitFun 工程控制面与 ADE 产品位置 -> 质量协议前置 -> 团队和个人角色变化。
+
+## V0.11 材料
+
+- \`agents_are_the_new_Agile-v0.11.pptx\`：V0.11 演讲用 PPTX，${slides.length} 页。
+- \`agents_are_the_new_Agile-speaker-notes-v0.11.md\`：V0.11 分页讲稿，控制在约 15 分钟。
+- \`agents_are_the_new_Agile-slides-png-v0.11/\`：V0.11 逐页 SVG 与 PNG。
+- \`agents_are_the_new_Agile-preview-contact-sheet-v0.11.png\`：V0.11 缩略总览。
+- \`build-deck-v0.11.cjs\`：V0.11 可复现生成脚本。
+
+重新生成 V0.11：
+
+\`\`\`powershell
+node .\\docs\\report\\ai-redefines-software-development-presentation\\build-deck-v0.11.cjs
+\`\`\`
+
+V0.11 主线：BitFun 单月高吞吐经验 -> 强模型之后的工程运行基座 -> 业界工程化实践 -> BitFun/ADE 演进方向 -> 工程控制面 -> 可治理工作流 -> 质量协议前置 -> 能力保护式演进 -> 团队和个人角色变化。
 `;
   fs.writeFileSync(readmePath, text, "utf8");
 }

@@ -4,11 +4,11 @@ const sharp = require("sharp");
 const pptxgen = require("pptxgenjs");
 
 const outDir = __dirname;
-const slidesDir = path.join(outDir, "slides-png-v0.3");
-const pptxPath = path.join(outDir, process.env.PPTX_FILE || "ai-redefines-software-development-v0.3.pptx");
-const notesPath = path.join(outDir, "speaker-notes-v0.3.md");
+const slidesDir = path.join(outDir, "agents_are_the_new_Agile-slides-png-v0.3");
+const pptxPath = path.join(outDir, process.env.PPTX_FILE || "agents_are_the_new_Agile-v0.3.pptx");
+const notesPath = path.join(outDir, "agents_are_the_new_Agile-speaker-notes-v0.3.md");
 const readmePath = path.join(outDir, "README.md");
-const contactSheetPath = path.join(outDir, "preview-contact-sheet-v0.3.png");
+const contactSheetPath = path.join(outDir, "agents_are_the_new_Agile-preview-contact-sheet-v0.3.png");
 
 fs.mkdirSync(slidesDir, { recursive: true });
 
@@ -2297,10 +2297,10 @@ function writeReadme() {
 
 ## 原版材料
 
-- \`ai-redefines-software-development.pptx\`：原版演讲用 PPTX。
-- \`speaker-notes.md\`：原版分页讲稿。
-- \`slides-png/\`：原版逐页 SVG 与 PNG。
-- \`preview-contact-sheet.png\`：原版缩略总览。
+- \`agents_are_the_new_Agile.pptx\`：原版演讲用 PPTX。
+- \`agents_are_the_new_Agile-speaker-notes.md\`：原版分页讲稿。
+- \`agents_are_the_new_Agile-slides-png/\`：原版逐页 SVG 与 PNG。
+- \`agents_are_the_new_Agile-preview-contact-sheet.png\`：原版缩略总览。
 - \`build-deck.cjs\`：原版可复现生成脚本。
 
 重新生成原版：
@@ -2311,10 +2311,10 @@ node .\\docs\\report\\ai-redefines-software-development-presentation\\build-deck
 
 ## V0.2 材料
 
-- \`ai-redefines-software-development-v0.2.pptx\`：V0.2 演讲用 PPTX，${slides.length} 页。
-- \`speaker-notes-v0.2.md\`：V0.2 分页讲稿，按约 15 分钟节奏扩展。
-- \`slides-png-v0.2/\`：V0.2 逐页 SVG 与 PNG。
-- \`preview-contact-sheet-v0.2.png\`：V0.2 缩略总览。
+- \`agents_are_the_new_Agile-v0.2.pptx\`：V0.2 演讲用 PPTX，${slides.length} 页。
+- \`agents_are_the_new_Agile-speaker-notes-v0.2.md\`：V0.2 分页讲稿，按约 15 分钟节奏扩展。
+- \`agents_are_the_new_Agile-slides-png-v0.2/\`：V0.2 逐页 SVG 与 PNG。
+- \`agents_are_the_new_Agile-preview-contact-sheet-v0.2.png\`：V0.2 缩略总览。
 - \`build-deck-v0.2.cjs\`：V0.2 可复现生成脚本。
 
 重新生成 V0.2：
@@ -2327,10 +2327,10 @@ V0.2 主线：BitFun 的高速 AI 开发经验 -> 代码量膨胀后的真实问
 
 ## V0.3 材料
 
-- \`ai-redefines-software-development-v0.3.pptx\`：V0.3 演讲用 PPTX，${slides.length} 页。
-- \`speaker-notes-v0.3.md\`：V0.3 分页讲稿，按约 15 分钟节奏扩展。
-- \`slides-png-v0.3/\`：V0.3 逐页 SVG 与 PNG。
-- \`preview-contact-sheet-v0.3.png\`：V0.3 缩略总览。
+- \`agents_are_the_new_Agile-v0.3.pptx\`：V0.3 演讲用 PPTX，${slides.length} 页。
+- \`agents_are_the_new_Agile-speaker-notes-v0.3.md\`：V0.3 分页讲稿，按约 15 分钟节奏扩展。
+- \`agents_are_the_new_Agile-slides-png-v0.3/\`：V0.3 逐页 SVG 与 PNG。
+- \`agents_are_the_new_Agile-preview-contact-sheet-v0.3.png\`：V0.3 缩略总览。
 - \`build-deck-v0.3.cjs\`：V0.3 可复现生成脚本。
 
 重新生成 V0.3：
