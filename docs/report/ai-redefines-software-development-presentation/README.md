@@ -1,6 +1,6 @@
 # AI 如何重新定义软件开发：演讲材料
 
-本目录保留原版演讲材料、V0.2、V0.3、V0.4、V0.5、V0.6、V0.8、V0.9、V0.10、V0.11 版本，并新增 V0.12 版本。V0.12 继续使用整页图片式生成链路，不做元素化编辑版改造；本版将第 6 页改为 BitFun/ADE 全链路产品范围，并把第 7-10 页按研发过程节点重排为需求到任务、实现到验证、评审到交付、发布到运维。
+本目录保留原版演讲材料、V0.2、V0.3、V0.4、V0.5、V0.6、V0.8、V0.9、V0.10、V0.11、V0.12 版本，并新增 V0.13 版本。V0.13 继续使用整页图片式生成链路，不做元素化编辑版改造；本版重点优化第 5 页“产品化”，去掉运行环境独立卡片，改为三张竖排卡片，将身份、隔离和恢复能力合并进任务委托与治理护栏。
 
 ## 原版材料
 
@@ -127,3 +127,19 @@ node .\docs\report\ai-redefines-software-development-presentation\build-deck-v0.
 ```
 
 V0.12 主线：BitFun 单月高吞吐经验 -> 强模型之后的工程运行基座 -> 业界工程化实践 -> BitFun/ADE 全链路产品范围 -> 需求到任务 -> 实现到验证 -> 评审到交付 -> 发布到运维 -> 开发者角色变化。
+
+## V0.13 材料
+
+- `agents_are_the_new_Agile-v0.13.pptx`：V0.13 演讲用 PPTX，12 页。
+- `agents_are_the_new_Agile-speaker-notes-v0.13.md`：V0.13 分页讲稿，控制在约 15 分钟。
+- `agents_are_the_new_Agile-slides-png-v0.13/`：V0.13 逐页 SVG 与 PNG。
+- `agents_are_the_new_Agile-preview-contact-sheet-v0.13.png`：V0.13 缩略总览。
+- `build-deck-v0.13.cjs`：V0.13 可复现生成脚本。
+
+重新生成 V0.13：
+
+```powershell
+node .\docs\report\ai-redefines-software-development-presentation\build-deck-v0.13.cjs
+```
+
+V0.13 主线：沿用 V0.12 的研发过程节点结构，并将第 5 页行业产品化实践收敛为任务委托、治理护栏、证据复盘三类 ADE 基座能力，结合 GitHub Agent HQ、Copilot coding agent、Codex Cloud、Claude Code subagents/hooks 与 AIDev 研究信号补充外部依据。
