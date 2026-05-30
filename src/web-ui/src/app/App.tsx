@@ -2,11 +2,10 @@ import { useEffect, useCallback, useState, useRef } from 'react';
 import { useShortcut } from '@/infrastructure/hooks/useShortcut';
 import { useHasDismissibleLayer } from '@/infrastructure/hooks/useDismissibleLayer';
 import { dismissibleLayerManager } from '@/infrastructure/services/DismissibleLayerManager';
-import { ChatProvider, useAIInitialization } from '../infrastructure';
+import { ChatProvider } from '../infrastructure/contexts/ChatProvider';
 import { ViewModeProvider } from '../infrastructure/contexts/ViewModeProvider';
 import { SSHRemoteProvider } from '../features/ssh-remote';
 import AppLayout from './layout/AppLayout';
-import { useCurrentModelConfig } from '../hooks/useModelConfigs';
 import { ContextMenuRenderer } from '../shared/context-menu-system/components/ContextMenuRenderer';
 import { NotificationContainer, NotificationCenter, notificationService } from '../shared/notification-system';
 import { AnnouncementProvider } from '../shared/announcement-system';
@@ -45,10 +44,8 @@ const log = createLogger('App');
 const MIN_SPLASH_MS = 900;
 
 function App() {
-  // AI initialization
-  const { currentConfig } = useCurrentModelConfig();
-  const { isInitialized: aiInitialized, isInitializing: aiInitializing, error: aiError } = useAIInitialization(currentConfig);
   const { t } = useI18n('settings/basics');
+  const { t: tCommon } = useI18n('common');
 
   // Workspace loading state — drives splash exit timing
   const { loading: workspaceLoading } = useWorkspaceContext();
@@ -148,6 +145,9 @@ function App() {
     }
     interactiveShellReadyRef.current = true;
     startupTrace.markPhase('interactive_shell_ready');
+    window.dispatchEvent(new CustomEvent('bitfun:interactive-shell-ready', {
+      detail: { reason: 'workspace-ready' },
+    }));
     setInteractiveShellReady(true);
   }, [workspaceLoading]);
 
@@ -189,6 +189,38 @@ function App() {
 
     return () => startupSystemsHandle.cancel();
   }, [interactiveShellReady]);
+
+  useEffect(() => {
+    if (!interactiveShellReady || splashVisible) {
+      return;
+    }
+
+    let disposed = false;
+    let editorWarmupHandle: { promise: Promise<void>; cancel: () => void } | null = null;
+
+    void import('@/tools/editor/services/MonacoStartupWarmup')
+      .then(({ scheduleMonacoStartupWarmup }) => {
+        if (disposed) {
+          return;
+        }
+        editorWarmupHandle = scheduleMonacoStartupWarmup();
+        editorWarmupHandle.promise.catch(error => {
+          if (!disposed && !(error instanceof BackgroundTaskCancelledError)) {
+            log.warn('Editor startup warmup task failed', error);
+          }
+        });
+      })
+      .catch(error => {
+        if (!disposed) {
+          log.warn('Failed to schedule editor startup warmup', error);
+        }
+      });
+
+    return () => {
+      disposed = true;
+      editorWarmupHandle?.cancel();
+    };
+  }, [interactiveShellReady, splashVisible]);
 
   useEffect(() => {
     if (!isTauriRuntime() || !interactiveShellReady) return;
@@ -294,23 +326,6 @@ function App() {
       unlisten?.();
     };
   }, []);
-
-  // Observe AI initialization state
-  useEffect(() => {
-    if (aiError) {
-      log.error('AI initialization failed', aiError);
-    } else if (aiInitialized) {
-      log.debug('AI client initialized successfully');
-    } else if (!aiInitializing && !currentConfig) {
-      log.warn('AI not initialized: waiting for model config');
-    } else if (!aiInitializing && currentConfig && !currentConfig.apiKey) {
-      log.warn('AI not initialized: missing API key');
-    } else if (!aiInitializing && currentConfig && !currentConfig.modelName) {
-      log.warn('AI not initialized: missing model name');
-    } else if (!aiInitializing && currentConfig && !currentConfig.baseUrl) {
-      log.warn('AI not initialized: missing base URL');
-    }
-  }, [aiInitialized, aiInitializing, aiError, currentConfig]);
 
   // Block browser-native Ctrl+F (find bar) and Ctrl+R (hard reload).
   // On macOS the equivalent modifiers are Cmd+F / Cmd+R.
@@ -436,7 +451,11 @@ function App() {
 
             {/* Startup splash — sits above everything, exits once workspace is ready */}
             {splashVisible && (
-              <SplashScreen isExiting={splashExiting} onExited={handleSplashExited} />
+              <SplashScreen
+                isExiting={splashExiting}
+                onExited={handleSplashExited}
+                delayedMessage={workspaceLoading ? tCommon('loading.workspace') : undefined}
+              />
             )}
           </ToolbarModeProvider>
         </SSHRemoteProvider>
