@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BitFun Product Intro</title>
+    <style>
+      :root {
+        --bg: #05070a;
+        --ink: #f6f7fb;
+        --muted: #9aa4b7;
+        --line: rgba(255, 255, 255, 0.13);
+        --panel: rgba(255, 255, 255, 0.055);
+        --cyan: #58e6ff;
+        --lime: #c7ff62;
+        --blue: #75a7ff;
+        --rose: #ff7aa8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        background: var(--bg);
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+        color: var(--ink);
+        font-family:
+          "PingFang SC",
+          "Microsoft YaHei",
+          "Noto Sans CJK SC",
+          "Source Han Sans SC",
+          sans-serif;
+      }
+
+      .frame {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 70% 22%, rgba(88, 230, 255, 0.18), transparent 26%),
+          radial-gradient(circle at 16% 88%, rgba(199, 255, 98, 0.12), transparent 22%),
+          linear-gradient(145deg, #05070a 0%, #080c13 43%, #020304 100%);
+      }
+
+      .frame::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+        background-size: 80px 80px;
+        mask-image: radial-gradient(circle at 62% 48%, black 0%, transparent 72%);
+        opacity: 0.34;
+      }
+
+      .frame::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        pointer-events: none;
+      }
+
+      .content {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: 720px 1fr;
+        gap: 42px;
+        height: 100%;
+        padding: 56px 72px 50px;
+      }
+
+      .brand {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-width: 0;
+      }
+
+      .brand-top {
+        display: grid;
+        gap: 26px;
+      }
+
+      .logo-row {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+      }
+
+      .logo {
+        width: 72px;
+        height: 72px;
+        border-radius: 18px;
+        object-fit: cover;
+        box-shadow: 0 0 42px rgba(88, 230, 255, 0.28);
+      }
+
+      .eyebrow {
+        color: var(--muted);
+        font-size: 23px;
+        line-height: 1.1;
+        letter-spacing: 0;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 116px;
+        line-height: 0.9;
+        letter-spacing: 0;
+        font-weight: 700;
+      }
+
+      .tagline {
+        margin: 0;
+        max-width: 660px;
+        color: rgba(246, 247, 251, 0.86);
+        font-size: 38px;
+        line-height: 1.23;
+        font-weight: 500;
+        letter-spacing: 0;
+      }
+
+      .tagline strong {
+        color: var(--ink);
+        font-weight: 700;
+      }
+
+      .position {
+        display: grid;
+        gap: 14px;
+        width: 630px;
+        padding: 22px 28px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.046);
+        backdrop-filter: blur(18px);
+      }
+
+      .position-label {
+        color: var(--cyan);
+        font-size: 22px;
+        line-height: 1;
+        font-weight: 700;
+      }
+
+      .position-copy {
+        margin: 0;
+        color: rgba(246, 247, 251, 0.8);
+        font-size: 24px;
+        line-height: 1.38;
+        letter-spacing: 0;
+      }
+
+      .footer {
+        display: flex;
+        gap: 28px;
+        color: rgba(246, 247, 251, 0.5);
+        font-size: 19px;
+        line-height: 1;
+      }
+
+      .right {
+        display: grid;
+        grid-template-rows: 282px 238px 1fr;
+        gap: 20px;
+        min-width: 0;
+      }
+
+      .vision {
+        display: grid;
+        grid-template-columns: 332px 1fr;
+        gap: 16px;
+        min-height: 0;
+      }
+
+      .vision-statement {
+        padding: 24px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.035));
+      }
+
+      .section-kicker {
+        margin: 0 0 14px;
+        color: var(--muted);
+        font-size: 19px;
+        line-height: 1;
+      }
+
+      .vision-title {
+        margin: 0;
+        font-size: 36px;
+        line-height: 1.16;
+        font-weight: 700;
+        letter-spacing: 0;
+      }
+
+      .vision-title span {
+        color: var(--lime);
+      }
+
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+
+      .flow-card {
+        position: relative;
+        min-width: 0;
+        padding: 22px 22px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.052);
+      }
+
+      .flow-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 24px;
+        right: 24px;
+        height: 2px;
+        background: var(--accent);
+      }
+
+      .flow-index {
+        color: rgba(246, 247, 251, 0.46);
+        font-size: 18px;
+        line-height: 1;
+      }
+
+      .flow-card h3 {
+        margin: 32px 0 12px;
+        font-size: 28px;
+        line-height: 1.1;
+        letter-spacing: 0;
+      }
+
+      .flow-card p {
+        margin: 0;
+        color: rgba(246, 247, 251, 0.64);
+        font-size: 18px;
+        line-height: 1.34;
+      }
+
+      .abilities {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+
+      .ability {
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+      }
+
+      .ability-mark {
+        width: 30px;
+        height: 30px;
+        margin-bottom: 18px;
+        border: 2px solid var(--accent);
+        border-radius: 50%;
+        box-shadow: 0 0 26px color-mix(in srgb, var(--accent), transparent 55%);
+      }
+
+      .ability h3 {
+        margin: 0 0 12px;
+        font-size: 27px;
+        line-height: 1.1;
+        letter-spacing: 0;
+      }
+
+      .ability p {
+        margin: 0;
+        color: rgba(246, 247, 251, 0.64);
+        font-size: 17px;
+        line-height: 1.34;
+      }
+
+      .bottom {
+        display: grid;
+        grid-template-columns: 1fr;
+        min-height: 0;
+      }
+
+      .values {
+        display: grid;
+        grid-template-rows: 52px 1fr;
+        gap: 18px;
+      }
+
+      .values-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .values-head h2 {
+        margin: 0;
+        font-size: 34px;
+        line-height: 1;
+        letter-spacing: 0;
+      }
+
+      .values-head span {
+        color: rgba(246, 247, 251, 0.48);
+        font-size: 17px;
+      }
+
+      .value-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+
+      .value {
+        padding: 30px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.046);
+      }
+
+      .value b {
+        display: block;
+        margin-bottom: 18px;
+        color: var(--accent);
+        font-size: 25px;
+        line-height: 1;
+      }
+
+      .value p {
+        margin: 0;
+        color: rgba(246, 247, 251, 0.78);
+        font-size: 30px;
+        line-height: 1.32;
+        letter-spacing: 0;
+      }
+
+      .value small {
+        display: none;
+        margin-top: 14px;
+        color: rgba(246, 247, 251, 0.44);
+        font-size: 15px;
+        line-height: 1.24;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="frame" aria-label="BitFun 产品介绍图">
+      <section class="content">
+        <aside class="brand">
+          <div class="brand-top">
+            <div class="logo-row">
+              <img class="logo" src="../../../png/BitFun-Logo.png" alt="" />
+              <div class="eyebrow">openbitfun.com</div>
+            </div>
+            <h1>BitFun</h1>
+            <p class="tagline">
+              一个把 <strong>Code Agent</strong>、办公协作、桌面操控与个人助理装进同一桌面端的
+              <strong>ADE</strong>。
+            </p>
+          </div>
+
+          <div class="position">
+            <div class="position-label">产品定位</div>
+            <p class="position-copy">
+              下载即用的桌面 Agent 套件，也是可扩展、可审计、可长期运行的 Agent 基座。直接使用官方 Agent，也可以用 Markdown、MCP、Skill、Mini App 或源码 fork 定义领域 Agent。
+            </p>
+          </div>
+
+          <div class="footer">
+            <span>GitHub: GCWing/BitFun</span>
+            <span>Windows · macOS · Linux</span>
+          </div>
+        </aside>
+
+        <section class="right">
+          <div class="vision">
+            <div class="vision-statement">
+              <p class="section-kicker">愿景</p>
+              <p class="vision-title">
+                从会聊天的 AI 工具，走向<span>可验证、可协作、可自我迭代</span>的智能工作系统。
+              </p>
+            </div>
+            <div class="flow">
+              <article class="flow-card" style="--accent: var(--blue)">
+                <div class="flow-index">01</div>
+                <h3>Agentic Coding</h3>
+                <p>AI 不再只补全代码，而是读仓库、改文件、跑验证、解释结果。</p>
+              </article>
+              <article class="flow-card" style="--accent: var(--cyan)">
+                <div class="flow-index">02</div>
+                <h3>Context Engineering</h3>
+                <p>会话、记忆、项目上下文、工具权限和规范一起进入执行环境。</p>
+              </article>
+              <article class="flow-card" style="--accent: var(--lime)">
+                <div class="flow-index">03</div>
+                <h3>Quality Gates</h3>
+                <p>Plan、Debug、Review、Deep Review 把完成感绑定到证据和审查。</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="abilities">
+            <article class="ability" style="--accent: var(--cyan)">
+              <div class="ability-mark"></div>
+              <h3>Code Agent</h3>
+              <p>Agentic、Plan、Debug、Review 四种模式，覆盖开发、排障与检视。</p>
+            </article>
+            <article class="ability" style="--accent: var(--lime)">
+              <div class="ability-mark"></div>
+              <h3>Cowork</h3>
+              <p>文档、表格、幻灯片与知识整理能力，适合办公和项目协作。</p>
+            </article>
+            <article class="ability" style="--accent: var(--rose)">
+              <div class="ability-mark"></div>
+              <h3>Computer Use</h3>
+              <p>看屏幕、动鼠标键盘，把浏览器和桌面应用交给 Agent 操作。</p>
+            </article>
+            <article class="ability" style="--accent: var(--blue)">
+              <div class="ability-mark"></div>
+              <h3>Agent 生态</h3>
+              <p>MCP、Skill、Mini App、生成式 UI、远程控制与长期记忆内置。</p>
+            </article>
+          </div>
+
+          <div class="bottom">
+            <div class="values">
+              <div class="values-head">
+                <h2>给用户带来的价值</h2>
+                <span>Less switching. More agency.</span>
+              </div>
+              <div class="value-grid">
+                <article class="value" style="--accent: var(--cyan)">
+                  <b>效率</b>
+                  <p>编码、办公、桌面执行与远程指挥收进一个工作台。</p>
+                  <small>协议栈、文件、终端、Git 与远程能力默认就绪。</small>
+                </article>
+                <article class="value" style="--accent: var(--lime)">
+                  <b>掌控</b>
+                  <p>数据留在本机，会话、记忆和工作目录可迁移、可审计。</p>
+                  <small>适合长期运行、隐私与合规场景。</small>
+                </article>
+                <article class="value" style="--accent: var(--rose)">
+                  <b>演进</b>
+                  <p>从 Markdown Agent 到整仓 fork，让 BitFun 改进 BitFun。</p>
+                  <small>沉淀成可复用 Agent、工具和 Mini App。</small>
+                </article>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

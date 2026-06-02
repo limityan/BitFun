@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BitFun Architecture</title>
+    <style>
+      :root {
+        --bg: #05070a;
+        --ink: #f6f7fb;
+        --soft: rgba(246, 247, 251, 0.68);
+        --muted: rgba(246, 247, 251, 0.48);
+        --line: rgba(255, 255, 255, 0.13);
+        --panel: rgba(255, 255, 255, 0.052);
+        --cyan: #58e6ff;
+        --lime: #c7ff62;
+        --blue: #75a7ff;
+        --rose: #ff7aa8;
+        --amber: #ffd66b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        background: var(--bg);
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+        color: var(--ink);
+        font-family:
+          "PingFang SC",
+          "Microsoft YaHei",
+          "Noto Sans CJK SC",
+          "Source Han Sans SC",
+          sans-serif;
+      }
+
+      .frame {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 58% 20%, rgba(88, 230, 255, 0.16), transparent 25%),
+          radial-gradient(circle at 86% 78%, rgba(199, 255, 98, 0.12), transparent 22%),
+          linear-gradient(150deg, #05070a 0%, #091018 48%, #020304 100%);
+      }
+
+      .frame::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+        background-size: 84px 84px;
+        mask-image: radial-gradient(circle at 62% 48%, black 0%, transparent 74%);
+        opacity: 0.36;
+      }
+
+      .content {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: 430px 1fr;
+        gap: 44px;
+        height: 100%;
+        padding: 48px 72px 44px;
+      }
+
+      .left {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        gap: 260px;
+        min-width: 0;
+      }
+
+      .brand {
+        display: grid;
+        gap: 26px;
+      }
+
+      .logo-row {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .logo {
+        width: 68px;
+        height: 68px;
+        border-radius: 17px;
+        object-fit: cover;
+        box-shadow: 0 0 34px rgba(88, 230, 255, 0.25);
+      }
+
+      .site {
+        color: rgba(246, 247, 251, 0.62);
+        font-size: 21px;
+        line-height: 1;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 68px;
+        line-height: 0.96;
+        letter-spacing: 0;
+      }
+
+      .subtitle {
+        margin: 0;
+        color: rgba(246, 247, 251, 0.76);
+        font-size: 31px;
+        line-height: 1.28;
+        letter-spacing: 0;
+      }
+
+      .subtitle b {
+        color: var(--cyan);
+        font-weight: 700;
+      }
+
+      .principle {
+        padding: 20px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.045);
+      }
+
+      .principle small {
+        display: block;
+        margin-bottom: 14px;
+        color: var(--lime);
+        font-size: 20px;
+        font-weight: 700;
+      }
+
+      .principle p {
+        margin: 0;
+        color: rgba(246, 247, 251, 0.76);
+        font-size: 21px;
+        line-height: 1.32;
+      }
+
+      .diagram {
+        display: grid;
+        grid-template-rows: 102px 114px 108px 344px 178px;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .layer {
+        position: relative;
+        display: grid;
+        grid-template-columns: 168px 1fr;
+        gap: 16px;
+        min-height: 0;
+      }
+
+      .label {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .label b {
+        color: var(--ink);
+        font-size: 24px;
+        line-height: 1.04;
+      }
+
+      .label span {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.22;
+      }
+
+      .cards {
+        display: grid;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .cols-5 {
+        grid-template-columns: repeat(5, 1fr);
+      }
+
+      .cols-4 {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .cols-3 {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .card {
+        position: relative;
+        min-width: 0;
+        padding: 15px 17px 13px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 18px;
+        right: 18px;
+        height: 2px;
+        background: var(--accent);
+      }
+
+      .card h3 {
+        margin: 0 0 9px;
+        color: var(--ink);
+        font-size: 22px;
+        line-height: 1.08;
+        letter-spacing: 0;
+      }
+
+      .card p {
+        margin: 0;
+        color: var(--soft);
+        font-size: 15px;
+        line-height: 1.25;
+      }
+
+      .kernel-wrap {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 12px;
+        min-width: 0;
+      }
+
+      .kernel {
+        position: relative;
+        padding: 18px 20px;
+        border: 1px solid rgba(88, 230, 255, 0.38);
+        border-radius: 8px;
+        background: linear-gradient(180deg, rgba(88, 230, 255, 0.11), rgba(255, 255, 255, 0.045));
+        box-shadow: inset 0 0 42px rgba(88, 230, 255, 0.055);
+      }
+
+      .kernel h2 {
+        margin: 0 0 14px;
+        font-size: 30px;
+        line-height: 1;
+        letter-spacing: 0;
+      }
+
+      .runtime-flow {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .step {
+        padding: 11px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.18);
+        color: rgba(246, 247, 251, 0.82);
+        font-size: 16px;
+        line-height: 1.15;
+        text-align: center;
+      }
+
+      .kernel-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+
+      .kernel-chip {
+        padding: 11px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .kernel-chip b {
+        display: block;
+        margin-bottom: 7px;
+        color: var(--cyan);
+        font-size: 17px;
+        line-height: 1.1;
+      }
+
+      .kernel-chip span {
+        color: var(--soft);
+        font-size: 14px;
+        line-height: 1.18;
+      }
+
+      .owners {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .owner {
+        padding: 13px 14px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.045);
+      }
+
+      .owner b {
+        display: block;
+        margin-bottom: 7px;
+        color: var(--accent);
+        font-size: 17px;
+        line-height: 1;
+      }
+
+      .owner span {
+        color: var(--soft);
+        font-size: 14px;
+        line-height: 1.2;
+      }
+
+      .footer-note {
+        position: absolute;
+        right: 72px;
+        bottom: 24px;
+        color: rgba(246, 247, 251, 0.4);
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="frame" aria-label="BitFun 架构图">
+      <section class="content">
+        <aside class="left">
+          <div class="brand">
+            <div class="logo-row">
+              <img class="logo" src="../../../png/BitFun-Logo.png" alt="" />
+              <div class="site">GCWing/BitFun · openbitfun.com</div>
+            </div>
+            <h1>BitFun<br />Architecture</h1>
+            <p class="subtitle">面向桌面的 <b>ADE</b>：产品能力在上，平台适配在外，Agent Runtime 与工具生态在内。</p>
+          </div>
+
+          <div class="principle">
+            <small>核心架构原则</small>
+            <p>平台适配在外；共享产品逻辑在内。桌面、Web、CLI、ACP、远程入口通过 API / Transport 接入同一 Runtime。</p>
+          </div>
+
+        </aside>
+
+        <section class="diagram">
+          <div class="layer">
+            <div class="label">
+              <b>产品入口</b>
+              <span>不同交互外壳，共用底层 runtime</span>
+            </div>
+            <div class="cards cols-5">
+              <article class="card" style="--accent: var(--cyan)">
+                <h3>Desktop</h3>
+                <p>Tauri 桌面端，系统托盘、窗口、通知与本机能力</p>
+              </article>
+              <article class="card" style="--accent: var(--lime)">
+                <h3>Shared Web UI</h3>
+                <p>Flow Chat、Agents、Skills、Mini App、Usage</p>
+              </article>
+              <article class="card" style="--accent: var(--blue)">
+                <h3>Server / Web</h3>
+                <p>WebSocket 路由与浏览器端共享体验</p>
+              </article>
+              <article class="card" style="--accent: var(--amber)">
+                <h3>CLI / ACP</h3>
+                <p>命令行与 Agent Client Protocol 接入</p>
+              </article>
+              <article class="card" style="--accent: var(--rose)">
+                <h3>Remote / IM</h3>
+                <p>Relay、手机扫码、Telegram、飞书、微信</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="layer">
+            <div class="label">
+              <b>能力层</b>
+              <span>用户能感知的主打功能</span>
+            </div>
+            <div class="cards cols-4">
+              <article class="card" style="--accent: var(--cyan)">
+                <h3>Code Agent</h3>
+                <p>Agentic / Plan / Debug / Review，读改跑验证</p>
+              </article>
+              <article class="card" style="--accent: var(--lime)">
+                <h3>Cowork</h3>
+                <p>PDF、DOCX、XLSX、PPTX 与知识协作</p>
+              </article>
+              <article class="card" style="--accent: var(--rose)">
+                <h3>Computer Use</h3>
+                <p>屏幕感知、鼠标键盘、浏览器与桌面应用</p>
+              </article>
+              <article class="card" style="--accent: var(--blue)">
+                <h3>Personal / Custom</h3>
+                <p>长期记忆、Markdown Agent、MCP、Mini App</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="layer">
+            <div class="label">
+              <b>接口层</b>
+              <span>隔离平台入口与产品逻辑</span>
+            </div>
+            <div class="cards cols-3">
+              <article class="card" style="--accent: var(--cyan)">
+                <h3>API Layer</h3>
+                <p>共享 DTO、handler、Tauri command 请求形状</p>
+              </article>
+              <article class="card" style="--accent: var(--blue)">
+                <h3>Transport</h3>
+                <p>Tauri、WebSocket、CLI adapters 与事件桥接</p>
+              </article>
+              <article class="card" style="--accent: var(--lime)">
+                <h3>Web Infra</h3>
+                <p>前端 API adapter、状态同步、消息流渲染</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="layer">
+            <div class="label">
+              <b>Runtime Kernel</b>
+              <span>BitFun 的 Agent 执行中枢</span>
+            </div>
+            <div class="kernel-wrap">
+              <section class="kernel">
+                <h2>bitfun-core · Product Runtime Assembly</h2>
+                <div class="runtime-flow">
+                  <div class="step">SessionManager</div>
+                  <div class="step">Session</div>
+                  <div class="step">DialogTurn</div>
+                  <div class="step">ModelRound</div>
+                </div>
+                <div class="kernel-grid">
+                  <div class="kernel-chip">
+                    <b>Agents & Modes</b>
+                    <span>Agentic、Plan、Debug、Review、Deep Review</span>
+                  </div>
+                  <div class="kernel-chip">
+                    <b>Tool Runtime</b>
+                    <span>manifest、registry、权限、GetToolSpec</span>
+                  </div>
+                  <div class="kernel-chip">
+                    <b>Context System</b>
+                    <span>项目上下文、记忆、压缩、会话持久化</span>
+                  </div>
+                  <div class="kernel-chip">
+                    <b>Quality Loop</b>
+                    <span>测试、日志、审查、用户确认与恢复</span>
+                  </div>
+                  <div class="kernel-chip">
+                    <b>Mini App Runtime</b>
+                    <span>生成、运行、打包、自定义与内置更新</span>
+                  </div>
+                  <div class="kernel-chip">
+                    <b>Remote Orchestration</b>
+                    <span>远程会话、轮询、取消、附件和队列</span>
+                  </div>
+                </div>
+              </section>
+
+              <section class="owners">
+                <div class="owner" style="--accent: var(--cyan)">
+                  <b>Contracts</b>
+                  <span>core-types · runtime-ports · events</span>
+                </div>
+                <div class="owner" style="--accent: var(--lime)">
+                  <b>Agent Tools</b>
+                  <span>agent-tools · tool-packs · tool-runtime</span>
+                </div>
+                <div class="owner" style="--accent: var(--amber)">
+                  <b>Services</b>
+                  <span>services-core · services-integrations</span>
+                </div>
+                <div class="owner" style="--accent: var(--blue)">
+                  <b>Domains</b>
+                  <span>product-domains · acp · agent-stream</span>
+                </div>
+                <div class="owner" style="--accent: var(--rose)">
+                  <b>AI / Stream</b>
+                  <span>ai-adapters · provider protocol adapters</span>
+                </div>
+                <div class="owner" style="--accent: var(--cyan)">
+                  <b>Compatibility</b>
+                  <span>core 仍是 facade 与完整 runtime 组装点</span>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <div class="layer">
+            <div class="label">
+              <b>外部能力</b>
+              <span>Agent 执行时可调度的真实世界</span>
+            </div>
+            <div class="cards cols-5">
+              <article class="card" style="--accent: var(--blue)">
+                <h3>Models</h3>
+                <p>OpenAI、Anthropic、DeepSeek</p>
+              </article>
+              <article class="card" style="--accent: var(--cyan)">
+                <h3>Project IO</h3>
+                <p>文件、Git、Terminal、LSP、flashgrep</p>
+              </article>
+              <article class="card" style="--accent: var(--lime)">
+                <h3>MCP / Skills</h3>
+                <p>外部工具、Skill 市场、自定义 Agent</p>
+              </article>
+              <article class="card" style="--accent: var(--rose)">
+                <h3>Desktop</h3>
+                <p>浏览器、WebDriver、OCR、键鼠</p>
+              </article>
+              <article class="card" style="--accent: var(--amber)">
+                <h3>Storage</h3>
+                <p>.bitfun/sessions、记忆、配置、assets</p>
+              </article>
+            </div>
+          </div>
+        </section>
+      </section>
+      <div class="footer-note">Layered architecture · platform adapters outside, product runtime inside</div>
+    </main>
+  </body>
+</html>

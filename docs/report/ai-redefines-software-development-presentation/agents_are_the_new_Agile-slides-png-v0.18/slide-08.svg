@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <pattern id="lightDots" width="34" height="34" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1.7" fill="#C4C6C1" opacity="0.55"/>
+    </pattern>
+    <filter id="paperShadow" x="-18%" y="-18%" width="136%" height="150%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#4B5563" flood-opacity="0.13"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#106BEF" stroke-width="2"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#A5A9AE" stroke-width="2"/>
+    </marker>
+  </defs>
+  <rect width="1920" height="1080" fill="#FBFAF7"/>
+
+    <path d="M1816 92 h-70 q-28 0 -28 28 v78" stroke="#D7D7D2" stroke-width="2" fill="none" opacity="0.34"/>
+    <path d="M1782 890 v-190 q0 -32 32 -32 h50" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M1650 820 h112 q30 0 30 -30 v-80" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <circle cx="1800" cy="708" r="7" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <circle cx="1762" cy="820" r="7" fill="#106BEF"/>
+    <circle cx="1848" cy="622" r="6" fill="#FF5A1F"/>
+    <rect x="1378" y="720" width="180" height="120" fill="url(#lightDots)" opacity="0.48"/>
+    <rect x="152" y="318" width="128" height="96" fill="url(#lightDots)" opacity="0.42"/>
+    <path d="M70 740 h120 v118 h250" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <path d="M50 510 h116 q26 0 26 26 v52" stroke="#D7D7D2" stroke-width="2" fill="none"/>
+    <circle cx="150" cy="857" r="5" fill="#FF5A1F"/>
+
+    <g opacity="0.26" transform="translate(1350 820) scale(0.72)">
+      <path d="M0 120 L110 60 L220 120 L110 180 Z" fill="none" stroke="#C4C6C1" stroke-width="2"/>
+      <path d="M110 60 V180 M0 120 V220 M220 120 V220 M0 220 H320" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M260 50 h70 v170 h-70 Z M280 80 h30 M280 116 h30 M280 152 h30" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M360 96 h90 v124 h-90 Z M382 122 h46 M382 154 h46 M382 186 h46" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+      <path d="M88 144 h42 v76 h-42 Z M150 126 h48 v94 h-48 Z" stroke="#C4C6C1" stroke-width="2" fill="none"/>
+    </g>
+
+
+
+    <g transform="rotate(-2 1508 104)">
+      <text x="1268" y="58"
+        style="font-family:'Arial Black','Microsoft YaHei','Noto Sans SC',sans-serif;font-size:88px;font-weight:900;letter-spacing:1.4px;fill:#106BEF;fill-opacity:0.15;stroke:#106BEF;stroke-width:1.4;stroke-opacity:0.2;paint-order:stroke">03</text>
+      <text x="1370" y="92"
+        style="font-family:'Microsoft YaHei','Noto Sans SC','Segoe UI',sans-serif;font-size:38px;font-weight:900;letter-spacing:1.6px;fill:#106BEF;stroke:#FFFFFF;stroke-width:2.4;paint-order:stroke;fill-opacity:0.48">工程治理</text>
+      <path d="M1368 150 C1488 118 1628 174 1768 134" stroke="#106BEF" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.24"/>
+    </g>
+
+
+    <style>
+      text { font-family: "Microsoft YaHei", "Noto Sans SC", "PingFang SC", "Segoe UI", Arial, sans-serif; dominant-baseline: hanging; }
+      .brand5 { font-size: 42px; font-weight: 900; fill: #050608; }
+      .num5 { font-family: "Arial", "Microsoft YaHei", sans-serif; font-weight: 900; fill: #050608; }
+      .h15 { font-size: 68px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .h25 { font-size: 58px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .sub5 { font-size: 31px; font-weight: 560; fill: #5F6670; }
+      .body5 { font-size: 30px; font-weight: 700; fill: #050608; }
+      .muted5 { font-size: 24px; font-weight: 560; fill: #5F6670; }
+      .label5 { font-size: 29px; font-weight: 900; fill: #050608; }
+      .small5 { font-size: 23px; font-weight: 760; fill: #5F6670; }
+      .micro5 { font-size: 19px; font-weight: 760; fill: #5F6670; }
+    </style>
+    <text x="42" y="46" class="brand5">BitFun</text>
+    <text x="1840" y="50" class="small5" text-anchor="end">08 / 12</text>
+
+
+
+    <text x="96" y="146" class="h15" style="font-size:60px">实现到验证</text>
+    <text x="100" y="244" class="sub5">允许生成过程探索，但每轮实现必须产出可复现、可比较的验证证据。</text>
+    <path d="M96 318 h112" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="230" cy="318" r="5.5" fill="#FF5A1F"/>
+
+    <text x="128" y="356" class="small5" style="font-size:23px;fill:#106BEF;font-weight:900">核心原则：过程可以概率性探索，放行必须依赖确定性验证。</text>
+
+    <rect x="118" y="430" width="340" height="278" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="180" cy="494" r="36" fill="#106BEF" opacity="0.11"/>
+    <g transform="translate(156 470) scale(0.75)"><path d="M32 6 L52 14 V30 q0 18 -20 28 Q12 48 12 30 V14 Z M22 32 l7 7 l15 -18" stroke="#106BEF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    <text x="244" y="466" class="num5" style="font-size:31px;fill:#106BEF">01</text>
+    <text x="244" y="508" class="label5" style="font-size:29px">隔离执行</text>
+    <text x="166" y="558" class="small5" style="font-size:21px;fill:#106BEF;font-weight:900">工作区 / 权限 / 工具轨迹</text>
+    <path d="M166 594 H410" stroke="#106BEF" stroke-width="3.6" stroke-linecap="round" opacity="0.62"/>
+    <text x="166" y="630" class="small5" style="font-size:20px;fill:#050608;font-weight:820">探索不污染主线</text><text x="166" y="664" class="small5" style="font-size:20px;fill:#050608;font-weight:820">高风险操作可拦截</text>
+
+
+    <rect x="566" y="430" width="340" height="278" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="628" cy="494" r="36" fill="#FF5A1F" opacity="0.11"/>
+    <g transform="translate(604 470) scale(0.75)"><path d="M18 18 L34 32 L18 46" stroke="#FF5A1F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M38 48 h16" stroke="#FF5A1F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    <text x="692" y="466" class="num5" style="font-size:31px;fill:#FF5A1F">02</text>
+    <text x="692" y="508" class="label5" style="font-size:29px">生成修改</text>
+    <text x="614" y="558" class="small5" style="font-size:21px;fill:#FF5A1F;font-weight:900">代码 / 测试 / 文档</text>
+    <path d="M614 594 H858" stroke="#FF5A1F" stroke-width="3.6" stroke-linecap="round" opacity="0.62"/>
+    <text x="614" y="630" class="small5" style="font-size:20px;fill:#050608;font-weight:820">按任务契约实施</text><text x="614" y="664" class="small5" style="font-size:20px;fill:#050608;font-weight:820">每轮记录改动意图</text>
+
+
+    <rect x="1014" y="430" width="340" height="278" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="1076" cy="494" r="36" fill="#106BEF" opacity="0.11"/>
+    <g transform="translate(1052 470) scale(0.75)"><rect x="12" y="10" width="40" height="44" rx="4" stroke="#106BEF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M22 32 l8 8 l14 -18" stroke="#106BEF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    <text x="1140" y="466" class="num5" style="font-size:31px;fill:#106BEF">03</text>
+    <text x="1140" y="508" class="label5" style="font-size:29px">验证矩阵</text>
+    <text x="1062" y="558" class="small5" style="font-size:21px;fill:#106BEF;font-weight:900">lint / test / build / 回归</text>
+    <path d="M1062 594 H1306" stroke="#106BEF" stroke-width="3.6" stroke-linecap="round" opacity="0.62"/>
+    <text x="1062" y="630" class="small5" style="font-size:20px;fill:#050608;font-weight:820">按风险选择最小验证</text><text x="1062" y="664" class="small5" style="font-size:20px;fill:#050608;font-weight:820">失败自动进入修复轮</text>
+
+
+    <rect x="1462" y="430" width="340" height="278" rx="18" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2" filter="url(#paperShadow)"/>
+    <circle cx="1524" cy="494" r="36" fill="#FF5A1F" opacity="0.11"/>
+    <g transform="translate(1500 470) scale(0.75)"><path d="M18 8 h22 l10 10 v38 H18 Z M40 8 v12 h12 M26 32 h20 M26 42 h18" stroke="#FF5A1F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+    <text x="1588" y="466" class="num5" style="font-size:31px;fill:#FF5A1F">04</text>
+    <text x="1588" y="508" class="label5" style="font-size:29px">证据包</text>
+    <text x="1510" y="558" class="small5" style="font-size:21px;fill:#FF5A1F;font-weight:900">diff / log / risk / impact</text>
+    <path d="M1510 594 H1754" stroke="#FF5A1F" stroke-width="3.6" stroke-linecap="round" opacity="0.62"/>
+    <text x="1510" y="630" class="small5" style="font-size:20px;fill:#050608;font-weight:820">让评审不用倒推上下文</text><text x="1510" y="664" class="small5" style="font-size:20px;fill:#050608;font-weight:820">保留可复现材料</text>
+
+    <path d="M518 582 H556 M966 582 H1004 M1414 582 H1452" stroke="#C4C6C1" stroke-width="5" stroke-linecap="round" marker-end="url(#arrowGray)" opacity="0.86"/>
+    <rect x="278" y="788" width="1364" height="74" rx="16" fill="#FBFAF7" stroke="#C4C6C1" stroke-width="2"/>
+    <text x="960" y="810" class="body5" text-anchor="middle" style="font-size:28px"><tspan style="fill:#FF5A1F;font-weight:900">0.99 的多轮串联</tspan><tspan> 需要被每轮验证证据打断和纠偏。</tspan></text>
+
+    <rect x="170" y="954" width="1580" height="64" rx="10" fill="#FFFFFF" stroke="#C4C6C1" stroke-width="2"/>
+    <path d="M240 971 v30" stroke="#106BEF" stroke-width="8" stroke-linecap="round"/>
+    <text x="986" y="974" class="body5" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" style="font-size:27px">隔离执行与验证矩阵把概率性探索切成可复现、可比较、可纠偏的小段。</text>
+
+
+</svg>

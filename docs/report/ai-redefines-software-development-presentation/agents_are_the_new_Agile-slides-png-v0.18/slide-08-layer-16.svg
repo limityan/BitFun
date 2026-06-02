@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+<defs>
+    <pattern id="lightDots" width="34" height="34" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="1.7" fill="#C4C6C1" opacity="0.55"/>
+    </pattern>
+    <filter id="paperShadow" x="-18%" y="-18%" width="136%" height="150%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#4B5563" flood-opacity="0.13"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#106BEF" stroke-width="2"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2 2 L10 6 L2 10" fill="none" stroke="#A5A9AE" stroke-width="2"/>
+    </marker>
+  </defs>
+<style>
+      text { font-family: "Microsoft YaHei", "Noto Sans SC", "PingFang SC", "Segoe UI", Arial, sans-serif; dominant-baseline: hanging; }
+      .brand5 { font-size: 42px; font-weight: 900; fill: #050608; }
+      .num5 { font-family: "Arial", "Microsoft YaHei", sans-serif; font-weight: 900; fill: #050608; }
+      .h15 { font-size: 68px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .h25 { font-size: 58px; font-weight: 900; fill: #050608; letter-spacing: 0; }
+      .sub5 { font-size: 31px; font-weight: 560; fill: #5F6670; }
+      .body5 { font-size: 30px; font-weight: 700; fill: #050608; }
+      .muted5 { font-size: 24px; font-weight: 560; fill: #5F6670; }
+      .label5 { font-size: 29px; font-weight: 900; fill: #050608; }
+      .small5 { font-size: 23px; font-weight: 760; fill: #5F6670; }
+      .micro5 { font-size: 19px; font-weight: 760; fill: #5F6670; }
+    </style>
+
+    <g transform="translate(604 470) scale(0.75)"><path d="M18 18 L34 32 L18 46" stroke="#FF5A1F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M38 48 h16" stroke="#FF5A1F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g>
+
+
+
+
+</svg>
