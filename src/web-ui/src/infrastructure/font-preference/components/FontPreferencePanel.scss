@@ -117,13 +117,13 @@
 
     &--active {
       @include btn-primary.btn-primary-surface-default;
-      border-color: var(--btn-primary-border, transparent);
+      border-color: var(--btn-primary-border);
       font-weight: $font-weight-semibold;
       box-shadow: var(--btn-primary-shadow, none);
 
       &:hover:not(:disabled) {
         @include btn-primary.btn-primary-surface-hover;
-        border-color: var(--btn-primary-hover-border, transparent);
+        border-color: var(--btn-primary-hover-border);
         box-shadow: var(--btn-primary-hover-shadow, none);
       }
     }
